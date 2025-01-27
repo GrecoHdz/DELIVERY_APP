@@ -1,28 +1,47 @@
-/*const mysql = require("promise-mysql");
-const dotenv = require("dotenv");
+const mysql = require('mysql2/promise');
+const dotenv = require('dotenv');
 dotenv.config();
 
-const connection = mysql.createConnection({
-  host:process.env.host,
-  database:process.env.database,
-  user:process.env.user,
-  password:process.env.password
-})
+// Crear la conexión a la base de datos utilizando las variables de entorno
+const connection = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10, // El número de conexiones simultáneas permitidas
+  queueLimit: 0
+});
 
-const getConnection = async ()=> await connection;
-
-module.exports = {
-  getConnection
+// Función para obtener una conexión
+const getConnection = async () => {
+  try {
+    const conn = await connection.getConnection();
+    console.log('Conexión exitosa a la base de datos');
+    return conn;
+  } catch (error) {
+    console.error('Error al conectar a la base de datos', error);
+    throw error; // Lanza el error si hay problemas con la conexión
+  }
 }
-*/
-const users = [
-  { id: 1, username: "admin", password: "123456" },
-  { id: 2, username: "user", password: "password" },
-];
 
+// Función para obtener un usuario y comparar la contraseña
 const getUser = async (username, password) => {
-  // Simular consulta a base de datos
-  return users.find((user) => user.username === username && user.password === password);
+  const [rows] = await connection.execute('SELECT * FROM usuarios WHERE usuario = ?', [username]);
+
+  console.log('Resultado de la consulta:', rows); // Verifica si se está obteniendo el usuario
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const user = rows[0];
+  if (user.password === password) {
+    return user;
+  }
+
+  return null;
 };
 
-module.exports = { getUser };
+
+module.exports = { getConnection, getUser };

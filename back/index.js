@@ -1,9 +1,7 @@
-require("dotenv").config();
-console.log("JWT_SECRET:", process.env.JWT_SECRET)
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-
+require("dotenv").config(); 
 
 const localesRoutes = require("./routes/locales");
 const authRoutes = require("./routes/auth");
