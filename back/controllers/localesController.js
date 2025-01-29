@@ -1,4 +1,4 @@
-const database = require("../database/database");
+const database = require("../config/database");
 
 const getLocales = async (req, res) => {
   try {
