@@ -5,6 +5,7 @@ const { connectDB, sequelize } = require("./config/database");
 const usuariosRoutes = require("./routes/usuarios");
 
 const app = express(); 
+const authRoutes = require("./routes/auth"); // Importa la ruta de autenticación
 
 // Middlewares
 app.use(morgan("dev"));
@@ -18,6 +19,8 @@ app.use(
 
 // Rutas
 app.use("/usuarios", usuariosRoutes);
+app.use("/auth", authRoutes); // Agrega la ruta de autenticación
+
  
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

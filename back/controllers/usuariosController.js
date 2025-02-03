@@ -20,6 +20,10 @@ const getUsuarioById = async (req, res) => {
   }
 };
 
+const getUserByUsername = async (usuario) => {
+  return await Usuario.findOne({ where: { usuario } });
+};
+
 const createUsuario = async (req, res) => {
   try {
     const { usuario, clave, id_rol } = req.body;
@@ -58,7 +62,8 @@ const deleteUsuario = async (req, res) => {
 module.exports = { 
   getUsuarios, 
   getUsuarioById, 
+  getUserByUsername,
   createUsuario, 
   updateUsuario, 
-  deleteUsuario 
+  deleteUsuario
 };
