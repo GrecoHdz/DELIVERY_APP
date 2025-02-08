@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
-const {getUsuarios,getUsuarioById,createUsuario,updateUsuario,deleteUsuario} = require("../controllers/usuariosController");
+const {getUsuarios,getUsuarioById,createUsuario,updateUsuario,deleteUsuario,getUserByUsername} = require("../controllers/usuariosController");
 
 const router = express.Router();
 
@@ -13,18 +13,19 @@ const validarErrores = (req, res, next) => {
     next();
 };
 
-// Obtener todos los usuarios
-router.get("/", getUsuarios);
-
-// Obtener usuario por ID con validación
+router.get(
+    "/", getUsuarios
+);
+ 
 router.get(
     "/:id",
     [param("id").isInt().withMessage("El ID debe ser un número entero")],
     validarErrores,
     getUsuarioById
 );
-
-// Crear un nuevo usuario con validaciones
+router.get(
+    "/usuarios/:username", getUserByUsername
+);
 router.post(
     "/",
     [
@@ -38,8 +39,7 @@ router.post(
     validarErrores,
     createUsuario
 );
-
-// Actualizar un usuario con validaciones
+ 
 router.put(
     "/:id",
     [
@@ -54,8 +54,7 @@ router.put(
     validarErrores,
     updateUsuario
 );
-
-// Eliminar usuario con validación
+ 
 router.delete(
     "/:id",
     [param("id").isInt().withMessage("El ID debe ser un número entero")],

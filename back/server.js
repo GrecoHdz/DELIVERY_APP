@@ -3,9 +3,9 @@ const morgan = require("morgan");
 const cors = require("cors");
 const { connectDB, sequelize } = require("./config/database");
 const usuariosRoutes = require("./routes/usuarios");
-
+const authRoutes = require("./routes/auth");
 const app = express(); 
-const authRoutes = require("./routes/auth"); // Importa la ruta de autenticación
+ 
 
 // Middlewares
 app.use(morgan("dev"));

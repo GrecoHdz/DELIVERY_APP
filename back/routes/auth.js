@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { getUserByUsername } = require("../controllers/usuariosController");
@@ -27,8 +28,10 @@ router.post(
                 return res.status(401).json({ message: "Usuario no encontrado" });
             }
 
-            if (user.clave !== clave) {
-                return res.status(401).json({ message: "Contraseña incorrecta" });
+            const isMatch = await bcrypt.compare(clave, user.clave);
+
+            if (!isMatch) {
+                return res.status(400).json({ message: "Usuario o contraseña incorrectos." });
             }
 
             const token = jwt.sign(
