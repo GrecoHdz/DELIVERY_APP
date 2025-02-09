@@ -8,6 +8,7 @@ const categoriasRoutes = require("./routes/categorias");
 const subcategoriasRoutes = require("./routes/subcategorias");
 const membresiasRoutes = require("./routes/membresialocales");
 const extrasRoutes = require("./routes/extras")
+const rolesRoutes = require("./routes/roles"); 
 const app = express(); 
  
 
@@ -28,6 +29,7 @@ app.use("/categorias", categoriasRoutes);
 app.use("/subcategorias", subcategoriasRoutes);
 app.use("/membresialocales", membresiasRoutes);
 app.use("/extras", extrasRoutes);
+app.use("/roles", rolesRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

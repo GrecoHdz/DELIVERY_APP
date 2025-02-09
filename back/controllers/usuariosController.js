@@ -1,29 +1,30 @@
 const bcrypt = require("bcryptjs");
 const Usuario = require("../models/Usuario");
 
+// Obtener todos los usuarios
 const getUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll();
     res.json(usuarios);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener usuarios", error });
+    res.status(500).json({ message: "Error al obtener los usuarios", error });
   }
 };
 
+// Obtener un usuario por su ID
 const getUsuarioById = async (req, res) => {
   try {
     const usuario = await Usuario.findByPk(req.params.id);
-    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
     res.json(usuario);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener usuario", error });
+    res.status(500).json({ message: "Error al obtener el usuario", error });
   }
 };
 
-const getUserByUsername = async (usuario) => {
-  return await Usuario.findOne({ where: { usuario } });
-};
-
+// Crear un nuevo usuario
 const createUsuario = async (req, res) => {
   const { usuario, clave, id_rol, email, imagen_perfil_url } = req.body;
 
@@ -33,69 +34,75 @@ const createUsuario = async (req, res) => {
     const hashedPassword = await bcrypt.hash(clave, salt);
 
     // Crear el usuario con la clave hasheada
-    const nuevoUsuario = await Usuario.create({
+    await Usuario.create({
       usuario,
       clave_hash: hashedPassword,
       id_rol,
       email,
       imagen_perfil_url,
     });
-
-    res.status(201).json(nuevoUsuario);
+    res.status(201).json({ message: "Usuario creado exitosamente" });
   } catch (error) {
-    console.error("Error al crear el usuario:", error);
-
-    // Manejar el error de duplicación de nombre de usuario
     if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ message: "El nombre de usuario ya existe" });
+      return res.status(400).json({ message: "El nombre de usuario o email ya existe" });
     }
-
-    // Manejar otros errores
-    res.status(500).json({ message: "Error interno del servidor" });
+    res.status(500).json({ message: "Error al crear el usuario", error });
   }
 };
 
+// Actualizar un usuario
 const updateUsuario = async (req, res) => {
   const { id } = req.params;
-  const { usuario, clave, email, imagen_perfil_url } = req.body;
+  const { usuario, clave, id_rol, email, imagen_perfil_url } = req.body;
+
   try {
     const user = await Usuario.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
+
+    // Si el usuario envió una nueva clave, la hasheamos antes de guardarla
     let hashedPassword;
     if (clave) {
       const salt = await bcrypt.genSalt(10);
       hashedPassword = await bcrypt.hash(clave, salt);
     }
+
+    // Actualizamos los datos del usuario
     await user.update({
       usuario: usuario || user.usuario,
       clave_hash: hashedPassword || user.clave_hash,
+      id_rol: id_rol || user.id_rol,
       email: email || user.email,
       imagen_perfil_url: imagen_perfil_url || user.imagen_perfil_url,
     });
-    res.json({ message: "Usuario actualizado correctamente" });
+    res.status(200).json({ message: "Usuario actualizado correctamente" });
   } catch (error) {
-    console.error("Error al actualizar el usuario:", error);
-    res.status(500).json({ message: "Error interno del servidor" });
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({ message: "El nombre de usuario o email ya existe" });
+    }
+    res.status(500).json({ message: "Error al actualizar el usuario", error });
   }
 };
 
+// Eliminar un usuario
 const deleteUsuario = async (req, res) => {
   try {
     const usuario = await Usuario.findByPk(req.params.id);
-    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
     await usuario.destroy();
-    res.json({ message: "Usuario eliminado correctamente" });
+    res.status(200).json({ message: "Usuario eliminado correctamente" });
   } catch (error) {
-    res.status(500).json({ message: "Error al eliminar usuario", error });
+    res.status(500).json({ message: "Error al eliminar el usuario", error });
   }
 };
 
 module.exports = {
   getUsuarios,
   getUsuarioById,
-  getUserByUsername,
   createUsuario,
   updateUsuario,
   deleteUsuario,
