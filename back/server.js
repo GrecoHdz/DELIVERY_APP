@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth");
 const categoriasRoutes = require("./routes/categorias");
 const subcategoriasRoutes = require("./routes/subcategorias");
 const membresiasRoutes = require("./routes/membresialocales");
+const extrasRoutes = require("./routes/extras")
 const app = express(); 
  
 
@@ -26,7 +27,7 @@ app.use("/usuarios", usuariosRoutes);
 app.use("/categorias", categoriasRoutes);
 app.use("/subcategorias", subcategoriasRoutes);
 app.use("/membresialocales", membresiasRoutes);
-
+app.use("/extras", extrasRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
