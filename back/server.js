@@ -5,6 +5,7 @@ const { connectDB, sequelize } = require("./config/database");
 const usuariosRoutes = require("./routes/usuarios");
 const authRoutes = require("./routes/auth");
 const categoriasRoutes = require("./routes/categorias");
+const subcategoriasRoutes = require("./routes/subcategorias");
 const app = express(); 
  
 
@@ -22,6 +23,7 @@ app.use(
 app.use("/auth", authRoutes); 
 app.use("/usuarios", usuariosRoutes);
 app.use("/categorias", categoriasRoutes);
+app.use("/subcategorias", subcategoriasRoutes);
  
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
