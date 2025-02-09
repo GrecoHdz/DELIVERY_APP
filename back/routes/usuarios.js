@@ -37,10 +37,7 @@ router.post(
       .isLength({ min: 3 }).withMessage("El usuario debe tener al menos 3 caracteres"),
     body("clave")
       .notEmpty().withMessage("La clave es obligatoria")
-      .isLength({ min: 6 }).withMessage("La clave debe tener al menos 6 caracteres"),
-    body("email")
-      .notEmpty().withMessage("El email es obligatorio")
-      .isEmail().withMessage("El email debe ser válido"),
+      .isLength({ min: 6 }).withMessage("La clave debe tener al menos 6 caracteres")
   ],
   validarErrores,
   createUsuario

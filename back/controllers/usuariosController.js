@@ -28,8 +28,11 @@ const createUsuario = async (req, res) => {
   const { usuario, clave, id_rol, email, imagen_perfil_url } = req.body;
 
   try {
+    // Generar el hash de la clave antes de guardarla
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(clave, salt);
+
+    // Crear el usuario con la clave hasheada
     const nuevoUsuario = await Usuario.create({
       usuario,
       clave_hash: hashedPassword,
@@ -37,9 +40,17 @@ const createUsuario = async (req, res) => {
       email,
       imagen_perfil_url,
     });
+
     res.status(201).json(nuevoUsuario);
   } catch (error) {
     console.error("Error al crear el usuario:", error);
+
+    // Manejar el error de duplicación de nombre de usuario
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({ message: "El nombre de usuario ya existe" });
+    }
+
+    // Manejar otros errores
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };

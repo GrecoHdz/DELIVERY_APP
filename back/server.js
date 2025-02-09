@@ -4,6 +4,7 @@ const cors = require("cors");
 const { connectDB, sequelize } = require("./config/database");
 const usuariosRoutes = require("./routes/usuarios");
 const authRoutes = require("./routes/auth");
+const categoriasRoutes = require("./routes/categorias");
 const app = express(); 
  
 
@@ -18,9 +19,9 @@ app.use(
 );
 
 // Rutas
+app.use("/auth", authRoutes); 
 app.use("/usuarios", usuariosRoutes);
-app.use("/auth", authRoutes); // Agrega la ruta de autenticación
-
+app.use("/categorias", categoriasRoutes);
  
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
