@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const Usuario = require("../models/Usuario");
+const UsuarioRol = require("../models/UsuarioRol");
 
 // Obtener todos los usuarios
 const getUsuarios = async (req, res) => {
@@ -26,22 +27,29 @@ const getUsuarioById = async (req, res) => {
 
 // Crear un nuevo usuario
 const createUsuario = async (req, res) => {
-  const { usuario, clave, id_rol, email, imagen_perfil_url } = req.body;
+  const { usuario, clave, id_rol=1, email, imagen_perfil_url } = req.body; // El rol por defecto es 1 (cliente)
 
   try {
     // Generar el hash de la clave antes de guardarla
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(clave, salt);
 
-    // Crear el usuario con la clave hasheada
-    await Usuario.create({
+    // Crear el usuario y obtener su ID
+    const nuevoUsuario = await Usuario.create({
       usuario,
       clave_hash: hashedPassword,
       id_rol,
       email,
       imagen_perfil_url,
     });
-    res.status(201).json({ message: "Usuario creado exitosamente" });
+
+    // Insertar en UsuarioRoles
+    await UsuarioRol.create({
+      id_usuario: nuevoUsuario.id_usuario,
+      id_rol,
+    });
+
+    res.status(201).json({ message: "Usuario creado exitosamente y registrado en UsuarioRoles" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({ message: "El nombre de usuario o email ya existe" });

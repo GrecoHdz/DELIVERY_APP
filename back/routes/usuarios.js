@@ -1,5 +1,6 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
+const {createUsuarioRol,}= require("../controllers/usuarioRolesController");
 const {
   getUsuarios,
   getUsuarioById,
@@ -44,7 +45,8 @@ router.post(
       .isEmail().withMessage("El email debe ser válido"),
   ],
   validarErrores,
-  createUsuario
+  createUsuario,
+  createUsuarioRol,
 );
 
 // Actualizar un usuario
