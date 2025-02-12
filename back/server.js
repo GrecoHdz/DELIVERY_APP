@@ -7,6 +7,12 @@ const authRoutes = require("./routes/auth");
 const ciudadRoutes = require("./routes/ciudad");
 const bancoRoutes = require("./routes/banco");
 const metodoPagoRoutes = require("./routes/metodoPago");
+const categoriasRoutes = require("./routes/categorias");
+const subcategoriasRoutes = require("./routes/subcategorias");
+const membresiasRoutes = require("./routes/membresialocales");
+const extrasRoutes = require("./routes/extras")
+const rolesRoutes = require("./routes/roles"); 
+const usuarioRolesRoutes = require("./routes/usuarioRoles");
 const app = express(); 
  
 
@@ -21,11 +27,9 @@ app.use(
 );
 
 // Rutas
+app.use("/auth", authRoutes); 
 app.use("/usuarios", usuariosRoutes);
 app.use("/auth", authRoutes); // Agrega la ruta de autenticación
-app.use("/ciudades", ciudadRoutes);
-app.use("/bancos", bancoRoutes);
-app.use("/metodosPago", metodoPagoRoutes);
 
  
 // Iniciar servidor
