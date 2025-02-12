@@ -30,7 +30,9 @@ app.use(
 app.use("/auth", authRoutes); 
 app.use("/usuarios", usuariosRoutes);
 app.use("/auth", authRoutes); // Agrega la ruta de autenticación
-
+app.use("/ciudades", ciudadRoutes);
+app.use("/bancos", bancoRoutes);
+app.use("/metodosPago", metodoPagoRoutes);
  
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
