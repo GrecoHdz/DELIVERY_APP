@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const Usuario = require("../models/Usuario");
+const Cliente = require("../models/Cliente")
 const UsuarioRol = require("../models/UsuarioRol");
 
 // Obtener todos los usuarios
@@ -24,10 +25,13 @@ const getUsuarioById = async (req, res) => {
     res.status(500).json({ message: "Error al obtener el usuario", error });
   }
 };
-
+// Obtener un usuario por su nombre
+const getUserByUsername = async (usuario) => {
+  return await Usuario.findOne({ where: { usuario } });
+};
 // Crear un nuevo usuario
 const createUsuario = async (req, res) => {
-  const { usuario, clave, id_rol=1, email, imagen_perfil_url } = req.body; // El rol por defecto es 1 (cliente)
+  const { usuario, clave, id_rol = 1, email, imagen_perfil_url, nombre, identidad, fecha_nacimiento, telefono } = req.body;
 
   try {
     // Generar el hash de la clave antes de guardarla
@@ -49,6 +53,15 @@ const createUsuario = async (req, res) => {
       id_rol,
     });
 
+    // Crear el cliente asociado al usuario
+    await Cliente.create({
+      id_usuario: nuevoUsuario.id_usuario, 
+      nombre,
+      identidad,
+      fecha_nacimiento,
+      telefono,
+      activo: true,
+    });
     res.status(201).json({ message: "Usuario creado exitosamente y registrado en UsuarioRoles" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
@@ -111,6 +124,7 @@ const deleteUsuario = async (req, res) => {
 module.exports = {
   getUsuarios,
   getUsuarioById,
+  getUserByUsername,
   createUsuario,
   updateUsuario,
   deleteUsuario,

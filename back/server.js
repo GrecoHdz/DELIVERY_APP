@@ -10,6 +10,7 @@ const membresiasRoutes = require("./routes/membresialocales");
 const extrasRoutes = require("./routes/extras")
 const rolesRoutes = require("./routes/roles"); 
 const usuarioRolesRoutes = require("./routes/usuarioRoles");
+const clientesRoutes = require("./routes/clientes")
 const app = express(); 
  
 
@@ -32,7 +33,7 @@ app.use("/membresialocales", membresiasRoutes);
 app.use("/extras", extrasRoutes);
 app.use("/roles", rolesRoutes);
 app.use("/usuarioroles", usuarioRolesRoutes);
-
+app.use("/clientes", clientesRoutes);
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
