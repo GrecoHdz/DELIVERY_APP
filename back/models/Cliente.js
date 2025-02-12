@@ -11,8 +11,8 @@ const Cliente = sequelize.define(
     },
     id_usuario: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      unique: true, // Relación con la tabla usuarios
+      allowNull: false,
+      unique: true, // Relación única con la tabla usuarios
     },
     nombre: {
       type: DataTypes.STRING(255),
@@ -21,6 +21,7 @@ const Cliente = sequelize.define(
     identidad: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      unique: true, // Asegura que la identidad sea única
     },
     fecha_nacimiento: {
       type: DataTypes.DATEONLY, // Solo fecha (sin hora)
@@ -29,6 +30,7 @@ const Cliente = sequelize.define(
     telefono: {
       type: DataTypes.STRING(20),
       allowNull: true,
+      unique: true, // Asegura que el teléfono sea único
     },
     activo: {
       type: DataTypes.BOOLEAN,
@@ -44,5 +46,13 @@ const Cliente = sequelize.define(
     tableName: "Clientes", // Nombre de la tabla en la base de datos
   }
 );
+
+// Relación con la tabla Usuarios
+Cliente.associate = (models) => {
+  Cliente.belongsTo(models.Usuario, {
+    foreignKey: "id_usuario",
+    onDelete: "CASCADE",
+  });
+};
 
 module.exports = Cliente;

@@ -1,6 +1,5 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
-const {createUsuarioRol,}= require("../controllers/usuarioRolesController");
 const {
   getUsuarios,
   getUsuarioById,
@@ -8,6 +7,9 @@ const {
   updateUsuario,
   deleteUsuario,
 } = require("../controllers/usuariosController");
+const {
+  createUsuarioRol, 
+} = require("../controllers/usuarioRolesController");
 const router = express.Router();
 
 // Middleware para validar errores
@@ -43,6 +45,15 @@ router.post(
     body("email")
       .notEmpty().withMessage("El email es obligatorio")
       .isEmail().withMessage("El email debe ser válido"),
+    body("nombre")
+      .notEmpty().withMessage("El nombre del cliente es obligatorio")
+      .isLength({ max: 255 }).withMessage("El nombre no puede exceder los 255 caracteres"),
+    body("identidad")
+      .notEmpty().withMessage("La identidad del cliente es obligatoria")
+      .isLength({ max: 255 }).withMessage("La identidad no puede exceder los 255 caracteres"),
+    body("telefono")
+      .optional()
+      .isLength({ max: 20 }).withMessage("El teléfono no puede exceder los 20 caracteres"),
   ],
   validarErrores,
   createUsuario,
@@ -56,16 +67,20 @@ router.put(
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("usuario")
       .optional()
-      .isLength({ min: 3, max: 50 }).withMessage("El nombre de usuario debe tener entre 3 y 50 caracteres"),
+      .isLength({ min: 3, max: 50 })
+      .withMessage("El nombre de usuario debe tener entre 3 y 50 caracteres"),
     body("clave")
       .optional()
-      .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
+      .isLength({ min: 6 })
+      .withMessage("La contraseña debe tener al menos 6 caracteres"),
     body("email")
       .optional()
-      .isEmail().withMessage("El email debe ser válido"),
+      .isEmail()
+      .withMessage("El email debe ser válido"),
     body("imagen_perfil_url")
       .optional()
-      .isURL().withMessage("La URL de la imagen de perfil debe ser válida"),
+      .isURL()
+      .withMessage("La URL de la imagen de perfil debe ser válida"),
   ],
   validarErrores,
   updateUsuario
