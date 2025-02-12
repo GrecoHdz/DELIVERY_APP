@@ -37,6 +37,9 @@ app.use("/extras", extrasRoutes);
 app.use("/roles", rolesRoutes);
 app.use("/usuarioroles", usuarioRolesRoutes);
 app.use("/clientes", clientesRoutes);
+app.use("/ciudad", ciudadRoutes);
+app.use("/banco", bancoRoutes);
+app.use("/metodopago", metodoPagoRoutes);
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
