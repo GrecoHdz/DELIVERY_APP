@@ -34,7 +34,7 @@ const createDireccion = async (req, res) => {
       longitud,
     });
 
-    res.status(201).json({ message: "Dirección creada exitosamente", direccion: nuevaDireccion });
+    res.status(201).json({ message: "Dirección creada exitosamente"});
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
       if (error.fields.includes("id_cliente")) {
@@ -76,7 +76,7 @@ const updateDireccion = async (req, res) => {
         activo,
       });
   
-      res.status(200).json({ message: "Dirección actualizada correctamente", direccion });
+      res.status(200).json({ message: "Dirección actualizada correctamente" });
     } catch (error) {
       res.status(500).json({ message: "Error al actualizar la dirección", error });
     }
