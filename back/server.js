@@ -15,6 +15,8 @@ const rolesRoutes = require("./routes/roles");
 const usuarioRolesRoutes = require("./routes/usuarioRoles");
 const clientesRoutes = require("./routes/clientes")
 const localesRoutes = require("./routes/locales")
+const direccionesclientesRoutes = require("./routes/direccionesClientes") 
+
 const app = express(); 
  
 
@@ -42,6 +44,7 @@ app.use("/ciudad", ciudadRoutes);
 app.use("/banco", bancoRoutes);
 app.use("/metodopago", metodoPagoRoutes);
 app.use("/locales",localesRoutes);
+app.use("/direccionesclientes",direccionesclientesRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
