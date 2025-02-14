@@ -25,7 +25,7 @@ const getLocalById = async (req, res) => {
 
 // Crear un nuevo local
 const createLocal = async (req, res) => {
-  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url } = req.body;
+  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, pedidos_restantes, usuario_empleado} = req.body;
 
   try {
     const local = await Local.create({
@@ -36,6 +36,8 @@ const createLocal = async (req, res) => {
       cierre,
       rtn,
       imagen_url,
+      pedidos_restantes,
+      usuario_empleado,
     });
     res.status(201).json({ message: "Local creado exitosamente" });
   } catch (error) {
@@ -44,8 +46,8 @@ const createLocal = async (req, res) => {
       if (error.fields.includes("id_cliente")) {
         return res.status(400).json({ message: "El cliente no existe" });
       }
-      if (error.fields.includes("id_membresia")) {
-        return res.status(400).json({ message: "La membresía no existe" });
+      if (error.fields.includes("rtn")) {
+        return res.status(400).json({ message: "El rtn ya esta registrado" });
       }
     }
     res.status(500).json({ message: "Error al crear el local", error });
@@ -55,7 +57,7 @@ const createLocal = async (req, res) => {
 // Actualizar un local
 const updateLocal = async (req, res) => {
   const { id } = req.params;
-  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, activo } = req.body;
+  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, activo, pedidos_restantes, usuario_empleado } = req.body;
 
   try {
     const local = await Local.findByPk(id);
@@ -72,13 +74,28 @@ const updateLocal = async (req, res) => {
       rtn,
       imagen_url,
       activo,
+      pedidos_restantes,
+      usuario_empleado,
     });
 
-    res.status(200).json({ message: "Local actualizado correctamente"});
+    res.status(200).json({ message: "Local actualizado correctamente" });
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
-      return res.status(400).json({ message: "El cliente o membresía no existe" });
+      if (error.fields.includes("id_cliente")) {
+        return res.status(400).json({ message: "El cliente no existe" });
+      }
+      if (error.fields.includes("id_membresia")) {
+        return res.status(400).json({ message: "La membresía no existe" });
+      }else 
+        return res.status(400).json({ message: "Usuario no encontrado" });
+       
     }
+    if (error.name === "SequelizeUniqueConstraintError") {
+      if (error.errors.some(e => e.path === "rtn_UNIQUE")) {
+        return res.status(400).json({ message: "El RTN ya está registrado" });
+      }
+    }
+
     res.status(500).json({ message: "Error al actualizar el local", error });
   }
 };

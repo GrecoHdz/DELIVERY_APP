@@ -36,11 +36,7 @@ router.post(
   [
     body("id_cliente")
       .isInt()
-      .withMessage("El ID del cliente debe ser un número entero"),
-    body("id_membresia")
-      .optional()
-      .isInt()
-      .withMessage("El ID de membresía debe ser un número entero"),
+      .withMessage("El ID del cliente debe ser un número entero"), 
     body("nombre_local")
       .notEmpty()
       .withMessage("El nombre del local es obligatorio")
@@ -60,7 +56,7 @@ router.post(
     body("imagen_url")
       .optional()
       .isURL()
-      .withMessage("La URL de la imagen debe ser válida"),
+      .withMessage("La URL de la imagen debe ser válida"), 
   ],
   validarErrores,
   createLocal

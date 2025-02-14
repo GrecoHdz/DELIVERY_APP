@@ -15,7 +15,7 @@ const Local = sequelize.define(
     },
     id_membresia: {
       type: DataTypes.INTEGER,
-      allowNull: true, // Puede ser nulo si no tiene membresía
+      defaultValue: 1,
     },
     nombre_local: {
       type: DataTypes.STRING(255),
@@ -32,6 +32,7 @@ const Local = sequelize.define(
     rtn: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      unique: true,
     },
     imagen_url: {
       type: DataTypes.TEXT,
@@ -40,6 +41,14 @@ const Local = sequelize.define(
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
+    },
+    pedidos_restantes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 5,
+    },
+    usuario_empleado: {
+      type: DataTypes.STRING(55),
+      allowNull: true,
     },
   },
   {
