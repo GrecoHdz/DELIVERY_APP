@@ -17,7 +17,10 @@ const clientesRoutes = require("./routes/clientes")
 const localesRoutes = require("./routes/locales")
 const direccionesclientesRoutes = require("./routes/direccionesClientes") 
 const direccioneslocalesRoutes = require("./routes/direccionesLocales")
-
+const productosRoute=require("./routes/productos")
+const productosrecomendadosRoute=require("./routes/productosRecomedados")
+const bannerPublicitarioaRoute=require("./routes/bannersPublicitarios")
+const productoExtraRoutes = require('./routes/productoExtraRoutes');
 const app = express(); 
  
 
@@ -47,9 +50,13 @@ app.use("/metodopago", metodoPagoRoutes);
 app.use("/locales",localesRoutes);
 app.use("/direccionesclientes",direccionesclientesRoutes);
 app.use("/direccioneslocales",direccioneslocalesRoutes);
+app.use("/productos",productosRoute);
+app.use("/productosrecomendados",productosrecomendadosRoute);
+app.use("/bannerspublicitarios",bannerPublicitarioaRoute);
+app.use("/productoextra",productoExtraRoutes);
 
 // Iniciar servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, async () => {
   await connectDB();
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
