@@ -21,6 +21,10 @@ const productosRoute=require("./routes/productos")
 const productosrecomendadosRoute=require("./routes/productosRecomedados")
 const bannerPublicitarioaRoute=require("./routes/bannersPublicitarios")
 const productoExtraRoutes = require('./routes/productoExtraRoutes');
+const driversRoutes = require('./routes/driversRoutes');
+const vehiculosRoutes = require('./routes/vehiculosRoutes');
+const membresiasDriversRoutes = require('./routes/membresiasDriversRoutes');
+const driverVehiculoRoutes = require('./routes/driverVehiculoRoutes');
 const app = express(); 
  
 
@@ -54,6 +58,10 @@ app.use("/productos",productosRoute);
 app.use("/productosrecomendados",productosrecomendadosRoute);
 app.use("/bannerspublicitarios",bannerPublicitarioaRoute);
 app.use("/productoextra",productoExtraRoutes);
+app.use('/drivers', driversRoutes)
+app.use('/vehiculos', vehiculosRoutes)
+app.use('/membresiadrivers', membresiasDriversRoutes);
+app.use('/drivervehiculo', driverVehiculoRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;
