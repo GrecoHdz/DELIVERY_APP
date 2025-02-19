@@ -27,6 +27,9 @@ const bannersRoutes = require("./routes/banners");
 const driversRoutes = require("./routes/drivers");
 const vehiculosRoutes = require("./routes/vehiculos");
 const driverVehiculoRoutes = require("./routes/driverVehiculo");
+const pagosRoutes = require("./routes/pagos");
+const pagosTransferenciaRoutes = require("./routes/pagosTransferencia");
+const pagosEfectivoRoutes = require("./routes/pagosEfectivo");
 const app = express();  
  
 
@@ -66,8 +69,9 @@ app.use("/banners", bannersRoutes);
 app.use("/drivers", driversRoutes);
 app.use("/vehiculos", vehiculosRoutes); 
 app.use("/drivervehiculo", driverVehiculoRoutes);
-
-
+app.use("/pagos", pagosRoutes);
+app.use("/pagostransferencia", pagosTransferenciaRoutes);
+app.use("/pagosefectivo", pagosEfectivoRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
