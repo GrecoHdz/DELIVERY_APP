@@ -22,6 +22,9 @@ const productoExtraRoutes = require("./routes/productoExtra");
 const atributosRoutes = require("./routes/atributos");
 const valoresAtributosRoutes = require("./routes/valoresAtributos");
 const productoAtributosRoutes = require("./routes/productoAtributos");
+const productosRecomendadosRoutes = require("./routes/productosRecomendados");
+const bannersRoutes = require("./routes/banners");
+
 const app = express();  
  
 
@@ -56,6 +59,9 @@ app.use("/productoextra", productoExtraRoutes);
 app.use("/atributos", atributosRoutes);
 app.use("/valoresatributos", valoresAtributosRoutes);
 app.use("/productoatributos", productoAtributosRoutes);
+app.use("/productosrecomendados", productosRecomendadosRoutes);
+app.use("/banners", bannersRoutes);
+
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
