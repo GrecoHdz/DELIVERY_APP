@@ -15,7 +15,7 @@ const Producto = sequelize.define(
     },
     id_subcategoria: {
       type: DataTypes.INTEGER,
-      allowNull: true, // Puede ser nulo si no tiene subcategoría
+      allowNull: true, // Opcional si no todas las categorías son obligatorias
     },
     nombre_producto: {
       type: DataTypes.STRING(255),
@@ -41,28 +41,14 @@ const Producto = sequelize.define(
   {
     timestamps: false, // Desactiva los timestamps automáticos de Sequelize
     tableName: "Productos", // Nombre de la tabla en la base de datos
-    indexes: [
-      {
-        name: "idx_productos_local_activo",
-        fields: ["id_local", "activo"],
-      },
-      {
-        name: "idx_productos_id_local",
-        fields: ["id_local"],
-      },
-      {
-        name: "idx_productos_activo",
-        fields: ["activo"],
-      },
-    ],
   }
 );
 
-// Relaciones con otras tablas
+// Asociaciones
 Producto.associate = (models) => {
   Producto.belongsTo(models.Local, {
     foreignKey: "id_local",
-    onDelete: "CASCADE",
+    onDelete: "CASCADE", // Si se elimina el local, también se eliminan sus productos
   });
   Producto.belongsTo(models.Subcategoria, {
     foreignKey: "id_subcategoria",

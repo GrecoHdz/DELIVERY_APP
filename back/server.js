@@ -17,15 +17,12 @@ const clientesRoutes = require("./routes/clientes")
 const localesRoutes = require("./routes/locales")
 const direccionesclientesRoutes = require("./routes/direccionesClientes") 
 const direccioneslocalesRoutes = require("./routes/direccionesLocales")
-const productosRoute=require("./routes/productos")
-const productosrecomendadosRoute=require("./routes/productosRecomedados")
-const bannerPublicitarioaRoute=require("./routes/bannersPublicitarios")
-const productoExtraRoutes = require('./routes/productoExtraRoutes');
-const driversRoutes = require('./routes/driversRoutes');
-const vehiculosRoutes = require('./routes/vehiculosRoutes');
-const membresiasDriversRoutes = require('./routes/membresiasDriversRoutes');
-const driverVehiculoRoutes = require('./routes/driverVehiculoRoutes');
-const app = express(); 
+const productoRoutes = require('./routes/producto')
+const productoExtraRoutes = require("./routes/productoExtra");
+const atributosRoutes = require("./routes/atributos");
+const valoresAtributosRoutes = require("./routes/valoresAtributos");
+const productoAtributosRoutes = require("./routes/productoAtributos");
+const app = express();  
  
 
 // Middlewares
@@ -54,17 +51,14 @@ app.use("/metodopago", metodoPagoRoutes);
 app.use("/locales",localesRoutes);
 app.use("/direccionesclientes",direccionesclientesRoutes);
 app.use("/direccioneslocales",direccioneslocalesRoutes);
-app.use("/productos",productosRoute);
-app.use("/productosrecomendados",productosrecomendadosRoute);
-app.use("/bannerspublicitarios",bannerPublicitarioaRoute);
-app.use("/productoextra",productoExtraRoutes);
-app.use('/drivers', driversRoutes)
-app.use('/vehiculos', vehiculosRoutes)
-app.use('/membresiadrivers', membresiasDriversRoutes);
-app.use('/drivervehiculo', driverVehiculoRoutes);
+app.use('/productos', productoRoutes);
+app.use("/productoextra", productoExtraRoutes);
+app.use("/atributos", atributosRoutes);
+app.use("/valoresatributos", valoresAtributosRoutes);
+app.use("/productoatributos", productoAtributosRoutes);
 
 // Iniciar servidor
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   await connectDB();
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

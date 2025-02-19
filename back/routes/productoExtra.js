@@ -1,47 +1,60 @@
-const express = require('express');
+const express = require("express");
+const { body, param, validationResult } = require("express-validator");
+const {
+  getExtrasByProducto,
+  associateExtraToProducto,
+  deactivateExtraForProducto,
+  reactivateExtraForProducto,
+} = require("../controllers/productoExtraController");
+
 const router = express.Router();
-const { body, param, validationResult } = require('express-validator');
-const productoExtraController = require('../controllers/productoExtraController');
 
-// Ruta para crear una nueva relación Producto-Extra
+const validarErrores = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errores: errors.array() });
+  }
+  next();
+};
+
+// Obtener todos los extras asociados a un producto
+router.get(
+  "/:id_producto",
+  [param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero")],
+  validarErrores,
+  getExtrasByProducto
+);
+
+// Asociar un extra a un producto
 router.post(
-  '/',
+  "/",
   [
-    body('id_producto').isInt().withMessage('El ID del producto debe ser un número entero'),
-    body('id_extra').isInt().withMessage('El ID del extra debe ser un número entero'),
-    body('activo')
-      .optional()
-      .isBoolean()
-      .withMessage('El campo activo debe ser un booleano (true/false)'),
+    body("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"), 
   ],
-  productoExtraController.createProductoExtra
+  validarErrores,
+  associateExtraToProducto
 );
 
-// Ruta para obtener todas las relaciones Producto-Extra
-router.get('/', productoExtraController.getAllProductoExtras);
-
-// Ruta para actualizar una relación Producto-Extra
+// Desactivar un extra para un producto
 router.put(
-  '/:id_producto/:id_extra',
+  "/:id_producto/:id_extra",
   [
-    param('id_producto').isInt().withMessage('El ID del producto debe ser un número entero'),
-    param('id_extra').isInt().withMessage('El ID del extra debe ser un número entero'),
-    body('activo')
-      .optional()
-      .isBoolean()
-      .withMessage('El campo activo debe ser un booleano (true/false)'),
+    param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
+    param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
   ],
-  productoExtraController.updateProductoExtra
+  validarErrores,
+  deactivateExtraForProducto
 );
 
-// Ruta para eliminar una relación Producto-Extra
-router.delete(
-  '/:id_producto/:id_extra',
+// Reactivar un extra para un producto
+router.put(
+  "/productos/:id_producto/extras/:id_extra/reactivar",
   [
-    param('id_producto').isInt().withMessage('El ID del producto debe ser un número entero'),
-    param('id_extra').isInt().withMessage('El ID del extra debe ser un número entero'),
+    param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
+    param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
   ],
-  productoExtraController.deleteProductoExtra
+  validarErrores,
+  reactivateExtraForProducto
 );
 
 module.exports = router;

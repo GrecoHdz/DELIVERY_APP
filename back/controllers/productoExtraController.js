@@ -1,84 +1,94 @@
-const { validationResult } = require('express-validator');
-const ProductoExtra = require('../models/ProductoExtra');
+const ProductoExtra = require("../models/ProductoExtra");
 
-// Crear una nueva relación Producto-Extra
-exports.createProductoExtra = async (req, res) => {
-  // Verificar errores de validación
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+// Obtener todos los extras asociados a un producto
+const getExtrasByProducto = async (req, res) => {
+  const { id_producto } = req.params;
 
   try {
-    const { id_producto, id_extra, activo } = req.body;
+    const extras = await ProductoExtra.findAll({
+      where: { id_producto, activo: true }, // Solo los extras activos
+    });
 
-    // Crear la relación en la base de datos
-    const productoExtra = await ProductoExtra.create({ id_producto, id_extra, activo });
-    res.status(201).json(productoExtra);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al crear la relación Producto-Extra' });
-  }
-};
-
-// Obtener todas las relaciones Producto-Extra
-exports.getAllProductoExtras = async (req, res) => {
-  try {
-    const productoExtras = await ProductoExtra.findAll();
-    res.status(200).json(productoExtras);
-  } catch (error) {
-    res.status(500).json({ error: 'Error al obtener las relaciones Producto-Extra' });
-  }
-};
-
-// Actualizar una relación Producto-Extra
-exports.updateProductoExtra = async (req, res) => {
-  // Verificar errores de validación
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  try {
-    const { id_producto, id_extra } = req.params;
-    const { activo } = req.body;
-
-    // Buscar la relación en la base de datos
-    const productoExtra = await ProductoExtra.findOne({ where: { id_producto, id_extra } });
-    if (!productoExtra) {
-      return res.status(404).json({ error: 'Relación Producto-Extra no encontrada' });
+    if (!extras || extras.length === 0) {
+      return res.status(404).json({ message: "No se encontraron extras para este producto" });
     }
 
-    // Actualizar el campo activo
-    productoExtra.activo = activo;
-    await productoExtra.save();
-
-    res.status(200).json(productoExtra);
+    res.json(extras);
   } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar la relación Producto-Extra' });
+    res.status(500).json({ message: "Error al obtener los extras del producto", error });
   }
 };
 
-// Eliminar una relación Producto-Extra
-exports.deleteProductoExtra = async (req, res) => {
-  // Verificar errores de validación
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+// Asociar un extra a un producto
+const associateExtraToProducto = async (req, res) => {
+  const { id_producto, id_extra } = req.body;
 
   try {
-    const { id_producto, id_extra } = req.params;
+    const productoExtra = await ProductoExtra.create({
+      id_producto,
+      id_extra,
+      activo: true,
+    });
 
-    // Buscar la relación en la base de datos
-    const productoExtra = await ProductoExtra.findOne({ where: { id_producto, id_extra } });
+    res.status(201).json({ message: "Extra asociado al producto exitosamente" });
+  } catch (error) {
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      if (error.fields.includes("id_producto")) {
+        return res.status(400).json({ message: "El producto no existe" });
+      }
+      if (error.fields.includes("id_extra")) {
+        return res.status(400).json({ message: "El extra no existe" });
+      }
+    }
+    res.status(500).json({ message: "Error al asociar el extra al producto", error });
+  }
+};
+
+// Desactivar un extra para un producto
+const deactivateExtraForProducto = async (req, res) => {
+  const { id_producto, id_extra } = req.params;
+
+  try {
+    const productoExtra = await ProductoExtra.findOne({
+      where: { id_producto, id_extra },
+    });
+
     if (!productoExtra) {
-      return res.status(404).json({ error: 'Relación Producto-Extra no encontrada' });
+      return res.status(404).json({ message: "Relación producto-extra no encontrada" });
     }
 
-    // Eliminar la relación
-    await productoExtra.destroy();
-    res.status(200).json({ message: 'Relación Producto-Extra eliminada correctamente' });
+    await productoExtra.update({ activo: false });
+
+    res.status(200).json({ message: "Extra desactivado para el producto correctamente" });
   } catch (error) {
-    res.status(500).json({ error: 'Error al eliminar la relación Producto-Extra' });
+    res.status(500).json({ message: "Error al desactivar el extra para el producto", error });
   }
+};
+
+// Reactivar un extra para un producto
+const reactivateExtraForProducto = async (req, res) => {
+  const { id_producto, id_extra } = req.params;
+
+  try {
+    const productoExtra = await ProductoExtra.findOne({
+      where: { id_producto, id_extra },
+    });
+
+    if (!productoExtra) {
+      return res.status(404).json({ message: "Relación producto-extra no encontrada" });
+    }
+
+    await productoExtra.update({ activo: true });
+
+    res.status(200).json({ message: "Extra reactivado para el producto correctamente" });
+  } catch (error) {
+    res.status(500).json({ message: "Error al reactivar el extra para el producto", error });
+  }
+};
+
+module.exports = {
+  getExtrasByProducto,
+  associateExtraToProducto,
+  deactivateExtraForProducto,
+  reactivateExtraForProducto,
 };

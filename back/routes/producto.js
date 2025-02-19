@@ -1,15 +1,15 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
 const {
-  getProductosByLocal,
+  getProductos,
+  getProductoById,
   createProducto,
   updateProducto,
   deleteProducto,
-} = require("../controllers/productosController");
+} = require("../controllers/productoController");
 
 const router = express.Router();
 
-// Middleware para validar errores
 const validarErrores = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -18,12 +18,15 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-// Obtener todos los productos de un local
+// Obtener todos los productos
+router.get("/", getProductos);
+
+// Obtener un producto por su ID
 router.get(
-  "/local/:id_local",
-  [param("id_local").isInt().withMessage("El ID del local debe ser un número entero")],
+  "/:id",
+  [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
-  getProductosByLocal
+  getProductoById
 );
 
 // Crear un nuevo producto
@@ -33,26 +36,22 @@ router.post(
     body("id_local")
       .isInt()
       .withMessage("El ID del local debe ser un número entero"),
-    body("id_subcategoria")
-      .optional()
-      .isInt()
-      .withMessage("El ID de la subcategoría debe ser un número entero"),
     body("nombre_producto")
       .notEmpty()
       .withMessage("El nombre del producto es obligatorio")
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
-    body("descripcion_producto")
-      .optional()
-      .isLength({ max: 1000 })
-      .withMessage("La descripción del producto no puede exceder los 1000 caracteres"),
     body("precio")
       .isDecimal()
-      .withMessage("El precio debe ser un número decimal"),
+      .withMessage("El precio debe ser un número decimal válido"),
     body("imagen_url")
       .optional()
       .isURL()
       .withMessage("La URL de la imagen debe ser válida"),
+    body("activo")
+      .optional()
+      .isBoolean()
+      .withMessage("El campo 'activo' debe ser un valor booleano"),
   ],
   validarErrores,
   createProducto
@@ -62,23 +61,19 @@ router.post(
 router.put(
   "/:id",
   [
-    param("id").isInt().withMessage("El ID del producto debe ser un número entero"),
-    body("id_subcategoria")
+    param("id").isInt().withMessage("El ID debe ser un número entero"),
+    body("id_local")
       .optional()
       .isInt()
-      .withMessage("El ID de la subcategoría debe ser un número entero"),
+      .withMessage("El ID del local debe ser un número entero"),
     body("nombre_producto")
       .optional()
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
-    body("descripcion_producto")
-      .optional()
-      .isLength({ max: 1000 })
-      .withMessage("La descripción del producto no puede exceder los 1000 caracteres"),
     body("precio")
       .optional()
       .isDecimal()
-      .withMessage("El precio debe ser un número decimal"),
+      .withMessage("El precio debe ser un número decimal válido"),
     body("imagen_url")
       .optional()
       .isURL()
@@ -95,7 +90,7 @@ router.put(
 // Eliminar un producto
 router.delete(
   "/:id",
-  [param("id").isInt().withMessage("El ID del producto debe ser un número entero")],
+  [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   deleteProducto
 );

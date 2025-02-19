@@ -1,39 +1,51 @@
 const Producto = require("../models/Producto");
 
-// Obtener todos los productos de un local
-const getProductosByLocal = async (req, res) => {
-  const { id_local } = req.params;
-
+// Obtener todos los productos
+const getProductos = async (req, res) => {
   try {
-    const productos = await Producto.findAll({
-      where: { id_local, activo: true }, // Solo productos activos
-    });
-
-    if (!productos || productos.length === 0) {
-      return res.status(404).json({ message: "No se encontraron productos para este local" });
-    }
-
+    const productos = await Producto.findAll();
     res.json(productos);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener los productos del local", error });
+    res.status(500).json({ message: "Error al obtener los productos", error });
+  }
+};
+
+// Obtener un producto por su ID
+const getProductoById = async (req, res) => {
+  try {
+    const producto = await Producto.findByPk(req.params.id);
+    if (!producto) {
+      return res.status(404).json({ message: "Producto no encontrado" });
+    }
+    res.json(producto);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener el producto", error });
   }
 };
 
 // Crear un nuevo producto
 const createProducto = async (req, res) => {
-  const { id_local, id_subcategoria, nombre_producto, descripcion_producto, precio, imagen_url } = req.body;
+  const {
+    id_local,
+    id_subcategoria,
+    nombre_producto,
+    descripcion_producto,
+    precio,
+    imagen_url,
+    activo,
+  } = req.body;
 
   try {
-    const nuevoProducto = await Producto.create({
+    const producto = await Producto.create({
       id_local,
       id_subcategoria,
       nombre_producto,
       descripcion_producto,
       precio,
       imagen_url,
+      activo,
     });
-
-    res.status(201).json({ message: "Producto creado exitosamente", producto: nuevoProducto });
+    res.status(201).json({ message: "Producto creado exitosamente" });
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
       if (error.fields.includes("id_local")) {
@@ -50,7 +62,15 @@ const createProducto = async (req, res) => {
 // Actualizar un producto
 const updateProducto = async (req, res) => {
   const { id } = req.params;
-  const { id_subcategoria, nombre_producto, descripcion_producto, precio, imagen_url, activo } = req.body;
+  const {
+    id_local,
+    id_subcategoria,
+    nombre_producto,
+    descripcion_producto,
+    precio,
+    imagen_url,
+    activo,
+  } = req.body;
 
   try {
     const producto = await Producto.findByPk(id);
@@ -59,6 +79,7 @@ const updateProducto = async (req, res) => {
     }
 
     await producto.update({
+      id_local,
       id_subcategoria,
       nombre_producto,
       descripcion_producto,
@@ -67,9 +88,12 @@ const updateProducto = async (req, res) => {
       activo,
     });
 
-    res.status(200).json({ message: "Producto actualizado correctamente", producto });
+    res.status(200).json({ message: "Producto actualizado correctamente" });
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
+      if (error.fields.includes("id_local")) {
+        return res.status(400).json({ message: "El local no existe" });
+      }
       if (error.fields.includes("id_subcategoria")) {
         return res.status(400).json({ message: "La subcategoría no existe" });
       }
@@ -94,7 +118,8 @@ const deleteProducto = async (req, res) => {
 };
 
 module.exports = {
-  getProductosByLocal,
+  getProductos,
+  getProductoById,
   createProducto,
   updateProducto,
   deleteProducto,
