@@ -24,7 +24,9 @@ const valoresAtributosRoutes = require("./routes/valoresAtributos");
 const productoAtributosRoutes = require("./routes/productoAtributos");
 const productosRecomendadosRoutes = require("./routes/productosRecomendados");
 const bannersRoutes = require("./routes/banners");
-
+const driversRoutes = require("./routes/drivers");
+const vehiculosRoutes = require("./routes/vehiculos");
+const driverVehiculoRoutes = require("./routes/driverVehiculo");
 const app = express();  
  
 
@@ -61,6 +63,10 @@ app.use("/valoresatributos", valoresAtributosRoutes);
 app.use("/productoatributos", productoAtributosRoutes);
 app.use("/productosrecomendados", productosRecomendadosRoutes);
 app.use("/banners", bannersRoutes);
+app.use("/drivers", driversRoutes);
+app.use("/vehiculos", vehiculosRoutes); 
+app.use("/drivervehiculo", driverVehiculoRoutes);
+
 
 
 // Iniciar servidor
