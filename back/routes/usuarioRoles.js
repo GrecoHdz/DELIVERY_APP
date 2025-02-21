@@ -34,11 +34,9 @@ router.get(
 );
 // Crear el rol de un usuario
 router.post(
-  "/",
+  "/:id_usuario",
   [
-    body("id_usuario")
-      .notEmpty().withMessage("El ID de usuario es obligatorio")
-      .isInt().withMessage("El ID de usuario debe ser un número entero"),
+    param("id_usuario").isInt().withMessage("El ID debe ser un número entero"),
     body("id_rol")
       .notEmpty().withMessage("El ID de rol es obligatorio")
       .isInt().withMessage("El ID de rol debe ser un número entero"),

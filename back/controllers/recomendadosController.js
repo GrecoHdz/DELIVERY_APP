@@ -37,8 +37,7 @@ const getRecomendacionesByLocal = async (req, res) => {
 };
 
 // Crear una nueva recomendación
-const createRecomendacion = async (req, res) => {
-  
+const createRecomendacion = async (req, res) => {  
   const { id_local } = req.params;
   const { id_producto } = req.body;
 

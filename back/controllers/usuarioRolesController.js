@@ -30,7 +30,8 @@ const getUsuarioRolById = async (req, res) => {
 
 // Crear una nueva relación usuario-rol
 const createUsuarioRol = async (req, res) => {
-  const { id_usuario, id_rol } = req.body;
+  const { id_usuario } = req.params;
+  const { id_rol } = req.body;
 
   try {
     await UsuarioRol.create({ id_usuario, id_rol });

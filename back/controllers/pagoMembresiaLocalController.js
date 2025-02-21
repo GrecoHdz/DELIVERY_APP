@@ -30,7 +30,6 @@ const getPagoById = async (req, res) => {
 
 // Crear un nuevo pago de membresía
 const createPago = async (req, res) => {
-  
   const { id_local } = req.params;
   const { id_membresia, monto, deposito_url, estado } = req.body;
 

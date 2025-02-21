@@ -21,7 +21,6 @@ const getExtrasByProducto = async (req, res) => {
 
 // Asociar un extra a un producto
 const associateExtraToProducto = async (req, res) => {
-  
   const { id_producto } = req.params;
   const { id_extra } = req.body;
 
