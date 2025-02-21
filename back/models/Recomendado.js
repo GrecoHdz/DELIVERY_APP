@@ -1,8 +1,8 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 
-const ProductoRecomendado = sequelize.define(
-  "ProductoRecomendado",
+const Recomendado = sequelize.define(
+  "Recomendado",
   {
     id_recomendacion: {
       type: DataTypes.INTEGER,
@@ -24,20 +24,20 @@ const ProductoRecomendado = sequelize.define(
   },
   {
     timestamps: false, // Desactiva los timestamps automáticos de Sequelize
-    tableName: "Productos_Recomendados", // Nombre de la tabla en la base de datos
+    tableName: "Recomendados", // Nombre de la tabla en la base de datos
   }
 );
 
 // Asociaciones
-ProductoRecomendado.associate = (models) => {
-  ProductoRecomendado.belongsTo(models.Producto, {
+Recomendado.associate = (models) => {
+  Recomendado.belongsTo(models.Producto, {
     foreignKey: "id_producto",
     onDelete: "CASCADE", // Si se elimina el producto, también se eliminan sus recomendaciones
   });
-  ProductoRecomendado.belongsTo(models.Local, {
+  Recomendado.belongsTo(models.Local, {
     foreignKey: "id_local",
     onDelete: "CASCADE", // Si se elimina el local, también se eliminan sus recomendaciones
   });
 };
 
-module.exports = ProductoRecomendado;
+module.exports = Recomendado;

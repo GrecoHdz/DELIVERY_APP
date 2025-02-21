@@ -19,7 +19,10 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los valores de atributos
-router.get("/", getValoresAtributos);
+router.get(
+  "/", 
+  getValoresAtributos
+);
 
 // Obtener un valor de atributo por su ID
 router.get(
@@ -31,11 +34,9 @@ router.get(
 
 // Crear un nuevo valor de atributo
 router.post(
-  "/",
+  "/:id_atributo",
   [
-    body("id_atributo")
-      .isInt()
-      .withMessage("El ID del atributo debe ser un número entero"),
+    param("id_atributo").isInt().withMessage("El ID debe ser un número entero"),
     body("valor")
       .notEmpty()
       .withMessage("El valor es obligatorio")

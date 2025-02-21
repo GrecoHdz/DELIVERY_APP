@@ -22,8 +22,9 @@ router.get("/:id_pago/efectivos", [param("id_pago").isInt().withMessage("ID inv�
 
 // Crear un nuevo pago en efectivo
 router.post(
-  "/",
+  "/:id_pago",
   [
+    param("id_pago").isInt().withMessage("El ID debe ser un número entero"),
     body("id_pago").isInt().withMessage("ID de pago inválido"),
     body("cambio")
       .optional()

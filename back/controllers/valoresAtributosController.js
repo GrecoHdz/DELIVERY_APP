@@ -25,7 +25,8 @@ const getValorAtributoById = async (req, res) => {
 
 // Crear un nuevo valor de atributo
 const createValorAtributo = async (req, res) => {
-  const { id_atributo, valor } = req.body;
+  const { id_atributo } = req.params;
+  const { valor } = req.body;
 
   try {
     const valorAtributo = await ValorAtributo.create({

@@ -32,8 +32,9 @@ router.get(
 
 // Crear un nuevo cliente
 router.post(
-  "/",
+  "/:id_usuario",
   [ 
+    param("id_usuario").isInt().withMessage("El ID debe ser un número entero"),
     body("nombre")
       .notEmpty()
       .withMessage("El nombre del cliente es obligatorio")

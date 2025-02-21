@@ -25,8 +25,8 @@ const getProductoById = async (req, res) => {
 
 // Crear un nuevo producto
 const createProducto = async (req, res) => {
-  const {
-    id_local,
+  const { id_local } = req.params;
+  const { 
     id_subcategoria,
     nombre_producto,
     descripcion_producto,

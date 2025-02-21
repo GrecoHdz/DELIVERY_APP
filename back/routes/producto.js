@@ -31,11 +31,9 @@ router.get(
 
 // Crear un nuevo producto
 router.post(
-  "/",
+  "/:id_local",
   [
-    body("id_local")
-      .isInt()
-      .withMessage("El ID del local debe ser un número entero"),
+    param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("nombre_producto")
       .notEmpty()
       .withMessage("El nombre del producto es obligatorio")

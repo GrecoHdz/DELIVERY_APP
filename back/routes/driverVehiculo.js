@@ -17,13 +17,17 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los vehículos de un driver
-router.get("/:id_driver/vehiculos", [param("id_driver").isInt().withMessage("ID inválido")], validarErrores, getVehiculosByDriver);
+router.get("/:id_driver", 
+[param("id_driver").isInt().withMessage("ID inválido")], 
+validarErrores, 
+getVehiculosByDriver
+);
 
 // Asociar un vehículo a un driver
 router.post(
-  "/",
+  "/:id_driver",
   [
-    body("id_driver").isInt().withMessage("ID de driver inválido"),
+    param("id_driver").isInt().withMessage("El ID debe ser un número entero"),
     body("id_vehiculo").isInt().withMessage("ID de vehículo inválido"),
   ],
   validarErrores,
@@ -32,9 +36,8 @@ router.post(
 
 // Eliminar la asociación entre un driver y un vehículo
 router.delete(
-  "/:id_driver/:id_vehiculo",
-  [
-    param("id_driver").isInt().withMessage("ID de driver inválido"),
+  "/:id_vehiculo",
+  [ 
     param("id_vehiculo").isInt().withMessage("ID de vehículo inválido"),
   ],
   validarErrores,

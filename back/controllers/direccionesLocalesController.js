@@ -21,7 +21,8 @@ const getDireccionesByLocal = async (req, res) => {
 
 // Crear una nueva dirección para un local
 const createDireccion = async (req, res) => {
-  const { id_local, id_ciudad, colonia, direccion_precisa, latitud, longitud } = req.body;
+  const { id_local } = req.params;
+  const { id_ciudad, colonia, direccion_precisa, latitud, longitud } = req.body;
 
   try {
     const nuevaDireccion = await DireccionLocal.create({

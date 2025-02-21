@@ -21,7 +21,8 @@ const getDireccionesByCliente = async (req, res) => {
 
 // Crear una nueva dirección para un cliente
 const createDireccion = async (req, res) => {
-  const { id_cliente, id_ciudad, colonia, direccion_precisa, alias_direccion, latitud, longitud } = req.body;
+  const { id_cliente } = req.params;
+  const { id_ciudad, colonia, direccion_precisa, alias_direccion, latitud, longitud } = req.body;
 
   try {
     const nuevaDireccion = await DireccionCliente.create({

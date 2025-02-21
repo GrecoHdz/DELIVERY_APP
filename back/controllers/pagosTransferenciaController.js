@@ -21,7 +21,8 @@ const getTransferenciasByPago = async (req, res) => {
 
 // Crear una nueva transferencia
 const createTransferencia = async (req, res) => {
-  const { id_pago, id_cuenta, num_comprobante } = req.body;
+  const { id_pago } = req.params;
+  const { id_cuenta, num_comprobante } = req.body;
 
   try {
     const transferencia = await PagoTransferencia.create({

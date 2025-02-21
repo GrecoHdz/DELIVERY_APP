@@ -32,11 +32,9 @@ router.get(
 
 // Crear un nuevo local
 router.post(
-  "/",
+  "/:id_cliente",
   [
-    body("id_cliente")
-      .isInt()
-      .withMessage("El ID del cliente debe ser un número entero"), 
+    param("id_cliente").isInt().withMessage("El ID debe ser un número entero"),
     body("nombre_local")
       .notEmpty()
       .withMessage("El nombre del local es obligatorio")

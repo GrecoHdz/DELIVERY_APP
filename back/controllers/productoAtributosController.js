@@ -21,8 +21,8 @@ const getAtributosByProducto = async (req, res) => {
 
 // Asociar un atributo a un producto
 const associateAtributoToProducto = async (req, res) => {
-  const { id_producto, id_valor_atributo, precio_adicional } = req.body;
-
+  const { id_producto } = req.params;
+  const { id_valor_atributo, precio_adicional } = req.body;
   try {
     const productoAtributo = await ProductoAtributo.create({
       id_producto,

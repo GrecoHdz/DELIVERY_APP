@@ -21,7 +21,8 @@ const getVehiculosByDriver = async (req, res) => {
 
 // Asociar un vehículo a un driver
 const associateVehiculoToDriver = async (req, res) => {
-  const { id_driver, id_vehiculo } = req.body;
+  const { id_driver } = req.params;
+  const { id_vehiculo } = req.body;
 
   try {
     const relacion = await DriverVehiculo.create({
@@ -45,11 +46,11 @@ const associateVehiculoToDriver = async (req, res) => {
 
 // Eliminar la asociación entre un driver y un vehículo
 const deleteVehiculoFromDriver = async (req, res) => {
-  const { id_driver, id_vehiculo } = req.params;
+  const { id_vehiculo } = req.params;
 
   try {
     const relacion = await DriverVehiculo.findOne({
-      where: { id_driver, id_vehiculo },
+      where: { id_vehiculo },
     });
 
     if (!relacion) {

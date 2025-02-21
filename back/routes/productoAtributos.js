@@ -19,7 +19,7 @@ const validarErrores = (req, res, next) => {
 
 // Obtener todos los atributos de un producto
 router.get(
-  "/productos/:id_producto/atributos",
+  "/:id_producto",
   [param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero")],
   validarErrores,
   getAtributosByProducto
@@ -27,7 +27,7 @@ router.get(
 
 // Asociar un atributo a un producto
 router.post(
-  "/productos/:id_producto/atributos",
+  "/:id_producto",
   [
     param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
     body("id_valor_atributo")
@@ -44,10 +44,9 @@ router.post(
 
 // Actualizar un atributo de un producto
 router.put(
-  "/productos/:id_producto/atributos/:id",
+  "/:id_producto_atributo",
   [
-    param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
-    param("id").isInt().withMessage("El ID debe ser un número entero"),
+    param("id_producto_atributo").isInt().withMessage("El ID del producto debe ser un número entero"),
     body("precio_adicional")
       .optional()
       .isDecimal()
@@ -59,7 +58,7 @@ router.put(
 
 // Eliminar un atributo de un producto
 router.delete(
-  "/productos/:id_producto/atributos/:id",
+  "/:id_producto_atributo",
   [
     param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
     param("id").isInt().withMessage("El ID debe ser un número entero"),

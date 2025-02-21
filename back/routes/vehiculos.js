@@ -19,10 +19,18 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los vehículos
-router.get("/", getAllVehiculos);
+router.get(
+  "/", 
+  getAllVehiculos
+);
 
 // Obtener un vehículo por su ID
-router.get("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, getVehiculoById);
+router.get(
+  "/:id", 
+  [param("id").isInt().withMessage("ID inválido")], 
+  validarErrores, 
+  getVehiculoById
+);
 
 // Crear un nuevo vehículo
 router.post(
@@ -94,6 +102,10 @@ router.put(
 );
 
 // Eliminar un vehículo
-router.delete("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, deleteVehiculo);
+router.delete("/:id", 
+[param("id").isInt().withMessage("ID inválido")], 
+validarErrores, 
+deleteVehiculo
+);
 
 module.exports = router;

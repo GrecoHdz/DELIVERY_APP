@@ -28,11 +28,9 @@ router.get(
 
 // Crear una nueva dirección para un local
 router.post(
-  "/",
+  "/:id_local",
   [
-    body("id_local")
-      .isInt()
-      .withMessage("El ID del local debe ser un número entero"),
+    param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("id_ciudad")
       .isInt()
       .withMessage("El ID de la ciudad debe ser un número entero"),

@@ -31,8 +31,9 @@ router.get(
 
 // Crear una nueva subcategoría
 router.post(
-  "/",
+  "/:id_categoria",
   [
+    param("id_categoria").isInt().withMessage("El ID debe ser un número entero"),
     body("nombre_subcategoria")
       .notEmpty().withMessage("El nombre de la subcategoría es obligatorio")
       .isLength({ max: 255 }).withMessage("El nombre de la subcategoría no puede exceder los 255 caracteres"),

@@ -22,7 +22,11 @@ const validarErrores = (req, res, next) => {
 router.get("/", getAllPagos);
 
 // Obtener un pago por su ID
-router.get("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, getPagoById);
+router.get("/:id", 
+[param("id").isInt().withMessage("ID inválido")], 
+validarErrores, 
+getPagoById)
+;
 
 // Crear un nuevo pago
 router.post(
@@ -76,6 +80,10 @@ router.put(
 );
 
 // Eliminar un pago
-router.delete("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, deletePago);
+router.delete("/:id", 
+[param("id").isInt().withMessage("ID inválido")], 
+validarErrores, 
+deletePago
+);
 
 module.exports = router;

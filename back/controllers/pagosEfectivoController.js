@@ -21,7 +21,8 @@ const getEfectivosByPago = async (req, res) => {
 
 // Crear un nuevo pago en efectivo
 const createEfectivo = async (req, res) => {
-  const { id_pago, cambio } = req.body;
+  const { id_pago } = req.params;
+  const { cambio } = req.body;
 
   try {
     const efectivo = await PagoEfectivo.create({

@@ -27,7 +27,7 @@ router.get("/active", getActiveBanners);
 
 // Obtener todos los banners de un local
 router.get(
-  "/locales/:id_local/banners",
+  "/:id_local",
   [param("id_local").isInt().withMessage("El ID del local debe ser un número entero")],
   validarErrores,
   getBannersByLocal
@@ -37,7 +37,7 @@ router.get(
 router.post(
   "/:id_local",
   [
-    param("id_local").isInt().withMessage("El ID del local debe ser un número entero"),
+    param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("titulo")
       .notEmpty()
       .withMessage("El título es obligatorio")
@@ -59,7 +59,7 @@ router.post(
 
 // Actualizar un banner
 router.put(
-  "/banners/:id",
+  "/:id",
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("titulo")
@@ -85,7 +85,7 @@ router.put(
 
 // Eliminar un banner
 router.delete(
-  "/banners/:id",
+  "/:id",
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   deleteBanner

@@ -27,9 +27,9 @@ router.get(
 
 // Asociar un extra a un producto
 router.post(
-  "/",
+  "/:id_producto",
   [
-    body("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"), 
+    body("id_extra").isInt().withMessage("El ID del producto debe ser un número entero"), 
   ],
   validarErrores,
   associateExtraToProducto
@@ -37,9 +37,8 @@ router.post(
 
 // Desactivar un extra para un producto
 router.put(
-  "/:id_producto/:id_extra",
+  "/:id_producto",
   [
-    param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
     param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
   ],
   validarErrores,
@@ -48,10 +47,9 @@ router.put(
 
 // Reactivar un extra para un producto
 router.put(
-  "/productos/:id_producto/extras/:id_extra/reactivar",
+  "/:id_producto",
   [
-    param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
-    param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
+   param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
   ],
   validarErrores,
   reactivateExtraForProducto

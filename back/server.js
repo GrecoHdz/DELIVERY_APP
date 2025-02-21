@@ -22,7 +22,7 @@ const productoExtraRoutes = require("./routes/productoExtra");
 const atributosRoutes = require("./routes/atributos");
 const valoresAtributosRoutes = require("./routes/valoresAtributos");
 const productoAtributosRoutes = require("./routes/productoAtributos");
-const productosRecomendadosRoutes = require("./routes/productosRecomendados");
+const recomendadosRoutes = require("./routes/recomendados");
 const bannersRoutes = require("./routes/banners");
 const driversRoutes = require("./routes/drivers");
 const vehiculosRoutes = require("./routes/vehiculos");
@@ -30,6 +30,7 @@ const driverVehiculoRoutes = require("./routes/driverVehiculo");
 const pagosRoutes = require("./routes/pagos");
 const pagosTransferenciaRoutes = require("./routes/pagosTransferencia");
 const pagosEfectivoRoutes = require("./routes/pagosEfectivo");
+const empleadosRoutes = require("./routes/empleados");
 const app = express();  
  
 
@@ -64,7 +65,7 @@ app.use("/productoextra", productoExtraRoutes);
 app.use("/atributos", atributosRoutes);
 app.use("/valoresatributos", valoresAtributosRoutes);
 app.use("/productoatributos", productoAtributosRoutes);
-app.use("/productosrecomendados", productosRecomendadosRoutes);
+app.use("/recomendados", recomendadosRoutes);
 app.use("/banners", bannersRoutes);
 app.use("/drivers", driversRoutes);
 app.use("/vehiculos", vehiculosRoutes); 
@@ -72,6 +73,7 @@ app.use("/drivervehiculo", driverVehiculoRoutes);
 app.use("/pagos", pagosRoutes);
 app.use("/pagostransferencia", pagosTransferenciaRoutes);
 app.use("/pagosefectivo", pagosEfectivoRoutes);
+app.use("/empleados", empleadosRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

@@ -25,7 +25,8 @@ const getSubcategoriaById = async (req, res) => {
 
 // Crear una nueva subcategoría
 const createSubcategoria = async (req, res) => {
-  const { nombre_subcategoria, id_categoria } = req.body;
+  const { id_categoria } = req.params;
+  const { nombre_subcategoria } = req.body;
 
   try {
     const nuevaSubcategoria = await Subcategoria.create({ nombre_subcategoria, id_categoria });

@@ -22,8 +22,9 @@ router.get("/:id_pago/transferencias", [param("id_pago").isInt().withMessage("ID
 
 // Crear una nueva transferencia
 router.post(
-  "/",
+  "/:id_pago",
   [
+    param("id_pago").isInt().withMessage("El ID debe ser un número entero"),
     body("id_pago").isInt().withMessage("ID de pago inválido"),
     body("num_comprobante")
       .notEmpty()
@@ -58,6 +59,10 @@ router.put(
 );
 
 // Eliminar una transferencia
-router.delete("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, deleteTransferencia);
+router.delete("/:id", 
+[param("id").isInt().withMessage("ID inválido")], 
+validarErrores, 
+deleteTransferencia
+);
 
 module.exports = router;

@@ -34,7 +34,7 @@ const getBannersByLocal = async (req, res) => {
 
   try {
     const banners = await BannerPublicitario.findAll({
-      where: { id_local, activo: true }, // Solo los banners activos del local
+      where: { id_local },  
     });
 
     if (!banners || banners.length === 0) {
@@ -49,7 +49,8 @@ const getBannersByLocal = async (req, res) => {
 
 // Crear un nuevo banner
 const createBanner = async (req, res) => {
-  const { id_local, titulo, descripcion, imagen_url, url_destino } = req.body;
+  const { id_local } = req.params;
+  const { titulo, descripcion, imagen_url, url_destino } = req.body;
 
   try {
     const banner = await BannerPublicitario.create({

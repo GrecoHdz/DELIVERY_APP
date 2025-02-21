@@ -1,12 +1,12 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
 const {
-  getAllDrivers,
-  getDriverById,
-  createDriver,
-  updateDriver,
-  deleteDriver,
-} = require("../controllers/driversController");
+  getAllEmpleados,
+  getEmpleadoById,
+  createEmpleado,
+  updateEmpleado,
+  deleteEmpleado,
+} = require("../controllers/empleadosController");
 
 const router = express.Router();
 
@@ -18,53 +18,58 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-// Obtener todos los drivers
-router.get("/", getAllDrivers);
+// Obtener todos los empleados
+router.get("/", getAllEmpleados);
 
-// Obtener un driver por su ID
+// Obtener un empleado por su ID
 router.get("/:id", 
 [param("id").isInt().withMessage("ID inválido")], 
 validarErrores, 
-getDriverById
+getEmpleadoById
 );
 
-// Crear un nuevo driver
+// Crear un nuevo empleado
 router.post(
-  "/:cliente",
+  "/:id_local",
   [
-    param("id_cliente").isInt().withMessage("El ID debe ser un número entero"),
-    body("membresia_driver")
-      .optional()
-      .isDecimal()
-      .withMessage("La membresía debe ser un número decimal válido"),
-  ],
-  validarErrores,
-  createDriver
-);
-
-// Actualizar un driver
-router.put(
-  "/:id",
-  [
-    param("id").isInt().withMessage("ID inválido"),
-    body("membresia_driver")
-      .optional()
-      .isDecimal()
-      .withMessage("La membresía debe ser un número decimal válido"),
+    param("id_local").isInt().withMessage("El ID debe ser un número entero"),
+    body("id_usuario").isInt().withMessage("ID de usuario inválido"),
     body("activo")
       .optional()
       .isBoolean()
       .withMessage("El campo 'activo' debe ser un valor booleano"),
   ],
   validarErrores,
-  updateDriver
+  createEmpleado
 );
 
-// Eliminar un driver
+// Actualizar un empleado
+router.put(
+  "/:id",
+  [
+    param("id").isInt().withMessage("ID inválido"),
+    body("id_local")
+      .optional()
+      .isInt()
+      .withMessage("ID de local inválido"),
+    body("id_usuario")
+      .optional()
+      .isInt()
+      .withMessage("ID de usuario inválido"),
+    body("activo")
+      .optional()
+      .isBoolean()
+      .withMessage("El campo 'activo' debe ser un valor booleano"),
+  ],
+  validarErrores,
+  updateEmpleado
+);
+
+// Eliminar un empleado
 router.delete("/:id", 
 [param("id").isInt().withMessage("ID inválido")], 
 validarErrores, 
-deleteDriver
+deleteEmpleado
 );
 
 module.exports = router;
