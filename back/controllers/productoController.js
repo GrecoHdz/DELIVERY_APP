@@ -23,10 +23,9 @@ const getProductoById = async (req, res) => {
   }
 };
 
-// Crear un nuevo producto
 const createProducto = async (req, res) => {
-  const { id_local } = req.params;
-  const { 
+  const { id_local } = req.params; // Obtener id_local de los parámetros de la ruta
+  const {
     id_subcategoria,
     nombre_producto,
     descripcion_producto,
@@ -36,6 +35,16 @@ const createProducto = async (req, res) => {
   } = req.body;
 
   try {
+    // Verificar si ya existe un producto con el mismo nombre
+    const productoExistente = await Producto.findOne({
+      where: { nombre_producto },
+    });
+
+    if (productoExistente) {
+      return res.status(400).json({ message: "El nombre del producto ya está en uso" });
+    }
+
+    // Crear el nuevo producto
     const producto = await Producto.create({
       id_local,
       id_subcategoria,
@@ -45,8 +54,12 @@ const createProducto = async (req, res) => {
       imagen_url,
       activo,
     });
+
     res.status(201).json({ message: "Producto creado exitosamente" });
   } catch (error) {
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({ message: "El nombre del producto ya está en uso" });
+    }
     if (error.name === "SequelizeForeignKeyConstraintError") {
       if (error.fields.includes("id_local")) {
         return res.status(400).json({ message: "El local no existe" });

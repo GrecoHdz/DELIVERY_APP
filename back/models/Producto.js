@@ -20,6 +20,7 @@ const Producto = sequelize.define(
     nombre_producto: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      unique: true,
     },
     descripcion_producto: {
       type: DataTypes.TEXT,
