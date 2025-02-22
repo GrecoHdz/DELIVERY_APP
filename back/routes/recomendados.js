@@ -4,8 +4,7 @@ const {
   getRecomendaciones,
   getRecomendacionesByLocal,
   createRecomendacion,
-  deactivateRecomendacion,
-  reactivateRecomendacion,
+  updateRecomendacion,
 } = require("../controllers/recomendadosController");
 
 const router = express.Router();
@@ -41,20 +40,16 @@ router.post(
   validarErrores,
   createRecomendacion
 );
-// Desactivar una recomendación
+// Editar estado una recomendación
 router.put(
   "/:id_recomendacion",
-  [param("id_recomendacion").isInt().withMessage("El ID debe ser un número entero")],
+  [param("id_recomendacion")
+  .isInt().
+  withMessage("El ID debe ser un número entero"),
+  body("activo").optional(),
+],
   validarErrores,
-  deactivateRecomendacion
-);
-
-// Reactivar una recomendación
-router.put(
-  "/:id_recomendacion",
-  [param("id").isInt().withMessage("El ID debe ser un número entero")],
-  validarErrores,
-  reactivateRecomendacion
-);
+  updateRecomendacion
+); 
 
 module.exports = router;

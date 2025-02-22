@@ -6,7 +6,7 @@ const {
   createPago,
   updatePago,
   deletePago,
-} = require("../controllers/pagoRentarAutoController");
+} = require("../controllers/pagosRentarAutoController");
 
 const router = express.Router();
 

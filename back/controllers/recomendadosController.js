@@ -8,7 +8,7 @@ const getRecomendaciones = async (req, res) => {
     });
 
     if (!recomendaciones || recomendaciones.length === 0) {
-      return res.status(404).json({ message: "No se encontraron recomendaciones para este local" });
+      return res.status(404).json({ message: "No se encontraron recomendaciones" });
     }
 
     res.json(recomendaciones);
@@ -44,8 +44,7 @@ const createRecomendacion = async (req, res) => {
   try {
     const recomendacion = await Recomendado.create({
       id_producto,
-      id_local,
-      activo: true,
+      id_local, 
     });
 
     res.status(201).json({ message: "Recomendación creada exitosamente" });
@@ -63,45 +62,28 @@ const createRecomendacion = async (req, res) => {
 };
 
 // Desactivar una recomendación
-const deactivateRecomendacion = async (req, res) => {
-  const { id } = req.params;
+const updateRecomendacion = async (req, res) => {
+  const { id_recomendacion } = req.params;
+  const { activo } = req.body;
 
   try {
-    const recomendacion = await Recomendado.findByPk(id);
+    const recomendacion = await Recomendado.findByPk(id_recomendacion)
     if (!recomendacion) {
-      return res.status(404).json({ message: "Recomendación no encontrada" });
-    }
-
-    await recomendacion.update({ activo: false });
-
-    res.status(200).json({ message: "Recomendación desactivada correctamente" });
+      return res.status(404).json({ message: "Recomendacion no encontrada" });
+    } 
+    await recomendacion.update({ 
+      activo
+    }); 
+    res.status(200).json({ message: "Recomendacion actualizada correctamente" });
   } catch (error) {
-    res.status(500).json({ message: "Error al desactivar la recomendación", error });
+    res.status(500).json({ message: "Error al actualizar la recomendacion", error });
   }
 };
-
-// Reactivar una recomendación
-const reactivateRecomendacion = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const recomendacion = await Recomendado.findByPk(id);
-    if (!recomendacion) {
-      return res.status(404).json({ message: "Recomendación no encontrada" });
-    }
-
-    await recomendacion.update({ activo: true });
-
-    res.status(200).json({ message: "Recomendación reactivada correctamente" });
-  } catch (error) {
-    res.status(500).json({ message: "Error al reactivar la recomendación", error });
-  }
-};
+ 
 
 module.exports = {
   getRecomendaciones,
   getRecomendacionesByLocal,
   createRecomendacion,
-  deactivateRecomendacion,
-  reactivateRecomendacion,
+  updateRecomendacion, 
 };
