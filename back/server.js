@@ -33,6 +33,8 @@ const pagosEfectivoRoutes = require("./routes/pagosEfectivo");
 const empleadosRoutes = require("./routes/empleados");
 const localMetodoPagoRoutes = require("./routes/localMetodoPago");
 const pagomembresiasDrivers = require ("./routes/pagoMembresiaDriver")
+const viajeRoutes = require("./routes/viaje");
+const productoSucursalRoutes = require("./routes/productoSucursal");
 const app = express();  
 
 // Middlewares
@@ -77,6 +79,8 @@ app.use("/pagosefectivo", pagosEfectivoRoutes);
 app.use("/empleados", empleadosRoutes);
 app.use("/localmetodopago", localMetodoPagoRoutes);
 app.use("/pagomembresiadriver",pagomembresiasDrivers);
+app.use("/viajes", viajeRoutes); 
+app.use("/productossucursales", productoSucursalRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
