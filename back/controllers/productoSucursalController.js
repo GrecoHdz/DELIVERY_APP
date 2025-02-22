@@ -48,7 +48,7 @@ const createProductoSucursal = async (req, res) => {
 // Actualizar un producto en una sucursal
 const updateProductoSucursal = async (req, res) => {
   const { id } = req.params;
-  const { precio, activo } = req.body;
+  const { id_producto, id_direccion_local, precio, activo } = req.body;
 
   try {
     const productoSucursal = await ProductoSucursal.findByPk(id);
@@ -57,6 +57,8 @@ const updateProductoSucursal = async (req, res) => {
     }
 
     await productoSucursal.update({
+      id_producto,
+      id_direccion_local,
       precio,
       activo,
     });

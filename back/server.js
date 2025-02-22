@@ -32,9 +32,13 @@ const pagosTransferenciaRoutes = require("./routes/pagosTransferencia");
 const pagosEfectivoRoutes = require("./routes/pagosEfectivo");
 const empleadosRoutes = require("./routes/empleados");
 const localMetodoPagoRoutes = require("./routes/localMetodoPago");
+const pedidoRoutes = require("./routes/pedido");
 const pagomembresiasDrivers = require ("./routes/pagoMembresiaDriver")
 const viajeRoutes = require("./routes/viaje");
 const productoSucursalRoutes = require("./routes/productoSucursal");
+const pagoRentarAutoRoutes = require("./routes/pagoRentarAuto");
+const rentarAutoRoutes = require("./routes/rentarAuto");
+const autoEnRentaRoutes = require("./routes/autoEnRenta");
 const app = express();  
 
 // Middlewares
@@ -81,7 +85,10 @@ app.use("/localmetodopago", localMetodoPagoRoutes);
 app.use("/pagomembresiadriver",pagomembresiasDrivers);
 app.use("/viajes", viajeRoutes); 
 app.use("/productossucursales", productoSucursalRoutes);
-
+app.use("/pedidos", pedidoRoutes);
+app.use("/pagorentarauto", pagoRentarAutoRoutes);
+app.use("/rentarauto", rentarAutoRoutes);
+app.use("/autos-en-renta", autoEnRentaRoutes);
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {

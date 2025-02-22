@@ -40,6 +40,10 @@ router.put(
   "/:id",
   [
     param("id").isInt().withMessage("ID inválido"),
+    body("id_producto").isInt().withMessage("ID de producto inválido"),
+    body("id_direccion_local")    
+    .optional()
+    .isInt(),
     body("precio")
       .optional()
       .isDecimal()

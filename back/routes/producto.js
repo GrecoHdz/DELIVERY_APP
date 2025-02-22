@@ -34,11 +34,17 @@ router.post(
   "/:id_local",
   [
     param("id_local").isInt().withMessage("El ID debe ser un número entero"),
+    body("id_subcategoria")
+    .isInt()
+    .withMessage("ID de subcategoria inválido"),
     body("nombre_producto")
       .notEmpty()
       .withMessage("El nombre del producto es obligatorio")
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
+    body("descripcion_producto")
+      .notEmpty()
+      .withMessage("La Descripcion del producto es obligatorio"),
     body("precio")
       .isDecimal()
       .withMessage("El precio debe ser un número decimal válido"),
@@ -46,10 +52,6 @@ router.post(
       .optional()
       .isURL()
       .withMessage("La URL de la imagen debe ser válida"),
-    body("activo")
-      .optional()
-      .isBoolean()
-      .withMessage("El campo 'activo' debe ser un valor booleano"),
   ],
   validarErrores,
   createProducto
@@ -64,11 +66,17 @@ router.put(
       .optional()
       .isInt()
       .withMessage("El ID del local debe ser un número entero"),
-    body("nombre_producto")
+      body("id_subcategoria")
+      .optional()
+      .isInt()
+      .withMessage("ID de subcategoria inválido"),
+      body("nombre_producto")
       .optional()
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
-    body("precio")
+      body("descripcion_producto")
+      .optional(),
+      body("precio")
       .optional()
       .isDecimal()
       .withMessage("El precio debe ser un número decimal válido"),

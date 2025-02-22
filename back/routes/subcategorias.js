@@ -37,9 +37,6 @@ router.post(
     body("nombre_subcategoria")
       .notEmpty().withMessage("El nombre de la subcategoría es obligatorio")
       .isLength({ max: 255 }).withMessage("El nombre de la subcategoría no puede exceder los 255 caracteres"),
-    body("id_categoria")
-      .notEmpty().withMessage("El ID de la categoría es obligatorio")
-      .isInt().withMessage("El ID de la categoría debe ser un número entero"),
   ],
   validarErrores,
   createSubcategoria
