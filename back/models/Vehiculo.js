@@ -15,7 +15,7 @@ const Vehiculo = sequelize.define(
     },
     capacidad: {
       type: DataTypes.INTEGER,
-      allowNull: true, // Capacidad es opcional
+      allowNull: false, // Capacidad es opcional
     },
     marca: {
       type: DataTypes.STRING(55),
@@ -31,7 +31,7 @@ const Vehiculo = sequelize.define(
     },
     imagen_url: {
       type: DataTypes.TEXT,
-      allowNull: true, // URL de la imagen es opcional
+      allowNull: false, // URL de la imagen es opcional
     },
     disponible_para_renta: {
       type: DataTypes.BOOLEAN,

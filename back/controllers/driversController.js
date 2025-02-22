@@ -30,13 +30,11 @@ const getDriverById = async (req, res) => {
 
 // Crear un nuevo driver
 const createDriver = async (req, res) => {
-  const { id_cliente } = req.params;
-  const { membresia_driver } = req.body;
+  const { id_cliente } = req.params; 
 
   try {
     const driver = await Driver.create({
-      id_cliente,
-      membresia_driver,
+      id_cliente, 
     });
 
     res.status(201).json({ message: "Driver creado exitosamente" });

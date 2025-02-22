@@ -26,11 +26,12 @@ const getClienteById = async (req, res) => {
 // Crear un nuevo cliente
 const createCliente = async (req, res) => {
   const { id_usuario } = req.params;
-  const { nombre, identidad, fecha_nacimiento, telefono } = req.body;
+  const { id_ciudad, nombre, identidad, fecha_nacimiento, telefono } = req.body;
 
   try {
     const cliente = await Cliente.create({
       id_usuario,
+      id_ciudad,
       nombre,
       identidad,
       fecha_nacimiento,

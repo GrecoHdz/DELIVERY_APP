@@ -14,6 +14,10 @@ const Cliente = sequelize.define(
       allowNull: false,
       unique: true, // Relación única con la tabla usuarios
     },
+    id_ciudad: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     nombre: {
       type: DataTypes.STRING(255),
       allowNull: false,

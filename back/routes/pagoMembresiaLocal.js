@@ -38,11 +38,7 @@ router.post(
     body("deposito_url")
       .optional()
       .isURL()
-      .withMessage("La URL de depósito debe ser válida"),
-    body("estado")
-      .optional()
-      .isIn(["pendiente", "aprobado", "denegada"])
-      .withMessage("Estado no válido"),
+      .withMessage("La URL de depósito debe ser válida")
   ],
   validarErrores,
   createPago

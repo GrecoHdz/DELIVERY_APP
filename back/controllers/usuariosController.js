@@ -31,7 +31,8 @@ const getUserByUsername = async (usuario) => {
 };
 // Crear un nuevo usuario
 const createUsuario = async (req, res) => {
-  const { usuario, clave, id_rol = 1, email, imagen_perfil_url, nombre, identidad, fecha_nacimiento, telefono } = req.body;
+  const { usuario, clave, id_rol = 1, email, 
+    nombre, identidad, fecha_nacimiento, telefono, id_ciudad } = req.body;
 
   // Iniciar una transacción
   const t = await Usuario.sequelize.transaction();
@@ -48,7 +49,6 @@ const createUsuario = async (req, res) => {
         clave_hash: hashedPassword,
         id_rol,
         email,
-        imagen_perfil_url,
       },
       { transaction: t } // Asociar la transacción
     );
@@ -66,11 +66,12 @@ const createUsuario = async (req, res) => {
     await Cliente.create(
       {
         id_usuario: nuevoUsuario.id_usuario, // Relacionamos con el usuario recién creado
+        id_ciudad,
         nombre,
         identidad,
         fecha_nacimiento,
         telefono,
-        activo: true, // Por defecto, el cliente está activo
+         // Por defecto, el cliente está activo
       },
       { transaction: t } // Asociar la transacción
     );
@@ -82,8 +83,11 @@ const createUsuario = async (req, res) => {
   } catch (error) {
     // Revertir la transacción en caso de error
     await t.rollback();
-
-    if (error.name === "SequelizeUniqueConstraintError") {
+ 
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ message: "Ciudad no Disponible" });
+    }
+    else if (error.name === "SequelizeUniqueConstraintError") {
       // Manejar errores específicos de campos únicos
       const errors = error.errors.map(err => {
         if (err.path === "identidad") {
@@ -97,7 +101,7 @@ const createUsuario = async (req, res) => {
         }
       });
       return res.status(400).json({ errores: errors });
-    }
+    } 
     res.status(500).json({ message: "Error al crear el usuario o cliente", error });
   }
 };
@@ -129,7 +133,10 @@ const updateUsuario = async (req, res) => {
     });
     res.status(200).json({ message: "Usuario actualizado correctamente" });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ message: "El Rol no existe" });
+    }
+    else if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(400).json({ message: "El nombre de usuario o email ya existe" });
     }
     res.status(500).json({ message: "Error al actualizar el usuario", error });

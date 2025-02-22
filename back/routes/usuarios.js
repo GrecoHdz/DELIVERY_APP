@@ -54,7 +54,14 @@ router.post(
     body("telefono")
       .optional()
       .isLength({ max: 20 }).withMessage("El teléfono no puede exceder los 20 caracteres"),
-  ],
+      body("id_ciudad")
+      .notEmpty()
+      .withMessage("La ciudad es obligatoria"),
+       body("fecha_nacimiento")
+        .optional()
+        .isDate()
+        .withMessage("La fecha de nacimiento debe ser una fecha válida"),
+      ],
   validarErrores,
   createUsuario,
   createUsuarioRol,

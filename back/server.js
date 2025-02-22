@@ -31,8 +31,9 @@ const pagosRoutes = require("./routes/pagos");
 const pagosTransferenciaRoutes = require("./routes/pagosTransferencia");
 const pagosEfectivoRoutes = require("./routes/pagosEfectivo");
 const empleadosRoutes = require("./routes/empleados");
+const localMetodoPagoRoutes = require("./routes/localMetodoPago");
+const pagomembresiasDrivers = require ("./routes/pagoMembresiaDriver")
 const app = express();  
- 
 
 // Middlewares
 app.use(morgan("dev"));
@@ -74,6 +75,8 @@ app.use("/pagos", pagosRoutes);
 app.use("/pagostransferencia", pagosTransferenciaRoutes);
 app.use("/pagosefectivo", pagosEfectivoRoutes);
 app.use("/empleados", empleadosRoutes);
+app.use("/localmetodopago", localMetodoPagoRoutes);
+app.use("/pagomembresiadriver",pagomembresiasDrivers);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

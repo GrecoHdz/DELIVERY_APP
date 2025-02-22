@@ -34,10 +34,6 @@ router.post(
   [
     param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("id_usuario").isInt().withMessage("ID de usuario inválido"),
-    body("activo")
-      .optional()
-      .isBoolean()
-      .withMessage("El campo 'activo' debe ser un valor booleano"),
   ],
   validarErrores,
   createEmpleado

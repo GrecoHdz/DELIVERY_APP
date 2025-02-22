@@ -31,7 +31,7 @@ const Local = sequelize.define(
     },
     rtn: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
       unique: true,
     },
     imagen_url: {

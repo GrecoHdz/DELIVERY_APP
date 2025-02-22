@@ -32,28 +32,7 @@ router.get(
 
 // Crear un nuevo cliente
 router.post(
-  "/:id_usuario",
-  [ 
-    param("id_usuario").isInt().withMessage("El ID debe ser un número entero"),
-    body("nombre")
-      .notEmpty()
-      .withMessage("El nombre del cliente es obligatorio")
-      .isLength({ max: 255 })
-      .withMessage("El nombre no puede exceder los 255 caracteres"),
-    body("identidad")
-      .notEmpty()
-      .withMessage("La identidad del cliente es obligatoria")
-      .isLength({ max: 255 })
-      .withMessage("La identidad no puede exceder los 255 caracteres"),
-    body("fecha_nacimiento")
-      .optional()
-      .isDate()
-      .withMessage("La fecha de nacimiento debe ser una fecha válida"),
-    body("telefono")
-      .optional()
-      .isLength({ max: 20 })
-      .withMessage("El teléfono no puede exceder los 20 caracteres"),
-  ],
+  "/", 
   validarErrores,
   createCliente
 );

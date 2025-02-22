@@ -31,7 +31,7 @@ const getPagoById = async (req, res) => {
 // Crear un nuevo pago de membresía
 const createPago = async (req, res) => {
   const { id_driver } = req.params;
-  const { id_membresia, monto, deposito_url, estado } = req.body;
+  const { id_membresia, monto, deposito_url } = req.body;
 
   try {
     const pago = await PagoMembresiaDriver.create({
@@ -39,7 +39,6 @@ const createPago = async (req, res) => {
       id_membresia,
       monto,
       deposito_url,
-      estado,
     });
 
     res.status(201).json({ message: "Pago de membresía creado exitosamente" });

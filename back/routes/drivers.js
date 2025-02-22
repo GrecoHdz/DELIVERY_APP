@@ -33,10 +33,6 @@ router.post(
   "/:cliente",
   [
     param("id_cliente").isInt().withMessage("El ID debe ser un número entero"),
-    body("membresia_driver")
-      .optional()
-      .isDecimal()
-      .withMessage("La membresía debe ser un número decimal válido"),
   ],
   validarErrores,
   createDriver

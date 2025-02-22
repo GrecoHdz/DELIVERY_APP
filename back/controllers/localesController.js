@@ -26,12 +26,11 @@ const getLocalById = async (req, res) => {
 // Crear un nuevo local
 const createLocal = async (req, res) => {
   const { id_cliente } = req.params;
-  const { id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, pedidos_restantes, usuario_empleado} = req.body;
+  const { nombre_local, apertura, cierre, rtn, imagen_url, pedidos_restantes, usuario_empleado} = req.body;
 
   try {
     const local = await Local.create({
       id_cliente,
-      id_membresia,
       nombre_local,
       apertura,
       cierre,

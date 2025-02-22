@@ -31,13 +31,12 @@ const getEmpleadoById = async (req, res) => {
 // Crear un nuevo empleado
 const createEmpleado = async (req, res) => {
   const { id_local } = req.params;
-  const { id_usuario, activo } = req.body;
+  const { id_usuario } = req.body;
 
   try {
     const empleado = await Empleado.create({
       id_local,
       id_usuario,
-      activo,
     });
 
     res.status(201).json({ message: "Empleado creado exitosamente" });

@@ -29,11 +29,9 @@ router.get(
 
 // Crear una nueva dirección para un cliente
 router.post(
-  "/",
+  "/:id_cliente",
   [
-    body("id_cliente")
-      .isInt()
-      .withMessage("El ID del cliente debe ser un número entero"),
+    param("id_cliente").isInt().withMessage("El ID del cliente debe ser un número entero"),
     body("id_ciudad")
       .isInt()
       .withMessage("El ID de la ciudad debe ser un número entero"),
@@ -67,9 +65,9 @@ router.post(
 
 // Ruta para actualizar una dirección específica de un cliente
 router.put(
-  "/:id_cliente",
+  "/:id_direccion_cliente",
   [
-    param("id_cliente").isInt().withMessage("El ID del cliente debe ser un número entero"),
+    param("id_direccion_cliente").isInt().withMessage("El ID del cliente debe ser un número entero"),
     body("id_direccion_cliente")
       .isInt()
       .withMessage("El ID de la dirección es obligatorio"),

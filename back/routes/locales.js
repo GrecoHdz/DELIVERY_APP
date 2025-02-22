@@ -6,8 +6,7 @@ const {
   createLocal,
   updateLocal,
   deleteLocal,
-} = require("../controllers/localesController");
-
+} = require("../controllers/localesController"); 
 const router = express.Router();
 
 // Middleware para validar errores
@@ -44,11 +43,10 @@ router.post(
       .notEmpty()
       .withMessage("La hora de apertura es obligatoria"),
     body("cierre")
-      .notEmpty()
+    .optional().notEmpty()
       .withMessage("La hora de cierre es obligatoria"),
     body("rtn")
-      .notEmpty()
-      .withMessage("El RTN es obligatorio")
+    .optional()
       .isLength({ max: 255 })
       .withMessage("El RTN no puede exceder los 255 caracteres"),
     body("imagen_url")

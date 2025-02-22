@@ -41,7 +41,10 @@ router.post(
       .withMessage("El tipo de vehículo es obligatorio")
       .isLength({ max: 55 })
       .withMessage("El tipo de vehículo no puede exceder los 55 caracteres"),
-    body("marca")
+      body("capacidad")
+      .isInt()
+      .withMessage("La capacidad es obligatoria"),
+      body("marca")
       .notEmpty()
       .withMessage("La marca es obligatoria")
       .isLength({ max: 55 })
@@ -55,11 +58,9 @@ router.post(
       .isInt()
       .withMessage("El año debe ser un número entero válido"),
     body("imagen_url")
-      .optional()
       .isURL()
       .withMessage("La URL de la imagen debe ser válida"),
     body("disponible_para_renta")
-      .optional()
       .isBoolean()
       .withMessage("El campo 'disponible_para_renta' debe ser un valor booleano"),
   ],
@@ -76,7 +77,10 @@ router.put(
       .optional()
       .isLength({ max: 55 })
       .withMessage("El tipo de vehículo no puede exceder los 55 caracteres"),
-    body("marca")
+      body("capacidad")
+      .isInt()
+      .withMessage("La capacidad es obligatoria"),
+      body("marca")
       .optional()
       .isLength({ max: 55 })
       .withMessage("La marca no puede exceder los 55 caracteres"),

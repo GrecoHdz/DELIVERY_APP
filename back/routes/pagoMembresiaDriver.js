@@ -32,13 +32,8 @@ router.post(
      body("id_membresia").isInt().withMessage("ID de membresía inválido"),
     body("monto").isDecimal().withMessage("El monto debe ser un número decimal válido"),
     body("deposito_url")
-      .optional()
       .isURL()
       .withMessage("La URL de depósito debe ser válida"),
-    body("estado")
-      .optional()
-      .isIn(["pendiente", "aprobado", "denegado"])
-      .withMessage("Estado no válido"),
   ],
   validarErrores,
   createPago
