@@ -1,12 +1,12 @@
 const ProductoExtra = require("../models/ProductoExtra");
 
-// Obtener todos los extras asociados a un producto
-const getExtrasByProducto = async (req, res) => {
+// Obtener todos los extras de un producto
+const getAllExtrasByProducto = async (req, res) => {
   const { id_producto } = req.params;
 
   try {
     const extras = await ProductoExtra.findAll({
-      where: { id_producto, activo: true }, // Solo los extras activos
+      where: { id_producto },
     });
 
     if (!extras || extras.length === 0) {
@@ -19,77 +19,75 @@ const getExtrasByProducto = async (req, res) => {
   }
 };
 
-// Asociar un extra a un producto
-const associateExtraToProducto = async (req, res) => {
+// Crear un nuevo extra para un producto
+const createProductoExtra = async (req, res) => {
   const { id_producto } = req.params;
-  const { id_extra } = req.body;
+  const { nombre, precio } = req.body;
 
   try {
-    const productoExtra = await ProductoExtra.create({
+    const extra = await ProductoExtra.create({
       id_producto,
-      id_extra,
-      activo: true,
+      nombre,
+      precio, 
     });
 
-    res.status(201).json({ message: "Extra asociado al producto exitosamente" });
+    res.status(201).json({ message: "Extra creado exitosamente" });
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
-      if (error.fields.includes("id_producto")) {
-        return res.status(400).json({ message: "El producto no existe" });
-      }
-      if (error.fields.includes("id_extra")) {
-        return res.status(400).json({ message: "El extra no existe" });
-      }
+      return res.status(400).json({ message: "El producto no existe" });
     }
-    res.status(500).json({ message: "Error al asociar el extra al producto", error });
+    res.status(500).json({ message: "Error al crear el extra", error });
   }
 };
 
-// Desactivar un extra para un producto
-const deactivateExtraForProducto = async (req, res) => {
-  const { id_producto, id_extra } = req.params;
+// Actualizar un extra de un producto
+const updateProductoExtra = async (req, res) => {
+  const { id_producto } = req.params;
+  const { precio, activo } = req.body;
 
   try {
-    const productoExtra = await ProductoExtra.findOne({
-      where: { id_producto, id_extra },
+    const extra = await ProductoExtra.findOne({
+      where: { id_producto },
     });
 
-    if (!productoExtra) {
-      return res.status(404).json({ message: "Relación producto-extra no encontrada" });
+    if (!extra) {
+      return res.status(404).json({ message: "Extra no encontrado" });
     }
 
-    await productoExtra.update({ activo: false });
+    await extra.update({
+      precio,
+      activo,
+    });
 
-    res.status(200).json({ message: "Extra desactivado para el producto correctamente" });
+    res.status(200).json({ message: "Extra actualizado correctamente" });
   } catch (error) {
-    res.status(500).json({ message: "Error al desactivar el extra para el producto", error });
+    res.status(500).json({ message: "Error al actualizar el extra", error });
   }
 };
 
-// Reactivar un extra para un producto
-const reactivateExtraForProducto = async (req, res) => {
-  const { id_producto, id_extra } = req.params;
+// Eliminar un extra de un producto
+const deleteProductoExtra = async (req, res) => {
+  const { id_producto } = req.params;
 
   try {
-    const productoExtra = await ProductoExtra.findOne({
-      where: { id_producto, id_extra },
+    const extra = await ProductoExtra.findOne({
+      where: { id_producto },
     });
 
-    if (!productoExtra) {
-      return res.status(404).json({ message: "Relación producto-extra no encontrada" });
+    if (!extra) {
+      return res.status(404).json({ message: "Extra no encontrado" });
     }
 
-    await productoExtra.update({ activo: true });
-
-    res.status(200).json({ message: "Extra reactivado para el producto correctamente" });
+    await extra.destroy();
+    res.status(200).json({ message: "Extra eliminado correctamente" });
   } catch (error) {
-    res.status(500).json({ message: "Error al reactivar el extra para el producto", error });
+    res.status(500).json({ message: "Error al eliminar el extra", error });
   }
 };
 
 module.exports = {
-  getExtrasByProducto,
-  associateExtraToProducto,
-  deactivateExtraForProducto,
-  reactivateExtraForProducto,
+  getAllExtrasByProducto,
+  createProductoExtra,
+  updateProductoExtra,
+  deleteProductoExtra,
 };

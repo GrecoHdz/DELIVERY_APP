@@ -1,10 +1,10 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
 const {
-  getExtrasByProducto,
-  associateExtraToProducto,
-  deactivateExtraForProducto,
-  reactivateExtraForProducto,
+  getAllExtrasByProducto,
+  createProductoExtra,
+  updateProductoExtra,
+  deleteProductoExtra,
 } = require("../controllers/productoExtraController");
 
 const router = express.Router();
@@ -17,42 +17,62 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-// Obtener todos los extras asociados a un producto
+// Obtener todos los extras de un producto
 router.get(
-  "/:id_producto",
-  [param("id_producto").isInt().withMessage("El ID del producto debe ser un número entero")],
-  validarErrores,
-  getExtrasByProducto
-);
+  "/:id_producto", 
+  [
+    param("id_producto")
+    .isInt()
+    .withMessage("ID inválido")
+  ], 
+  validarErrores, 
+  getAllExtrasByProducto
+  );
 
-// Asociar un extra a un producto
+// Crear un nuevo extra para un producto
 router.post(
   "/:id_producto",
   [
-    body("id_extra").isInt().withMessage("El ID del producto debe ser un número entero"), 
+    param("id_producto")
+    .isInt()
+    .withMessage("ID inválido"),
+    body("nombre")
+      .notEmpty()
+      .withMessage("El nombre es obligatorio")
+      .isLength({ max: 55 })
+      .withMessage("El nombre no puede exceder los 55 caracteres"),
+    body("precio")
+      .isDecimal()
+      .withMessage("El precio debe ser un número decimal válido"), 
   ],
   validarErrores,
-  associateExtraToProducto
+  createProductoExtra
 );
 
-// Desactivar un extra para un producto
+// Actualizar un extra de un producto
 router.put(
   "/:id_producto",
   [
-    param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
+    param("id_producto").isInt().withMessage("ID de producto inválido"),
+    param("nombre")
+      .notEmpty()
+      .withMessage("El nombre es obligatorio")
+      .isLength({ max: 55 })
+      .withMessage("El nombre no puede exceder los 55 caracteres"),
+    body("precio")
+      .optional()
+      .isDecimal()
+      .withMessage("El precio debe ser un número decimal válido"),
+    body("activo")
+      .optional()
+      .isBoolean()
+      .withMessage("El campo 'activo' debe ser un valor booleano"),
   ],
   validarErrores,
-  deactivateExtraForProducto
+  updateProductoExtra
 );
 
-// Reactivar un extra para un producto
-router.put(
-  "/:id_producto",
-  [
-   param("id_extra").isInt().withMessage("El ID del extra debe ser un número entero"),
-  ],
-  validarErrores,
-  reactivateExtraForProducto
-);
+// Eliminar un extra de un producto
+router.delete("/:id_producto", [param("id_producto").isInt().withMessage("ID inválido"), param("nombre").notEmpty().withMessage("El nombre es obligatorio")], validarErrores, deleteProductoExtra);
 
 module.exports = router;

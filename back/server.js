@@ -10,7 +10,6 @@ const metodoPagoRoutes = require("./routes/metodoPago");
 const categoriasRoutes = require("./routes/categorias");
 const subcategoriasRoutes = require("./routes/subcategorias");
 const membresiasRoutes = require("./routes/membresialocales");
-const extrasRoutes = require("./routes/extras")
 const rolesRoutes = require("./routes/roles"); 
 const usuarioRolesRoutes = require("./routes/usuarioRoles");
 const clientesRoutes = require("./routes/clientes")
@@ -39,6 +38,7 @@ const productoSucursalRoutes = require("./routes/productoSucursal");
 const pagoRentarAutoRoutes = require("./routes/pagoRentarAuto");
 const rentarAutoRoutes = require("./routes/rentarAuto");
 const autoEnRentaRoutes = require("./routes/autoEnRenta");
+const productoExtraRoutes = require("./routes/productoExtra");
 const app = express();  
 
 // Middlewares
@@ -57,7 +57,6 @@ app.use("/usuarios", usuariosRoutes);
 app.use("/categorias", categoriasRoutes);
 app.use("/subcategorias", subcategoriasRoutes);
 app.use("/membresialocales", membresiasRoutes);
-app.use("/extras", extrasRoutes);
 app.use("/roles", rolesRoutes);
 app.use("/usuarioroles", usuarioRolesRoutes);
 app.use("/clientes", clientesRoutes);
@@ -88,7 +87,10 @@ app.use("/productossucursales", productoSucursalRoutes);
 app.use("/pedidos", pedidoRoutes);
 app.use("/pagorentarauto", pagoRentarAutoRoutes);
 app.use("/rentarauto", rentarAutoRoutes);
-app.use("/autos-en-renta", autoEnRentaRoutes);
+app.use("/autosenrenta", autoEnRentaRoutes);
+app.use("/productosextras", productoExtraRoutes);
+
+
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
