@@ -1,41 +1,44 @@
 const Atributo = require("../models/Atributo");
 
-// Obtener todos los atributos
-const getAtributos = async (req, res) => {
+// Obtener todos los atributos de un producto
+const getAllAtributosByProducto = async (req, res) => {
+  const { id_producto } = req.params;
+
   try {
-    const atributos = await Atributo.findAll();
+    const atributos = await Atributo.findAll({
+      where: { id_producto },
+    });
+
+    if (!atributos || atributos.length === 0) {
+      return res.status(404).json({ message: "No se encontraron atributos para este producto" });
+    }
+
     res.json(atributos);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener los atributos", error });
+    res.status(500).json({ message: "Error al obtener los atributos del producto", error });
   }
 };
 
-// Obtener un atributo por su ID
-const getAtributoById = async (req, res) => {
-  try {
-    const atributo = await Atributo.findByPk(req.params.id);
-    if (!atributo) {
-      return res.status(404).json({ message: "Atributo no encontrado" });
-    }
-    res.json(atributo);
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener el atributo", error });
-  }
-};
-
-// Crear un nuevo atributo
+// Crear un nuevo atributo para un producto
 const createAtributo = async (req, res) => {
-  const { nombre_atributo } = req.body;
+  const { id_producto } = req.params;
+  const { nombre_atributo, valor, precio_adicional } = req.body;
 
   try {
     const atributo = await Atributo.create({
+      id_producto,
       nombre_atributo,
+      valor,
+      precio_adicional,
     });
 
     res.status(201).json({ message: "Atributo creado exitosamente" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ message: "El nombre del atributo ya está registrado" });
+      return res.status(400).json({ message: "El nombre del atributo ya existe" });
+    }
+    if (error.name === "SequelizeForeignKeyConstraintError") {
+      return res.status(400).json({ message: "El producto no existe" });
     }
     res.status(500).json({ message: "Error al crear el atributo", error });
   }
@@ -44,7 +47,7 @@ const createAtributo = async (req, res) => {
 // Actualizar un atributo
 const updateAtributo = async (req, res) => {
   const { id } = req.params;
-  const { nombre_atributo } = req.body;
+  const { valor, precio_adicional, nombre_atributo } = req.body;
 
   try {
     const atributo = await Atributo.findByPk(id);
@@ -53,22 +56,23 @@ const updateAtributo = async (req, res) => {
     }
 
     await atributo.update({
+      valor,
       nombre_atributo,
+      precio_adicional,
     });
 
     res.status(200).json({ message: "Atributo actualizado correctamente" });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ message: "El nombre del atributo ya está registrado" });
-    }
     res.status(500).json({ message: "Error al actualizar el atributo", error });
   }
 };
 
 // Eliminar un atributo
 const deleteAtributo = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const atributo = await Atributo.findByPk(req.params.id);
+    const atributo = await Atributo.findByPk(id);
     if (!atributo) {
       return res.status(404).json({ message: "Atributo no encontrado" });
     }
@@ -81,8 +85,7 @@ const deleteAtributo = async (req, res) => {
 };
 
 module.exports = {
-  getAtributos,
-  getAtributoById,
+  getAllAtributosByProducto,
   createAtributo,
   updateAtributo,
   deleteAtributo,

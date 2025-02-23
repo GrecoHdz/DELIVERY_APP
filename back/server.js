@@ -18,9 +18,7 @@ const direccionesclientesRoutes = require("./routes/direccionesClientes")
 const direccioneslocalesRoutes = require("./routes/direccionesLocales")
 const productoRoutes = require('./routes/producto')
 const productoExtraRoutes = require("./routes/productoExtra");
-const atributosRoutes = require("./routes/atributos");
-const valoresAtributosRoutes = require("./routes/valoresAtributos");
-const productoAtributosRoutes = require("./routes/productoAtributos");
+const atributosRoutes = require("./routes/atributo"); 
 const recomendadosRoutes = require("./routes/recomendados");
 const bannersRoutes = require("./routes/banners");
 const driversRoutes = require("./routes/drivers");
@@ -66,11 +64,8 @@ app.use("/metodopago", metodoPagoRoutes);
 app.use("/locales",localesRoutes);
 app.use("/direccionesclientes",direccionesclientesRoutes);
 app.use("/direccioneslocales",direccioneslocalesRoutes);
-app.use('/productos', productoRoutes);
-app.use("/productoextra", productoExtraRoutes);
-app.use("/atributos", atributosRoutes);
-app.use("/valoresatributos", valoresAtributosRoutes);
-app.use("/productoatributos", productoAtributosRoutes);
+app.use('/productos', productoRoutes); 
+app.use("/atributos", atributosRoutes); 
 app.use("/recomendados", recomendadosRoutes);
 app.use("/banners", bannersRoutes);
 app.use("/drivers", driversRoutes);
