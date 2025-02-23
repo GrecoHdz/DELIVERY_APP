@@ -37,6 +37,7 @@ const pagoRentarAutoRoutes = require("./routes/pagoRentarAuto");
 const rentarAutoRoutes = require("./routes/rentarAuto");
 const autoEnRentaRoutes = require("./routes/autoEnRenta");
 const productoExtraRoutes = require("./routes/productoExtra");
+const atributoRoutes = require("./routes/atributo"); 
 const app = express();  
 
 // Middlewares
@@ -84,8 +85,7 @@ app.use("/pagorentarauto", pagoRentarAutoRoutes);
 app.use("/rentarauto", rentarAutoRoutes);
 app.use("/autosenrenta", autoEnRentaRoutes);
 app.use("/productosextras", productoExtraRoutes);
-
-
+app.use("/atributos", atributoRoutes); 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
