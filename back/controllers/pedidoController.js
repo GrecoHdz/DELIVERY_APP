@@ -34,12 +34,8 @@ const createPedido = async (req, res) => {
     const {    
     id_local,
     id_direccion_cliente,
-    id_direccion_local,
-    tiempo_preparacion_estimado,
-    tiempo_llegada_estimado,
-    notas,
-    fecha_pedido,
-    estado_pedido,
+    id_direccion_local,  
+    fecha_pedido, 
   } = req.body;
 
   try {
@@ -47,12 +43,8 @@ const createPedido = async (req, res) => {
       id_cliente,
       id_local,
       id_direccion_cliente,
-      id_direccion_local,
-      tiempo_preparacion_estimado,
-      tiempo_llegada_estimado,
-      notas,
-      fecha_pedido,
-      estado_pedido,
+      id_direccion_local,  
+      fecha_pedido, 
     });
 
     res.status(201).json({ message: "Pedido creado exitosamente" });
@@ -81,8 +73,7 @@ const updatePedido = async (req, res) => {
   const {
     id_driver,
     tiempo_preparacion_estimado,
-    tiempo_llegada_estimado,
-    notas,
+    tiempo_llegada_estimado, 
     fecha_entrega,
     estado_pedido,
   } = req.body;
@@ -97,7 +88,6 @@ const updatePedido = async (req, res) => {
       id_driver,
       tiempo_preparacion_estimado,
       tiempo_llegada_estimado,
-      notas,
       fecha_entrega,
       estado_pedido,
     });

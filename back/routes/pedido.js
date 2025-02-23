@@ -31,7 +31,6 @@ router.post(
     param("id_cliente").isInt().withMessage("ID de cliente inválido"),
     body("id_local").isInt().withMessage("ID de local inválido"),
     body("id_direccion_cliente").isInt().withMessage("ID de dirección de cliente inválido"),
-    body("notas").optional(),
     body("id_direccion_local").isInt().withMessage("ID de dirección de local inválido"),
     body("fecha_pedido").isISO8601().withMessage("La fecha del pedido debe ser válida"),
   ],

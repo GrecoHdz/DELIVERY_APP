@@ -37,10 +37,6 @@ const Pedido = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true, // Tiempo en minutos (opcional)
     },
-    notas: {
-      type: DataTypes.TEXT,
-      allowNull: true, // Notas adicionales son opcionales
-    },
     fecha_pedido: {
       type: DataTypes.DATE,
       allowNull: false,

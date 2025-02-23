@@ -43,7 +43,9 @@ router.post(
       .withMessage("El título es obligatorio")
       .isLength({ max: 255 })
       .withMessage("El título no puede exceder los 255 caracteres"),
-    body("imagen_url")
+      body("descripcion")
+      .optional(),  
+      body("imagen_url")
       .notEmpty()
       .withMessage("La URL de la imagen es obligatoria")
       .isURL()
