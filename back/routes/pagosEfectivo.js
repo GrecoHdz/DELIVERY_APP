@@ -18,7 +18,7 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los pagos en efectivo de un pago
-router.get("/:id_pago/efectivos", [param("id_pago").isInt().withMessage("ID inválido")], validarErrores, getEfectivosByPago);
+router.get("/", validarErrores, getEfectivosByPago);
 
 // Crear un nuevo pago en efectivo
 router.post(

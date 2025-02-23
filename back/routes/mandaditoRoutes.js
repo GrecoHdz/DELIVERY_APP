@@ -50,13 +50,7 @@ router.post(
     body("direccion_destino")
       .notEmpty()
       .withMessage("La dirección de destino es obligatoria"),
-    body("descripcion").optional(),
-    body("tiempo_llegada_recogida_estimado").optional().isInt().withMessage("El tiempo de llegada estimado debe ser un número entero"),
-    body("tiempo_entrega_estimado").optional().isInt().withMessage("El tiempo de entrega estimado debe ser un número entero"),
-    body("estado")
-      .optional()
-      .isString()
-      .withMessage("El estado debe ser una cadena de texto"),
+    body("descripcion"), 
   ],
   validarErrores,
   createMandadito

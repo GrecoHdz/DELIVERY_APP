@@ -15,7 +15,7 @@ const PagoTransferencia = sequelize.define(
     },
     id_cuenta: {
       type: DataTypes.INTEGER,
-      allowNull: true, // La cuenta bancaria es opcional
+      allowNull: false, // La cuenta bancaria es opcional
     },
     num_comprobante: {
       type: DataTypes.STRING(255),
