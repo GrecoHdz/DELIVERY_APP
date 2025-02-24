@@ -1,65 +1,50 @@
-const bcrypt = require("bcryptjs");
 const express = require("express");
-const jwt = require("jsonwebtoken");
-const { getUserByUsername } = require("../controllers/usuariosController");
+const { login, generateTokens } = require("../controllers/authController"); // Asegúrate de importar generateTokens
 const { body, validationResult } = require("express-validator");
 const router = express.Router();
+const jwt = require("jsonwebtoken");
 
-// Ruta de autenticación (login)
 router.post(
-    "/login",
-    [
-        body("usuario").notEmpty().withMessage("El usuario es obligatorio"),
-        body("clave").notEmpty().withMessage("La contraseña es obligatoria"),
-    ],
-    async (req, res) => {
-        // Capturar errores de validación
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const { usuario, clave } = req.body;
-
-        try {
-            // Buscar el usuario por su nombre de usuario
-            const user = await getUserByUsername(usuario);
-
-            if (!user) {
-                return res.status(401).json({ message: "Usuario no encontrado" });
-            }
-
-            // Comparar la contraseña proporcionada con el hash almacenado
-            const isMatch = await bcrypt.compare(clave, user.clave_hash);
-
-            if (!isMatch) {
-                return res.status(400).json({ message: "Usuario o contraseña incorrectos." });
-            }
-
-            // Crear el token JWT con información del usuario
-            const token = jwt.sign(
-                { 
-                    id_usuario: user.id_usuario, 
-                    usuario: user.usuario, 
-                    id_rol: user.id_rol, 
-                    email: user.email 
-                },
-                process.env.JWT_SECRET,
-                { expiresIn: "1h" }
-            );
-
-            // Actualizar la fecha del último login (opcional)
-            await user.update({ fecha_ultimo_login: new Date() });
-
-            // Devolver el token y cualquier otra información relevante
-            res.json({ 
-                token
-            });
-        } catch (error) {
-            console.error("Error en el login:", error);
-            res.status(500).json({ message: "Error interno del servidor" });
-        }
+  "/",
+  [
+    body("usuario").notEmpty().withMessage("El usuario es obligatorio"),
+    body("clave").notEmpty().withMessage("La contraseña es obligatoria"),
+  ],
+  async (req, res) => {
+    // Capturar errores de validación
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log("❌ Errores de validación:", errors.array());
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    return login(req, res);
+  }
 );
+router.post("/refresh", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "No se proporcionó el refresh token" });
+  }
+
+  try {
+    // Verificar el refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+
+    // Generar nuevos tokens
+    const newTokens = generateTokens(decoded);
+
+    res.json({
+      accessToken: newTokens.accessToken,
+      refreshToken: newTokens.refreshToken,
+    });
+  } catch (error) {
+    console.error("Error al renovar el token:", error);
+    res.status(401).json({ message: "Refresh token inválido o expirado" });
+  }
+});
+
+
 
 module.exports = router;

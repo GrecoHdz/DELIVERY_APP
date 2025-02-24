@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const { connectDB, sequelize } = require("./config/database");
 const usuariosRoutes = require("./routes/usuarios");
 const authRoutes = require("./routes/auth");
@@ -35,8 +36,7 @@ const viajeRoutes = require("./routes/viaje");
 const productoSucursalRoutes = require("./routes/productoSucursal");
 const pagoRentarAutoRoutes = require("./routes/pagoRentarAuto");
 const rentarAutoRoutes = require("./routes/rentarAuto");
-const autoEnRentaRoutes = require("./routes/autoEnRenta");
-const productoExtraRoutes = require("./routes/productoExtra");
+const autoEnRentaRoutes = require("./routes/autoEnRenta"); 
 const atributoRoutes = require("./routes/atributo"); 
 const app = express();  
 
@@ -48,44 +48,12 @@ app.use(
     origin: true, //process.env.NODE_ENV === "production" ? "https://tuapp.com" : true,
     credentials: true,
   })
-);
-
+); 
+app.use(cookieParser());
 // Rutas
-app.use("/auth", authRoutes); 
+app.use("/login", authRoutes); 
 app.use("/usuarios", usuariosRoutes);
-app.use("/categorias", categoriasRoutes);
-app.use("/subcategorias", subcategoriasRoutes);
-app.use("/membresialocales", membresiasRoutes);
-app.use("/roles", rolesRoutes);
-app.use("/usuarioroles", usuarioRolesRoutes);
-app.use("/clientes", clientesRoutes);
-app.use("/ciudad", ciudadRoutes);
-app.use("/banco", bancoRoutes);
-app.use("/metodopago", metodoPagoRoutes);
-app.use("/locales",localesRoutes);
-app.use("/direccionesclientes",direccionesclientesRoutes);
-app.use("/direccioneslocales",direccioneslocalesRoutes);
-app.use('/productos', productoRoutes); 
-app.use("/atributos", atributosRoutes); 
-app.use("/recomendados", recomendadosRoutes);
-app.use("/banners", bannersRoutes);
-app.use("/drivers", driversRoutes);
-app.use("/vehiculos", vehiculosRoutes); 
-app.use("/drivervehiculo", driverVehiculoRoutes);
-app.use("/pagos", pagosRoutes);
-app.use("/pagostransferencia", pagosTransferenciaRoutes);
-app.use("/pagosefectivo", pagosEfectivoRoutes);
-app.use("/empleados", empleadosRoutes);
-app.use("/localmetodopago", localMetodoPagoRoutes);
-app.use("/pagomembresiadriver",pagomembresiasDrivers);
-app.use("/viajes", viajeRoutes); 
-app.use("/productossucursales", productoSucursalRoutes);
-app.use("/pedidos", pedidoRoutes);
-app.use("/pagorentarauto", pagoRentarAutoRoutes);
-app.use("/rentarauto", rentarAutoRoutes);
-app.use("/autosenrenta", autoEnRentaRoutes);
-app.use("/productosextras", productoExtraRoutes);
-app.use("/atributos", atributoRoutes); 
+app.use("/bancos",bancoRoutes) 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {

@@ -1,5 +1,7 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
+
+const verifyToken = require("../middlewares/authMiddleware");
 const { getBancos, getBancoById, createBanco, updateBanco, deleteBanco } = require("../controllers/bancoController");
 
 const router = express.Router();
@@ -13,7 +15,7 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-router.get("/", getBancos);
+router.get("/", verifyToken,getBancos);
 
 router.get(
   "/:id",

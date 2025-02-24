@@ -1,17 +1,10 @@
-const { sequelize } = require("../config/database"); 
-const Usuario = require("./Usuario"); 
+const { sequelize } = require("../config/database");
+const Usuario = require("./Usuario");
 
-const syncDB = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log("✅ Base de datos conectada correctamente.");
+// Nota: Las migraciones deben manejarse manualmente usando un sistema de migraciones
+// Ejecutar migraciones por separado usando una herramienta de migraciones
 
-    await sequelize.sync({ alter: true })
-    console.log("✅ Base de datos sincronizada.");
-  } catch (error) {
-    console.error("❌ Error al conectar la base de datos:", error);
-  }
+module.exports = {
+  sequelize,
+  Usuario
 };
-
-syncDB(); 
-module.exports = { sequelize, Usuario };
