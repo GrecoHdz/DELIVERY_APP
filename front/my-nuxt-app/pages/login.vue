@@ -52,7 +52,8 @@ export default {
         });
 
         // Al recibir el token, lo guardamos en el localStorage (o sessionStorage)
-        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("token", response.data.accessToken);
+
 
         // Redirigir al usuario al dashboard o página principal
         this.$router.push("/dashboard");
