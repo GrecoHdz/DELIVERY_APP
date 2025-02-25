@@ -27,12 +27,12 @@ export default {
 
   // Axios configuration
   axios: {
-    baseURL: 'http://localhost:4000',
+    baseURL: 'http://localhost:3000',
   },
 
   // Server configuration
   server: {
-    port: 3000,
+    port: 4000,
   },
 
   compatibilityDate: '2025-02-23'
