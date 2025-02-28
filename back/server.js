@@ -45,7 +45,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(
   cors({
-    origin: true, //process.env.NODE_ENV === "production" ? "https://tuapp.com" : true,
+    origin: "http://localhost:8080",//true, //process.env.NODE_ENV === "production" ? "https://tuapp.com" : true,
     credentials: true,
   })
 ); 
@@ -55,7 +55,7 @@ app.use("/login", authRoutes);
 app.use("/usuarios", usuariosRoutes);
 app.use("/bancos",bancoRoutes) 
 // Iniciar servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, async () => {
   await connectDB();
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);

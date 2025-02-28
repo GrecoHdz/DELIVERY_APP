@@ -1,9 +1,10 @@
 const express = require("express");
-const { login, generateTokens } = require("../controllers/authController"); // Asegúrate de importar generateTokens
+const { login, generateTokens } = require("../controllers/authController");
 const { body, validationResult } = require("express-validator");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 
+// Login route
 router.post(
   "/",
   [
@@ -18,10 +19,17 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    return login(req, res);
+    try {
+      return await login(req, res); // Call the login function to handle authentication
+    } catch (error) {
+      console.error("Error en la ruta de login:", error);
+      res.status(500).json({ message: "Error en el proceso de login" });
+    }
   }
 );
-router.post("/refresh", async (req, res) => {
+
+// Session management route
+router.post("/session", async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -29,10 +37,7 @@ router.post("/refresh", async (req, res) => {
   }
 
   try {
-    // Verificar el refresh token
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-
-    // Generar nuevos tokens
     const newTokens = generateTokens(decoded);
 
     res.json({
@@ -44,7 +49,5 @@ router.post("/refresh", async (req, res) => {
     res.status(401).json({ message: "Refresh token inválido o expirado" });
   }
 });
-
-
 
 module.exports = router;
