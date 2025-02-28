@@ -45,7 +45,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:8080",//true, //process.env.NODE_ENV === "production" ? "https://tuapp.com" : true,
+    origin: "http://localhost:5173",//true, //process.env.NODE_ENV === "production" ? "https://tuapp.com" : true,
     credentials: true,
   })
 ); 

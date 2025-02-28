@@ -1,17 +1,18 @@
 <template>
-  <div>
-    <h1>Welcome to the Home Page</h1>
-  </div>
+  <HelloWorld />
 </template>
 
 <script>
-export default {
-  name: 'HomeView'
-}
-</script>
+import { defineComponent } from 'vue';
 
-<style scoped>
-h1 {
-  color: #42b983;
-}
-</style>
+// Components
+import HelloWorld from '../components/HelloWorld.vue';
+
+export default defineComponent({
+  name: 'HomeView',
+
+  components: {
+    HelloWorld,
+  },
+});
+</script>

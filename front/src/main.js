@@ -1,14 +1,14 @@
-import { createApp } from "vue";
-import App from "./App.vue";
-import router from "./router"; // Si tienes Vue Router 
-import store from "./store"; 
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import store from './store'
+import vuetify from './plugins/vuetify'
+import { loadFonts } from './plugins/webfontloader'
+import 'vuetify/styles';
 
-// Crea la instancia de la app
-const app = createApp(App);
-
-// Usa el router y el store (si los tienes)
-app.use(router);
-app.use(store);
-
-// Monta la app en el div con id="app"
-app.mount("#app");
+loadFonts()
+const app = createApp(App)
+  .use(router)
+  .use(store)
+  .use(vuetify)
+  .mount('#app')

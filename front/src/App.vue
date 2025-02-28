@@ -1,17 +1,18 @@
 <template>
-  <router-view />
+  <v-app>
+    <v-main>
+      <router-view/>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
+
 export default {
   name: 'App',
-};
-</script>
 
-<style>
-/* Estilos globales (opcional) */
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
+  data: () => ({
+    //
+  }),
 }
-</style>
+</script>
