@@ -34,6 +34,10 @@ const Producto = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true, // URL de la imagen (opcional)
     },
+    imagen_public_id: {
+      type: DataTypes.STRING,
+      allowNull: true, // ID público de Cloudinary (necesario para eliminar imágenes)
+    },
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
@@ -56,5 +60,4 @@ Producto.associate = (models) => {
     onDelete: "SET NULL", // Si se elimina la subcategoría, el campo se establece como NULL
   });
 };
-
 module.exports = Producto;
