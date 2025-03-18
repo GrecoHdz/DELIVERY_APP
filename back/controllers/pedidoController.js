@@ -28,14 +28,36 @@ const getPedidoById = async (req, res) => {
   }
 };
 
+// Controlador para obtener el conteo de productos en el carrito
+const getCarritoCount = async (req, res) => {
+  try {
+    const { id_cliente } = req.params; // Obtenemos el id_cliente de los parámetros de la ruta
+
+    // Buscamos si el cliente tiene al menos un pedido
+    const pedidos = await Pedido.findAll({
+      where: { id_cliente }, // Filtramos por id_cliente
+      limit: 1, // Solo necesitamos saber si existe al menos uno
+    });
+
+    // Si hay al menos un pedido, mostramos el indicador (punto)
+    const hasPedidos = pedidos.length > 0;
+
+    // Respondemos con un indicador para el front
+    res.json({ hasPedidos });
+
+  } catch (error) {
+    console.error("Error al obtener el indicador del carrito:", error);
+    res.status(500).json({ message: 'Error al obtener el indicador del carrito' });
+  }
+};
+
 // Crear un nuevo pedido
 const createPedido = async (req, res) => {
     const { id_cliente } = req.params;
     const {    
     id_local,
     id_direccion_cliente,
-    id_direccion_local,  
-    fecha_pedido, 
+    id_direccion_local,   
   } = req.body;
 
   try {
@@ -43,11 +65,10 @@ const createPedido = async (req, res) => {
       id_cliente,
       id_local,
       id_direccion_cliente,
-      id_direccion_local,  
-      fecha_pedido, 
+      id_direccion_local, 
     });
 
-    res.status(201).json({ message: "Pedido creado exitosamente" });
+    res.status(201).json({ message: "Pedido creado exitosamente", id_pedido: pedido.id_pedido });
   } catch (error) {
     if (error.name === "SequelizeForeignKeyConstraintError") {
       if (error.fields.includes("id_cliente")) {
@@ -75,7 +96,8 @@ const updatePedido = async (req, res) => {
     tiempo_preparacion_estimado,
     tiempo_llegada_estimado, 
     fecha_entrega,
-    estado_pedido,
+    estado_pedido, 
+    fecha_pedido, 
   } = req.body;
 
   try {
@@ -89,7 +111,8 @@ const updatePedido = async (req, res) => {
       tiempo_preparacion_estimado,
       tiempo_llegada_estimado,
       fecha_entrega,
-      estado_pedido,
+      estado_pedido, 
+      fecha_pedido, 
     });
 
     res.status(200).json({ message: "Pedido actualizado correctamente" });
@@ -118,6 +141,7 @@ const deletePedido = async (req, res) => {
 module.exports = {
   getAllPedidos,
   getPedidoById,
+  getCarritoCount,
   createPedido,
   updatePedido,
   deletePedido,

@@ -1,203 +1,450 @@
 <template>
- <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100"> 
-  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <TruckIcon class="text-blue-600" :size="24" />
-      <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-    </div>
-    <div class="flex items-center space-x-4">
-      <select v-model="selectedProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-        <option value="Cliente">Cliente</option>
-        <option value="Local">Local</option>
-        <option value="Delivery">Delivery</option>
-      </select>
-      <div class="relative cursor-pointer" @click="showNotifications">
-        <BellIcon class="text-blue-600" :size="24" />
-        <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-          {{ unreadNotifications.length }}
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <!-- Header con diseño moderno -->
+    <header class="bg-white shadow-lg px-6 py-4">
+      <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 rounded-lg">
+            <TruckIcon class="text-white" :size="26" />
+          </div>
+          <span class="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">DeliveryPro</span>
+        </div>
+        <div class="flex items-center space-x-5">
+          <select v-model="selectedProfile" class="p-2 text-center bg-white border-2 border-indigo-500 text-indigo-600 rounded-full font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
+            <option value="Cliente">Cliente</option>
+            <option value="Local">Local</option>
+            <option value="Delivery">Delivery</option>
+          </select>
+          <div class="relative cursor-pointer" @click="showNotifications">
+            <div class="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200 transition-all">
+              <BellIcon class="text-indigo-600" :size="24" />
+            </div>
+            <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {{ unreadNotifications.length }}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </header> 
-      <!-- Modal de Notificaciones -->
-      <transition name="fade">
-        <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
-          <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
-          <div v-if="notifications.length > 0">
-            <div
-              v-for="(notification, index) in notifications"
-              :key="index"
-              class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-              @click="markAsRead(notification.id)"
-              :class="{ 'bg-gray-100': notification.read }"
-            >
-              <p class="text-sm text-gray-700">{{ notification.message }}</p>
-              <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
-            </div>
-          </div>
-          <div v-else class="text-sm text-gray-500">
-            No tienes notificaciones nuevas.
-          </div>
-          <button
-            @click="closeNotifications"
-            class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
+    </header> 
+    
+    <!-- Modal de Notificaciones -->
+    <transition name="fade">
+      <div v-if="isModalOpen" class="absolute top-20 right-6 bg-white shadow-2xl rounded-xl p-4 w-72 z-50 border border-indigo-100">
+        <h3 class="font-bold text-lg mb-3 text-indigo-600">Notificaciones</h3>
+        <div v-if="notifications.length > 0" class="max-h-80 overflow-y-auto">
+          <div
+            v-for="(notification, index) in notifications"
+            :key="index"
+            class="p-3 mb-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-all"
+            @click="markAsRead(notification.id)"
+            :class="{ 'bg-indigo-50': notification.read }"
           >
-            Cerrar
-          </button>
+            <p class="text-sm text-gray-700">{{ notification.message }}</p>
+            <span v-if="!notification.read" class="text-xs text-indigo-500 font-medium mt-1 block">Nueva</span>
+          </div>
         </div>
-      </transition> 
-
-<div class="local-page">
-    <!-- Barra Superior -->
-    <div class="top-bar">
-      <h1 class="local-name">{{ localName }}</h1>
-      <div class="search-and-branch">
-        <select v-model="selectedBranch" class="branch-selector">
-          <option v-for="branch in branches" :key="branch.id" :value="branch.id">
-            {{ branch.name }}
-          </option>
-        </select>
-        <input type="text" v-model="searchQuery" placeholder="Buscar 🔍" class="search-input" />
+        <div v-else class="text-sm text-gray-500 p-3 text-center">
+          No tienes notificaciones nuevas.
         </div>
-    </div>
+        <button
+          @click="closeNotifications"
+          class="mt-3 w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg py-2 hover:from-blue-600 hover:to-indigo-700 transition-all font-medium"
+        >
+          Cerrar
+        </button>
+      </div>
+    </transition>
 
-    <!-- Lista de Productos -->
-    <div class="product-grid">
-      <div v-for="product in filteredProducts" :key="product.id" class="product-card">
-        <!-- Imagen del Producto -->
-        <img :src="product.image" :alt="product.name" class="product-image" />
-
-        <!-- Información del Producto -->
-        <div class="product-info">
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-description">{{ product.description }}</p>
+    <!-- Contenido Pricipal -->
+    <div class="px-6 py-8 pb-32 max-w-7xl mx-auto">
+      <!-- Header de Página con Diseño Mejorado -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Catálogo de Productos</h1>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+          <p class="text-indigo-600 text-lg">
+            Nuestros productos <span class="text-indigo-800 font-semibold">de la más alta calidad</span>
+          </p>
+          <div class="mt-4 md:mt-0 flex items-center space-x-2 bg-white p-1 rounded-full shadow-sm">
+            <span class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm py-1 px-3 rounded-full shadow-sm">
+              {{ useApiData ? 'Datos API' : 'Datos Locales' }}
+            </span>
+            <button 
+              @click="toggleDataSource" 
+              class="text-gray-500 hover:text-indigo-600 p-1"
+              title="Cambiar fuente de datos"
+            >
+              <RefreshCwIcon :size="20" />
+            </button>
+          </div>
         </div>
-
-        <!-- Precio y Botón de Carrito -->
-        <div class="price-and-quantity">
-          <div class="price-container">
-              <span v-if="product.discountedPrice" class="original-price">${{ product.price.toFixed(2) }}</span>
-              <span class="final-price">${{ (product.discountedPrice || product.price).toFixed(2) }}</span>
+      </div>
+      
+      <!-- Panel de control y búsqueda -->
+      <div class="mb-8 bg-white rounded-xl shadow-md p-6 border border-indigo-100">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Búsqueda -->
+          <div class="relative">
+            <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Buscar</label>
+            <input 
+              v-model="searchQuery" 
+              type="text" 
+              placeholder="Buscar productos..." 
+              class="w-full pl-12 pr-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 text-base"
+            >
+            <SearchIcon class="absolute left-4 top-9 text-indigo-400" :size="20" />
+          </div>
+          
+          <!-- Sucursal -->
+          <div class="lg:col-span-2 order-2 lg:order-2">
+            <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Sucursal</label>
+            <div class="relative">
+              <select 
+  v-model="selectedBranch" 
+  class="w-full appearance-none bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 text-gray-700"
+  @change="branchChanged"
+>
+  <option v-for="branch in branches" :key="branch.id_direccion_local" :value="branch.id_direccion_local">
+    {{ branch.colonia }} - {{ branch.direccion_precisa }}
+  </option>
+</select>
+              <ChevronDownIcon class="absolute right-3 bottom-3 text-indigo-400" :size="18" />
             </div>
-             <button class="cart-button" @click="openModal(product)">
-            <ShoppingCartIcon :size="20" />
-          </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Estado de carga -->
+      <div v-if="loading" class="flex justify-center items-center py-20">
+        <div class="relative w-20 h-20">
+          <div class="absolute top-0 left-0 w-full h-full rounded-full border-8 border-indigo-200"></div>
+          <div class="absolute top-0 left-0 w-full h-full rounded-full border-8 border-transparent border-t-indigo-600 animate-spin"></div>
+        </div>
+      </div>
+      
+      <!-- Mensaje de error -->
+      <div v-else-if="error" class="bg-red-50 p-6 rounded-xl shadow-md text-center my-10">
+        <AlertTriangleIcon :size="50" class="text-red-500 mx-auto mb-4" />
+        <h3 class="text-xl font-bold text-red-700 mb-2">Error al cargar los productos</h3>
+        <p class="text-red-600 mb-4">{{ error }}</p>
+        <button 
+          @click="fetchData" 
+          class="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+        >
+          Reintentar
+        </button>
+      </div>
+      
+      <!-- Mensaje sin resultados -->
+      <div v-else-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="bg-indigo-50 p-6 rounded-full mb-6">
+          <PackageXIcon :size="80" class="text-indigo-300" />
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">No se encontraron productos</h3>
+        <p class="text-indigo-600 mb-6 max-w-md">
+          Intenta con otra búsqueda o selecciona otra sucursal
+        </p>
+      </div>
+      
+      <!-- Grid de Productos Mejorado -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div 
+          v-for="product in filteredProducts" 
+          :key="product.id" 
+          class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all border border-indigo-100 relative transform hover:-translate-y-1 flex flex-col"
+        >
+          <!-- Badges (ofertas) -->
+          <div v-if="product.discountedPrice" class="absolute top-3 left-3 z-10">
+            <div class="bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center">
+              <TagIcon :size="12" class="mr-1" />
+              Oferta
+            </div>
+          </div>
+          
+          <!-- Imagen del producto -->
+          <div class="relative h-56 overflow-hidden bg-indigo-50">
+            <img
+              :src="product.image || 'https://via.placeholder.com/300x200?text=Sin+Imagen'"
+              :alt="product.name"
+              class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          
+          <!-- Información del producto -->
+          <div class="p-5 pt-4 flex-grow flex flex-col">
+            <!-- Nombre y precio -->
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-semibold text-gray-800 text-lg line-clamp-2 pr-2">
+                {{ product.name }}
+              </h3>
+              <div>
+                <div v-if="product.discountedPrice" class="flex flex-col items-end">
+                  <span class="line-through text-gray-500 text-sm">${{ formatPrice(product.price) }}</span>
+                  <span class="font-bold text-red-600 text-lg">${{ formatPrice(product.discountedPrice) }}</span>
+                </div>
+                <div v-else class="font-bold text-indigo-600 text-lg">
+                  ${{ formatPrice(product.price) }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Descripción -->
+            <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+              {{ product.description || 'Sin descripción disponible' }}
+            </p>
+            
+            <!-- Botón de agregar al carrito -->
+            <button 
+              @click="openModal(product)" 
+              class="mt-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <ShoppingCartIcon :size="18" />
+              <span>Agregar al carrito</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Modal de Producto -->
-    <div v-if="selectedProduct" class="modal-overlay">
-      <div class="modal-content">
-        <!-- Cerrar Modal -->
-        <button class="close-modal-button" @click="closeModal">×</button>
-
-        <!-- Imagen del Producto -->
-        <img :src="selectedProduct.image" :alt="selectedProduct.name" class="modal-image" />
-
-        <!-- Información del Producto -->
-        <h3 class="modal-product-name">{{ selectedProduct.name }}</h3>
-        <p class="modal-product-description">{{ selectedProduct.description }}</p>
-
-        <!-- Precio y Cantidad -->
-        <div class="modal-price-and-quantity">
-          <div class="price-container">
-              <span v-if="selectedProduct.discountedPrice" class="original-price">${{ selectedProduct.price.toFixed(2) }}</span>
-              <span class="final-price">${{ (selectedProduct.discountedPrice || selectedProduct.price).toFixed(2) }}</span>
+    <transition name="modal">
+      <div v-if="selectedProduct" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+          <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+          <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto z-10 overflow-hidden">
+            <!-- Header del modal -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 flex justify-between items-center">
+              <h2 class="text-xl font-bold text-white">
+                Detalles del Producto
+              </h2>
+              <button @click="closeModal" class="text-white hover:text-indigo-100">
+                <XIcon :size="24" />
+              </button>
             </div>
-            <div class="quantity-controls">
-            <button @click="decrementQuantity">-</button>
-            <span class="quantity">{{ quantity }}</span>
-            <button @click="incrementQuantity">+</button>
+            
+            <div class="p-6">
+              <!-- Imagen del producto -->
+              <div class="rounded-xl overflow-hidden h-56 mb-6">
+                <img
+                  :src="selectedProduct.image || 'https://via.placeholder.com/300x200?text=Sin+Imagen'"
+                  :alt="selectedProduct.name"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              
+              <!-- Nombre y precio -->
+              <div class="flex justify-between items-start mb-4">
+                <h3 class="font-bold text-gray-800 text-xl">
+                  {{ selectedProduct.name }}
+                </h3>
+                <div>
+                  <div v-if="selectedProduct.discountedPrice" class="flex flex-col items-end">
+                    <span class="line-through text-gray-500 text-sm">${{ formatPrice(selectedProduct.price) }}</span>
+                    <span class="font-bold text-red-600 text-xl">${{ formatPrice(selectedProduct.discountedPrice) }}</span>
+                  </div>
+                  <div v-else class="font-bold text-indigo-600 text-xl">
+                    ${{ formatPrice(selectedProduct.price) }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Descripción -->
+              <p class="text-gray-600 mb-6">
+                {{ selectedProduct.description || 'Sin descripción disponible' }}
+              </p>
+              
+              <!-- Cantidad -->
+              <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
+                <div class="flex items-center max-w-xs mx-auto">
+                  <button 
+                    @click="decrementQuantity" 
+                    class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-10 h-10 rounded-l-lg flex items-center justify-center transition-colors"
+                  >
+                    <MinusIcon :size="18" />
+                  </button>
+                  <div class="flex-1 bg-indigo-50 h-10 flex items-center justify-center text-xl font-bold text-indigo-700">
+                    {{ quantity }}
+                  </div>
+                  <button 
+                    @click="incrementQuantity" 
+                    class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-10 h-10 rounded-r-lg flex items-center justify-center transition-colors"
+                  >
+                    <PlusIcon :size="18" />
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Atributos (Sabor, Tamaño) -->
+              <div v-if="selectedProduct.attributes && selectedProduct.attributes.length > 0" class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Atributos</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
+                      :class="['flex items-center justify-center p-3 rounded-lg cursor-pointer border transition-colors', 
+                                selectedAttribute === attribute.id 
+                                  ? 'bg-indigo-600 text-white border-indigo-600' 
+                                  : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']" 
+                      @click="selectedAttribute = attribute.id">
+                    <div class="text-center">
+                      <div class="font-medium">{{ attribute.name }}: {{ attribute.value }}</div>
+                      <div v-if="attribute.price" class="text-xs mt-1" :class="selectedAttribute === attribute.id ? 'text-indigo-100' : 'text-gray-500'">
+                        +${{ formatPrice(attribute.price) }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Extras -->
+              <div v-if="selectedProduct.extras && selectedProduct.extras.length > 0" class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Extras</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <div v-for="extra in selectedProduct.extras" :key="extra.id" 
+                      :class="['flex items-center p-3 rounded-lg cursor-pointer border transition-colors', 
+                                extra.selected 
+                                  ? 'bg-indigo-50 border-indigo-300' 
+                                  : 'bg-white border-gray-200 hover:border-indigo-200']" 
+                      @click="extra.selected = !extra.selected">
+                    <input 
+                      type="checkbox" 
+                      :checked="extra.selected" 
+                      class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                      @click.stop
+                    >
+                    <div class="ml-3">
+                      <div class="font-medium text-gray-700">{{ extra.name }}</div>
+                      <div class="text-xs text-gray-500">+${{ formatPrice(extra.price) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Botón de agregar al carrito -->
+              <button 
+                @click="addToCart(selectedProduct)" 
+                class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <ShoppingCartIcon :size="18" />
+                <span>Agregar al Carrito - ${{ formatPrice(totalPrice) }}</span>
+              </button>
+            </div>
           </div>
         </div>
+      </div>
+    </transition>
 
-        <!-- Atributos (Sabor, Tamaño) -->
-        <div v-if="selectedProduct.attributes" class="attributes-section">
-          <h4>Atributos</h4>
-          <div class="attributes-grid">
-            <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
-                 :class="['attribute-option', { selected: selectedAttribute === attribute.id }]" 
-                 @click="selectedAttribute = attribute.id">
-              <label>{{ attribute.name }} {{ attribute.price ? `(+$${attribute.price.toFixed(2)})` : '' }}</label>
-            </div>
-          </div>
+    <!-- Toast de notificación -->
+    <transition name="toast">
+      <div 
+        v-if="toast.show" 
+        class="fixed bottom-8 right-8 p-4 rounded-xl shadow-xl z-50 max-w-sm flex items-center gap-3"
+        :class="toastClasses"
+      >
+        <div class="p-2 bg-white bg-opacity-25 rounded-full">
+          <component :is="toastIcon" :size="20" class="text-white" />
         </div>
-
-        <!-- Extras -->
-        <div v-if="selectedProduct.extras" class="extras-section">
-          <h4>Extras</h4>
-          <div class="extras-grid">
-            <div v-for="extra in selectedProduct.extras" :key="extra.id" 
-                 :class="['extra-option', { selected: extra.selected }]" 
-                 @click="extra.selected = !extra.selected">
-              <label>{{ extra.name }} (+${{ extra.price.toFixed(2) }})</label>
-            </div>
-          </div>
-        </div> 
-
-        <!-- Botón de Agregar al Carrito -->
-        <button class="modal-add-to-cart-button" @click="addToCart(selectedProduct)">
-          Agregar al Carrito - ${{ totalPrice.toFixed(2) }}
+        <p class="text-white font-medium">{{ toast.message }}</p>
+        <button @click="toast.show = false" class="ml-auto text-white hover:text-gray-200">
+          <XIcon :size="16" />
         </button>
-      </div> 
-    </div> 
+      </div>
+    </transition>
 
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-indigo-100 p-3 z-20">
+      <div class="max-w-7xl mx-auto">
+        <div class="flex justify-around items-center">
+          <div class="flex flex-col items-center">
+            <div class="p-2 bg-indigo-50 rounded-full">
+              <HomeIcon class="text-indigo-600" :size="20" />
+            </div>
+            <span class="text-xs text-indigo-600 mt-1">Inicio</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div class="p-2 bg-indigo-50 rounded-full">
+              <HeartIcon class="text-indigo-600" :size="20" />
+            </div>
+            <span class="text-xs text-indigo-600 mt-1">Favoritos</span>
+          </div>
+          <div class="flex flex-col items-center relative">
+  <div class="bg-blue-600 rounded-full p-2 relative">
+    <ShoppingCartIcon class="text-white" :size="20" />
+    <span 
+      v-if="carritoIndicador" 
+      class="absolute top-0 right-0 bg-red-500 w-2.5 h-2.5 rounded-full"
+    ></span>
   </div>
-   <!-- Footer -->
-   <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <HomeIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Inicio</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <HeartIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
+  <span class="text-xs text-blue-600 mt-1">Carrito</span>
+</div>
+
+          <div class="flex flex-col items-center">
+            <div class="p-2 bg-indigo-50 rounded-full">
+              <ShoppingBagIcon class="text-indigo-600" :size="20" />
+            </div>
+            <span class="text-xs text-indigo-600 mt-1">Pedidos</span>
           </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <ShoppingBagIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <div class="cursor-pointer">
-            <SettingsIcon class="text-blue-600" :size="20" />
+          <div class="flex flex-col items-center">
+            <div class="p-2 bg-indigo-50 rounded-full cursor-pointer">
+              <SettingsIcon class="text-indigo-600" :size="20" />
+            </div>
+            <span class="text-xs text-indigo-600 mt-1">Configuración</span>
           </div>
-          <span class="text-xs text-blue-600 mt-1">Configuración</span>
         </div>
       </div>
     </footer>
-  </div> 
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import {
-  Truck as TruckIcon,
+import { ref, computed, watch, onMounted } from 'vue';
+import axios from 'axios';
+import { 
+  Truck as TruckIcon, 
   Bell as BellIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Settings as SettingsIcon,
-  Heart as HeartIcon,
   Home as HomeIcon,
+  Heart as HeartIcon,
+  ShoppingCart as ShoppingCartIcon,
   ShoppingBag as ShoppingBagIcon,
+  Settings as SettingsIcon,
+  Search as SearchIcon,
+  ChevronDown as ChevronDownIcon,
+  PackageX as PackageXIcon,
+  Tag as TagIcon,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
+  X as XIcon,
+  CheckCircle as CheckCircleIcon,
+  AlertCircle as AlertCircleIcon,
+  AlertTriangle as AlertTriangleIcon,
+  Info as InfoIcon,
+  RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
 
-// Selector de perfil
-const selectedProfile = ref("Cliente"); 
+// Estado para alternar entre API y mock data
+const useApiData = ref(false);
+const loading = ref(false);
+const error = ref(null);
 
-// Datos de ejemplo
-const branches = [
-  { id: 1, name: "Sucursal Centro" },
-  { id: 2, name: "Sucursal Norte" },
-];
-const localName = "Mini Super Diprocon";
-const products = ref([
+// API URL
+const API_URL = 'http://localhost:4000';
+ 
+// Variables Globales
+const localId = ref(10); // ID fijo del local para este ejemplo
+const id_cliente = 18; // Reemplazar con el ID del cliente real
+const id_direccion_cliente = 3; // Reemplazar con el ID de la dirección del cliente real
+const idPedido = ref(null);
+const carritoIndicador = ref(false); 
+const selectedProfile = ref("Cliente");
+
+// Variables para almacenar datos
+const localName = ref("Mini Sper Diprocon");
+const branches = ref([
+  { id_direccion_local: 1, colonia: "Sucursal Centro", direccion_precisa: "Dirección 1" },
+  { id_direccion_local: 2, colonia: "Sucursal Norte", direccion_precisa: "Dirección 2" },
+]);
+const products = ref([]);
+
+// Mock data
+const mockProducts = [
   {
     id: 1,
     name: "American BBQ Single",
@@ -206,13 +453,13 @@ const products = ref([
     discountedPrice: 3.80,
     image: "https://images.unsplash.com/photo-1595854341625-f33ee10dbf94?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80",
     attributes: [
-      { id: 1, name: "Regular", price: 0 },
-      { id: 2, name: "Large", price: 1.00 },
+      { id: 1, name: "Tamaño", value: "Regular", price: 0 },
+      { id: 2, name: "Tamaño", value: "Large", price: 1.00 },
     ],
     extras: [
-      { id: 1, name: "Tomato", price: 1.00, selected: false },
-      { id: 2, name: "Lettuce", price: 0.50, selected: false },
-      { id: 3, name: "Onion", price: 0.50, selected: false },
+      { id: 101, name: "Tomato", price: 1.00, selected: false },
+      { id: 102, name: "Lettuce", price: 0.50, selected: false },
+      { id: 103, name: "Onion", price: 0.50, selected: false },
     ],
   },
   {
@@ -278,23 +525,234 @@ const products = ref([
     price: 2.50,
     image: "https://images.unsplash.com/photo-1560008581-09826d1de69e?ixlib=rb-1.2.1&auto=format&fit=crop&w=1348&q=80",
   },
-]);
+];
 
 const searchQuery = ref("");
-const selectedBranch = ref(1);
+const selectedBranch = ref(branches.value[0]?.id || null);
 const selectedProduct = ref(null);
 const quantity = ref(1);
 const selectedAttribute = ref(null);
 
+// Toast notifications
+const toast = ref({
+  show: false,
+  type: 'success',
+  message: ''
+});
+
+const toastClasses = computed(() => {
+  switch (toast.value.type) {
+    case 'success': return 'bg-gradient-to-r from-emerald-500 to-green-500';
+    case 'error': return 'bg-gradient-to-r from-rose-500 to-red-500';
+    case 'warning': return 'bg-gradient-to-r from-amber-500 to-yellow-500';
+    case 'info': return 'bg-gradient-to-r from-blue-500 to-indigo-500';
+    default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+  }
+});
+
+const toastIcon = computed(() => {
+  switch (toast.value.type) {
+    case 'success': return CheckCircleIcon;
+    case 'error': return AlertCircleIcon;
+    case 'warning': return AlertTriangleIcon;
+    case 'info': return InfoIcon;
+    default: return InfoIcon;
+  }
+});
+
+// Función para mostrar toast
+const showToast = (message, type = 'success') => {
+  toast.value = {
+    show: true,
+    type,
+    message
+  };
+  
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 3000);
+};
+
+// Función para cargar sucursales desde la API
+const fetchBranches = async () => {
+  if (!useApiData.value) return;
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    const response = await axios.get(`${API_URL}/direccionesLocales/${localId.value}`);
+    
+    if (response.data) {
+      if (response.data.length > 0) {
+        branches.value = response.data;
+        selectedBranch.value = response.data[0].id_direccion_local;
+      } else {
+        branches.value = [];
+        selectedBranch.value = null;
+      }
+    }
+  } catch (err) {
+    console.error("Error al cargar sucursales:", err);
+    error.value = `Error al cargar las sucursales: ${err.message}`;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Función para formatear precios
+const formatPrice = (price) => {
+  if (price === undefined || price === null) return '0.00';
+  return parseFloat(price).toFixed(2);
+};
+
+// Función para cargar productos desde la API
+const fetchProducts = async () => {
+  if (!useApiData.value) {
+    // Usar mock data
+    loading.value = true;
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simular carga
+    products.value = mockProducts;
+    loading.value = false;
+    return;
+  }
+  
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    // 1. Primero obtener productos por sucursal
+    const productoSucursalResponse = await axios.get(`${API_URL}/productosucursal/sucursal/${selectedBranch.value}`);
+
+    if (!productoSucursalResponse.data || productoSucursalResponse.data.length === 0) {
+      products.value = [];
+      loading.value = false;
+      return;
+    }
+
+    // 2. Obtener todos los productos del local
+    const allProductsResponse = await axios.get(`${API_URL}/productos/${localId.value}`);
+    const allProducts = allProductsResponse.data || [];
+    
+    // 3. Combinar datos de productos con sus relaciones de sucursal
+    const productsList = [];
+    
+    for (const productoSucursal of productoSucursalResponse.data) {
+      // Buscar información completa del producto
+      const productData = allProducts.find(p => p.id_producto === productoSucursal.id_producto);
+      
+      if (productData) {
+        // Inicializar el producto con datos básicos
+        const product = {
+          id: productData.id_producto,
+          name: productData.nombre_producto,
+          description: productData.descripcion_producto,
+          // Usar el precio de la sucursal o el precio final del producto
+          price: parseFloat(productoSucursal.precio || productData.preciofinal || productData.precio || 0),
+          // Si existe precioofertafinal, usarlo como precio con descuento
+          discountedPrice: productData.precioofertafinal ? parseFloat(productData.precioofertafinal) : null,
+          image: productData.imagen_url,
+          attributes: [],
+          extras: []
+        };
+        
+        try {
+          // 4. Cargar atributos del producto
+          const atributosResponse = await axios.get(`${API_URL}/atributos/${productData.id_producto}`);
+          
+          if (atributosResponse.data && Array.isArray(atributosResponse.data)) {
+            // Mapear atributos al formato esperado
+            product.attributes = atributosResponse.data.map(attr => ({
+              id: attr.id_atributo,
+              name: attr.nombre_atributo,
+              value: attr.valor,
+              price: parseFloat(attr.precio_adicional || 0)
+            }));
+          }
+        } catch (err) {
+          console.error(`Error al cargar atributos del producto ${productData.id_producto}:`, err);
+        }
+        
+        try {
+          // 5. Cargar extras del producto
+          const extrasResponse = await axios.get(`${API_URL}/extra/${productData.id_producto}`);
+          
+          if (extrasResponse.data && Array.isArray(extrasResponse.data)) {
+            // Mapear extras al formato esperado
+            product.extras = extrasResponse.data
+              .filter(extra => extra.activo) // Solo considerar extras activos
+              .map(extra => ({
+                id: extra.id || extra.nombre, // Usar el ID si existe, si no el nombre como identificador
+                name: extra.nombre,
+                price: parseFloat(extra.precio || 0),
+                selected: false // Estado inicial no seleccionado
+              }));
+          }
+        } catch (err) {
+          console.error(`Error al cargar extras del producto ${productData.id_producto}:`, err);
+        }
+        
+        productsList.push(product);
+      }
+    }
+    
+    products.value = productsList;
+    
+  } catch (err) {
+    console.error("Error al cargar productos:", err);
+    error.value = `Error al cargar los productos: ${err.message}`;
+    // Fallback a datos mock en caso de error
+    products.value = mockProducts;
+    showToast('Error al cargar productos de la API. Mostrando datos locales.', 'warning');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Función para cargar datos según la fuente seleccionada
+const fetchData = async () => {
+  await fetchBranches();
+  await fetchProducts();
+};
+
+// Alternar entre API y datos mock
+const toggleDataSource = () => {
+  useApiData.value = !useApiData.value;
+  showToast(`Usando ${useApiData.value ? 'datos de la API' : 'datos locales'}`, 'info');
+  fetchData();  
+  checkCartStatus(); 
+};
+
+// Observar cambios en el modo de datos para recargar
+watch(useApiData, fetchData);
+
+// Observar cambios en la sucursal seleccionada
+const branchChanged = () => {
+  console.log("Sucursal seleccionada:", selectedBranch.value);
+  if (selectedBranch.value) {
+    fetchProducts(); // Llamar a fetchProducts solo si hay una sucursal seleccionada
+  } else {
+    console.warn("No se ha seleccionado ninguna sucursal.");
+  }
+};
+
 // Filtrar productos por búsqueda
 const filteredProducts = computed(() => {
-  return products.value.filter(product => product.name.toLowerCase().includes(searchQuery.value.toLowerCase()));
+  if (!products.value) return [];
+  return products.value.filter(product => 
+    product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (product.description && product.description.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  );
 });
 
 // Abrir modal con detalles del producto
 const openModal = (product) => {
+  // Resetear extras si existen
+  if (product.extras) {
+    product.extras.forEach(extra => extra.selected = false);
+  }
+  
   selectedProduct.value = product;
-  selectedAttribute.value = product.attributes ? product.attributes[0].id : null;
+  selectedAttribute.value = product.attributes && product.attributes.length > 0 ? product.attributes[0].id : null;
   quantity.value = 1;
 };
 
@@ -302,23 +760,154 @@ const openModal = (product) => {
 const closeModal = () => {
   selectedProduct.value = null;
 };
-// Datos de notificaciones en formato JSON (simulando una base de datos)
+
+// Incrementar cantidad
+const incrementQuantity = () => {
+  quantity.value++;
+};
+
+// Decrementar cantidad
+const decrementQuantity = () => {
+  if (quantity.value > 1) quantity.value--;
+};
+
+// Calcular precio total
+const totalPrice = computed(() => {
+  if (!selectedProduct.value) return 0;
+  
+  // Precio base (normal o con descuento)
+  let basePrice = selectedProduct.value.discountedPrice || selectedProduct.value.price;
+  
+  // Precio del atributo seleccionado
+  const attribute = selectedProduct.value.attributes?.find(attr => attr.id === selectedAttribute.value);
+  const attributePrice = attribute ? attribute.price : 0;
+  
+  // Precio de los extras seleccionados
+  const extrasPrice = selectedProduct.value.extras?.filter(extra => extra.selected)
+    .reduce((sum, extra) => sum + extra.price, 0) || 0;
+  
+  return (basePrice + attributePrice + extrasPrice) * quantity.value;
+});
+
+// Agregar al carrito  
+const addToCart = async (product) => {
+  try {
+    // Calcular precio final
+    const finalPrice = totalPrice.value;
+    
+    // Obtener el atributo seleccionado si existe
+    const selectedAttributeDetails = product.attributes?.find(attr => attr.id === selectedAttribute.value);
+    
+    // Obtener los extras seleccionados
+    const selectedExtras = product.extras?.filter(extra => extra.selected) || [];
+
+    // Crear un objeto para almacenar los atributos seleccionados
+    const attributesData = selectedAttributeDetails ? {
+      id: selectedAttributeDetails.id,
+      name: selectedAttributeDetails.name,
+      value: selectedAttributeDetails.value,
+      price: selectedAttributeDetails.price
+    } : {};
+
+    // Crear un objeto para almacenar los extras seleccionados
+    const extrasData = selectedExtras.length > 0 
+      ? Object.fromEntries(selectedExtras.map(extra => [extra.id, { name: extra.name, price: extra.price }])) 
+      : {};
+
+    if (useApiData.value) {
+      // MODO API: Realizar llamadas reales a la API
+      
+      // 1. Crear el pedido
+      const pedidoResponse = await axios.post(`${API_URL}/pedidos/${id_cliente}`, {
+        id_local: localId.value,
+        id_direccion_cliente: id_direccion_cliente,
+        id_direccion_local: selectedBranch.value,
+      });
+
+      // 2. Obtener el ID del pedido
+      idPedido.value = pedidoResponse.data.id_pedido;
+      console.log("ID del pedido:", idPedido.value);
+
+      // 3. Crear el detalle del pedido (carrito)
+      console.log('Enviando datos al carrito:', {
+        id_pedido: idPedido.value,
+        id_producto: product.id,
+        nombre_producto: product.name,
+        precio_unitario: product.discountedPrice || product.price,
+        cantidad: quantity.value,
+        subtotal: finalPrice,
+        atributos: JSON.parse(JSON.stringify(attributesData)), // Asegurar estructura válida
+        extras: JSON.parse(JSON.stringify(extrasData)) // Asegurar estructura válida
+      });
+
+      await axios.post(`${API_URL}/carrito/${idPedido.value}`, {
+        id_producto: product.id,
+        nombre_producto: product.name,
+        precio_unitario: product.discountedPrice || product.price,
+        cantidad: quantity.value,
+        subtotal: finalPrice,
+        atributos: JSON.parse(JSON.stringify(attributesData)), // Enviar objeto válido
+        extras: JSON.parse(JSON.stringify(extrasData)) // Enviar objeto válido
+      });
+
+      // Actualizar el contador del carrito 
+      await checkCartStatus();   
+     
+
+      // Mostrar notificación de éxito
+      showToast(`${quantity.value} ${product.name} agregado al carrito`, 'success');
+
+    } else {
+      // MODO SIMULACIÓN
+      await new Promise(resolve => setTimeout(resolve, 800));
+      idPedido.value = Math.floor(Math.random() * 1000) + 1; // Generar ID aleatorio para demo
+      
+      console.log('Item agregado al carrito:', {
+        id_pedido: idPedido.value,
+        producto: product.name,
+        cantidad: quantity.value,
+        atributos: attributesData,
+        extras: extrasData,
+        precio_total: finalPrice
+      });
+
+      // Activa el marcdor en modo mock
+      cartHasItems.value = true;
+
+      // Mostrar notificación de éxito
+      showToast(`${quantity.value} ${product.name} agregado al carrito`, 'success');
+    }
+
+    // Cerrar modal después de agregar al carrito
+    closeModal();
+
+  } catch (error) {
+    console.error('Error al agregar al carrito:', error);
+    showToast('Error al agregar al carrito: ' + (error.response?.data?.message || error.message), 'error');
+  }
+};
+
+const checkCartStatus = async () => {
+  if (useApiData.value) {
+    try {
+      const response = await axios.get(`${API_URL}/pedidos/count/${id_cliente}`);
+      console.log("respuesta del carrito: ", JSON.stringify(response.data));  // Convertir a cadena para ver todo el objeto
+      if (response.data.hasPedidos) {
+      // Mostrar el punto en el carrito
+      carritoIndicador.value = true;
+    } else {
+      carritoIndicador.value = false;
+    }
+  } catch (error) {
+    console.error('Error al obtener el indicador del carrito:', error);
+  }
+}
+};
+// Notificaciones
 const notifications = ref([
-  {
-    id: 1,
-    message: "Tu pedido ha sido enviado.",
-    read: false,
-  },
-  {
-    id: 2,
-    message: "Nuevo descuento disponible.",
-    read: false,
-  },
-  {
-    id: 3,
-    message: "Actualización de la app disponible.",
-    read: true,
-  },
+  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
+  { id: 2, message: "Nuevo descuento disponible.", read: false },
+  { id: 3, message: "Actualización de la app disponible.", read: true },
 ]);
 
 // Computed para obtener las notificaciones no leídas
@@ -327,6 +916,7 @@ const unreadNotifications = computed(() => {
 });
 
 // Función para abrir el modal de notificaciones
+const isModalOpen = ref(false);
 const showNotifications = () => {
   isModalOpen.value = true;
 };
@@ -346,308 +936,55 @@ const markAsRead = (id) => {
     notification.read = true;
   }
 };
-// Estado del modal de notificaciones
-const isModalOpen = ref(false);
-// Incrementar cantidad
-const incrementQuantity = () => {
-  quantity.value++;
-};
 
-// Decrementar cantidad
-const decrementQuantity = () => {
-  if (quantity.value > 1) quantity.value--;
-};
-
-// Calcular precio total
-const totalPrice = computed(() => {
-  if (!selectedProduct.value) return 0;
-  const attribute = selectedProduct.value.attributes?.find(attr => attr.id === selectedAttribute.value);
-  const attributePrice = attribute ? attribute.price : 0;
-  const extrasPrice = selectedProduct.value.extras?.filter(extra => extra.selected).reduce((sum, extra) => sum + extra.price, 0) || 0;
-  return (selectedProduct.value.price + attributePrice + extrasPrice) * quantity.value;
+// Inicialización
+onMounted(() => {
+  fetchBranches().then(() => {}); 
 });
+</script>
 
-// Agregar al carrito (simulación)
-const addToCart = (product) => {
-  alert(`Añadido al carrito: ${product.name}\nCantidad: ${quantity.value}\nTotal: $${totalPrice.value.toFixed(2)}`);
-  closeModal();
-};
-</script> 
-
-<style scoped>
-.local-page {
-  width: 97%;    
-  margin: 0 auto;  
- padding-top: 10px;  
-  padding-bottom: 95px; 
+<style>
+/* Animaciones para modal */
+.modal-enter-active, .modal-leave-active {
+  transition: opacity 0.3s;
 }
 
-/* Barra Superior */
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding: 12px 20px;
-  background: #0072fa; /* Fondo azul oscuro */
-  border-radius: 12px; /* Bordes redondeados */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+.modal-enter-from, .modal-leave-to {
+  opacity: 0;
 }
 
-
-.local-name {
-  font-size: 1.6rem;
-  font-weight: 750;
-  margin: 0;
-  color: white; /* Texto blanco */ 
-}
-
-.search-and-branch {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.search-input {
-  padding: 8px 16px; 
-  border-radius: 20px;
-  width: 97px; /* Ancho del campo de búsqueda */
-  background: #f9f9f9; /* Fondo gris claro */
-  font-size: 0.9rem;
-  color: #333;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-.search-input:focus {
-  border-color: #0072fa; /* Borde azul al enfocar */
-}
-
-.branch-selector {
-  padding: 6px 10px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  background: #f9f9f9; /* Fondo gris claro */
-  font-size: 0.9rem;
-  color: #333;
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.3s;
-}
-
-.branch-selector:hover {
-  border-color: #0072fa; /* Borde azul al pasar el mouse */
-}
-
-/* Lista de Productos */
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-}
-.product-card {
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative;
-  transition: transform 0.3s, box-shadow 0.3s;
-  display: flex;
-  flex-direction: column;
-  height: 320px;
-}
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.product-image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-}
-.product-info {
-  padding: 10px;
-  flex: 1;
-}
-.product-name {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0 0 5px;
-  color: #333;
-}
-.product-description {
-  font-size: 0.8rem;
-  color: #666;
-  margin: 0 0 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* Limita a 3 líneas */
-  -webkit-box-orient: vertical;
-}
-.price-and-quantity {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 10px;
-  background: #f9f9f9;
-  border-top: 1px solid #eee;
-}
-.price-container {
-  flex-direction: column;
-  align-items: flex-start; 
-}
-.original-price {
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #999;
-  text-decoration: line-through;
-  margin: 0;
-  align-items: left;
-}
-.final-price {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #0072fa;
-}
-.cart-button {
-  background-color: #0072fa;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-.cart-button:hover {
-  background-color: #005bb5;
-}
-
-/* Modal de Producto */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  max-width: 400px;
-  width: 100%;
-  position: relative;
-}
-.close-modal-button {
-  position: absolute;
-  top: -8px;
-  right: 3px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.5rem;
-  color: #666;
-}
-.modal-image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 10px;
-}
-.modal-product-name {
-  font-size: 1.2rem;
-  margin: 10px 0;
-  color: #333;
-}
-.modal-product-description {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 0 0 10px;
-}
-.modal-price-and-quantity {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 10px 0;
-}
-.modal-product-price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #0072fa;
-  margin: 0;
-}
-.quantity-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.quantity-controls button {
-  background-color: #0072fa;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-}
-.quantity-controls button:hover {
-  background-color: #005bb5;
-}
-.quantity {
-  font-size: 1.2rem;
-  color: #0072fa;
-}
-.attributes-section, .extras-section {
-  margin: 10px 0;
-  color: #4e4e4e;
-}
-.attributes-grid, .extras-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-.attribute-option, .extra-option {
-  background: #e0e0e0;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-}
-.attribute-option.selected, .extra-option.selected {
-  background-color: #0072fa;
-  color: white;
-}
-.modal-add-to-cart-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #0072fa;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-.modal-add-to-cart-button:hover {
-  background-color: #005bb5;
-}
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Animación para toast */
+.toast-enter-active, .toast-leave-active {
+  transition: all 0.3s;
+}
+
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Utilidades de clipping text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

@@ -10,6 +10,21 @@ const getProductos = async (req, res) => {
   }
 };
 
+// Obtener un producto por su IDLOCAL
+const getProductosByLocal = async (req, res) => {
+  const { id_local } = req.params;
+
+  try {
+    const productos = await Producto.findAll({
+      where: { id_local },
+    });
+
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener los productos", error });
+  }
+};
+
 // Obtener un producto por su ID
 const getProductoById = async (req, res) => {
   try {
@@ -25,12 +40,15 @@ const getProductoById = async (req, res) => {
 
 // Crear un producto con imagen
 const createProducto = async (req, res) => {
-  const { id_local } = req.params; // Obtener id_local de los parámetros de la ruta
+  const { id_local } = req.params;
   const {
     id_subcategoria,
     nombre_producto,
     descripcion_producto,
     precio,
+    preciooferta,
+    precioofertafinal,
+    preciofinal,
     activo,
   } = req.body;
 
@@ -51,6 +69,9 @@ const createProducto = async (req, res) => {
       nombre_producto,
       descripcion_producto,
       precio,
+      preciooferta: preciooferta || null,
+      precioofertafinal: precioofertafinal || null,
+      preciofinal: preciofinal,
       activo: activo !== undefined ? activo : true,
     };
 
@@ -92,6 +113,9 @@ const updateProducto = async (req, res) => {
     nombre_producto,
     descripcion_producto,
     precio,
+    preciooferta,
+    precioofertafinal,
+    preciofinal,
     activo,
   } = req.body;
 
@@ -108,6 +132,9 @@ const updateProducto = async (req, res) => {
     if (nombre_producto !== undefined) updateData.nombre_producto = nombre_producto;
     if (descripcion_producto !== undefined) updateData.descripcion_producto = descripcion_producto;
     if (precio !== undefined) updateData.precio = precio;
+    if (preciooferta !== undefined) updateData.preciooferta = preciooferta;
+    if (precioofertafinal !== undefined) updateData.precioofertafinal = precioofertafinal;    
+    if (preciofinal !== undefined) updateData.preciofinal = preciofinal;    
     if (activo !== undefined) updateData.activo = activo;
 
     // Si se subió una nueva imagen
@@ -115,9 +142,7 @@ const updateProducto = async (req, res) => {
       updateData.imagen_url = req.file.path;
       updateData.imagen_public_id = req.file.filename;
 
-      // Si el producto ya tenía una imagen, eliminarla de Cloudinary
-      // Esto debería hacerse a través de un servicio de Cloudinary separado
-      // que no está incluido en este código
+      // Aquí se debería implementar la eliminación de la imagen anterior en Cloudinary si es necesario
     }
 
     await producto.update(updateData);
@@ -148,7 +173,7 @@ const deleteProducto = async (req, res) => {
     }
 
     // Si el producto tiene una imagen, eliminarla de Cloudinary
-    // Esto debería implementarse con un servicio de Cloudinary
+    // Aquí se debería implementar la lógica de eliminación de la imagen
 
     await producto.destroy();
     res.status(200).json({ message: "Producto eliminado correctamente" });
@@ -163,4 +188,5 @@ module.exports = {
   createProducto,
   updateProducto,
   deleteProducto,
+  getProductosByLocal,
 };

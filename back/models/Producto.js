@@ -30,6 +30,18 @@ const Producto = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
+    preciooferta: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true, // Puede ser opcional si no todos los productos tienen un precio de oferta
+    },
+    precioofertafinal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true, // Puede ser opcional si no todos los productos tienen un precio de oferta
+    },
+    preciofinal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
     imagen_url: {
       type: DataTypes.TEXT,
       allowNull: true, // URL de la imagen (opcional)
@@ -60,4 +72,5 @@ Producto.associate = (models) => {
     onDelete: "SET NULL", // Si se elimina la subcategoría, el campo se establece como NULL
   });
 };
+
 module.exports = Producto;

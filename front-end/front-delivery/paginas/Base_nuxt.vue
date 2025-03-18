@@ -1,160 +1,109 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100"> 
-  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <TruckIcon class="text-blue-600" :size="24" />
-      <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-    </div>
-    <div class="flex items-center space-x-4">
-      <select v-model="selectedProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-        <option value="Cliente">Cliente</option>
-        <option value="Local">Local</option>
-        <option value="Delivery">Delivery</option>
-      </select>
-      <div class="relative cursor-pointer" @click="showNotifications">
-        <BellIcon class="text-blue-600" :size="24" />
-        <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-          {{ unreadNotifications.length }}
+  <div>
+    <HeaderComponent />
+    <main class="container mx-auto p-4">
+      <h1 class="text-2xl font-bold mb-4">Adminisración de Productos</h1>
+      
+      <button @click="openModal('addProduct')" class="btn-primary">Agregar Producto</button>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="producto in productos" :key="producto.id_producto" class="relative border p-4 rounded-lg shadow-md">
+          <img :src="producto.imagen_url" class="w-full h-40 object-cover rounded-md" />
+          <div v-if="producto.recomendado" class="absolute top-0 right-0 bg-yellow-500 text-white px-2 py-1 text-xs rounded-bl-lg">Recomendado</div>
+          <h2 class="text-lg font-semibold">{{ producto.nombre_producto }}</h2>
+          <p>{{ producto.descripcion_producto }}</p>
+          <p v-if="producto.precio_oferta"> <s>{{ producto.precio }}</s> <span class="text-red-500">{{ producto.precio_oferta }}</span></p>
+          <p v-else>{{ producto.precio }}</p>
+          <div class="mt-2 flex space-x-2">
+            <button @click="editProduct(producto)" class="btn-secondary">Editar</button>
+            <button @click="disableProduct(producto.id_producto)" class="btn-warning">Deshabilitar</button>
+            <button @click="toggleRecommend(producto)" class="btn-info">{{ producto.recomendado ? 'Quitar Recomendado' : 'Recomendar' }}</button>
+          </div>
         </div>
       </div>
-    </div>
-  </header> 
-      <!-- Modal de Notificaciones -->
-      <transition name="fade">
-        <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
-          <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
-          <div v-if="notifications.length > 0">
-            <div
-              v-for="(notification, index) in notifications"
-              :key="index"
-              class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-              @click="markAsRead(notification.id)"
-              :class="{ 'bg-gray-100': notification.read }"
-            >
-              <p class="text-sm text-gray-700">{{ notification.message }}</p>
-              <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
-            </div>
-          </div>
-          <div v-else class="text-sm text-gray-500">
-            No tienes notificaciones nuevas.
-          </div>
-          <button
-            @click="closeNotifications"
-            class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
-          >
-            Cerrar
-          </button>
-        </div>
-      </transition> 
-
-    <!-- Contenido Principal -->
-    <div class="p-4">
-      <!-- Aquí va el contenido principal -->
-    </div>
-
-    <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <HomeIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Inicio</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <HeartIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <ShoppingBagIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <div class="cursor-pointer">
-            <SettingsIcon class="text-blue-600" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Configuración</span>
-        </div>
-      </div>
-    </footer>
+    </main>
+    <FooterComponent />
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue';
-import {
-  Truck as TruckIcon,
-  Bell as BellIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Settings as SettingsIcon,
-  Heart as HeartIcon,
-  Home as HomeIcon,
-  ShoppingBag as ShoppingBagIcon,
-} from 'lucide-vue-next';
+<script>
+import axios from 'axios'; 
 
-// Estado del modal de notificaciones
-const isModalOpen = ref(false);
-
-// Datos de notificaciones en formato JSON (simulando una base de datos)
-const notifications = ref([
-  {
-    id: 1,
-    message: "Tu pedido ha sido enviado.",
-    read: false,
+export default {
+  components: { HeaderComponent, FooterComponent },
+  data() {
+    return {
+      productos: [],
+      API_URL: 'http://localhost:4000',
+      LOCAL_ID: 10,
+    };
   },
-  {
-    id: 2,
-    message: "Nuevo descuento disponible.",
-    read: false,
+  methods: {
+    async fetchProducts() {
+      try {
+        const response = await axios.get(`${this.API_URL}/productos/${this.LOCAL_ID}`);
+        this.productos = response.data;
+      } catch (error) {
+        console.error('Error al cargar productos:', error);
+      }
+    },
+    openModal(type) {
+      console.log('Abrir modal:', type);
+    },
+    editProduct(producto) {
+      console.log('Editar producto:', producto);
+    },
+    async disableProduct(id) {
+      try {
+        await axios.put(`${this.API_URL}/productos/${id}/disable`);
+        this.fetchProducts();
+      } catch (error) {
+        console.error('Error al deshabilitar producto:', error);
+      }
+    },
+    async toggleRecommend(producto) {
+      try {
+        if (producto.recomendado) {
+          await axios.delete(`${this.API_URL}/recomendados/${producto.id_producto}`);
+        } else {
+          await axios.post(`${this.API_URL}/recomendados`, { id_producto: producto.id_producto, id_local: this.LOCAL_ID });
+        }
+        this.fetchProducts();
+      } catch (error) {
+        console.error('Error al cambiar recomendación:', error);
+      }
+    },
+    loadMockData() {
+      this.productos = [
+        {
+          id_producto: 1,
+          nombre_producto: 'Hamburguesa Doble',
+          descripcion_producto: 'Deliciosa hamburguesa con doble carne',
+          precio: 5.99,
+          precio_oferta: 4.99,
+          imagen_url: 'https://res.cloudinary.com/demo/image/upload/v1614163404/sample.jpg',
+          recomendado: true,
+        },
+        {
+          id_producto: 2,
+          nombre_producto: 'Pizza Peperoni',
+          descripcion_producto: 'Pizza con queso y peperoni',
+          precio: 8.99,
+          imagen_url: 'https://res.cloudinary.com/demo/image/upload/v1614163404/sample.jpg',
+          recomendado: false,
+        }
+      ];
+    }
   },
-  {
-    id: 3,
-    message: "Actualización de la app disponible.",
-    read: true,
-  },
-]);
-
-// Computed para obtener las notificaciones no leídas
-const unreadNotifications = computed(() => {
-  return notifications.value.filter((notification) => !notification.read);
-});
-
-// Función para abrir el modal de notificaciones
-const showNotifications = () => {
-  isModalOpen.value = true;
-};
-
-// Función para cerrar el modal y marcar todas las notificaciones como leídas
-const closeNotifications = () => {
-  isModalOpen.value = false;
-  notifications.value.forEach((notification) => {
-    notification.read = true;
-  });
-};
-
-// Función para marcar una notificación como leída
-const markAsRead = (id) => {
-  const notification = notifications.value.find((n) => n.id === id);
-  if (notification) {
-    notification.read = true;
+  mounted() {
+    this.fetchProducts();
   }
 };
-
-// Selector de perfil
-const selectedProfile = ref("Cliente");
 </script>
 
 <style>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.btn-primary { background: #4CAF50; color: white; padding: 10px; border-radius: 5px; }
+.btn-secondary { background: #008CBA; color: white; padding: 5px; border-radius: 5px; }
+.btn-warning { background: #FF9800; color: white; padding: 5px; border-radius: 5px; }
+.btn-info { background: #2196F3; color: white; padding: 5px; border-radius: 5px; }
 </style>

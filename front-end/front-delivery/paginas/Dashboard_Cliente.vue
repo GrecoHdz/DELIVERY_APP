@@ -86,7 +86,7 @@
         <div class="bg-red-100 p-2 rounded-full mb-1">
           <PizzaIcon class="text-red-500" :size="20" />
         </div>
-        <span class="text-xs text-gray-700 text-center">Pizza</span>
+        <span class="text-xs text-gray-700 text-center">Comida Rapida</span>
       </div>
 
       <!-- Categoría 2: Cafetería -->
@@ -96,7 +96,7 @@
         <div class="bg-yellow-100 p-2 rounded-full mb-1">
           <CoffeeIcon class="text-yellow-500" :size="20" />
         </div>
-        <span class="text-xs text-gray-700 text-center">Cafetería</span>
+        <span class="text-xs text-gray-700 text-center">Bebidas</span>
       </div>
 
       <!-- Categoría 3: Saludable -->
@@ -104,9 +104,9 @@
         class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
       >
         <div class="bg-green-100 p-2 rounded-full mb-1">
-          <SaladIcon class="text-green-500" :size="20" />
+          <SmartphoneIcon class="text-green-500" :size="20" />
         </div>
-        <span class="text-xs text-gray-700 text-center">Saludable</span>
+        <span class="text-xs text-gray-700 text-center">Tecnología</span>
       </div>
 
       <!-- Categoría 4: Más -->
@@ -114,7 +114,7 @@
         class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
       >
         <div class="bg-blue-100 p-2 rounded-full mb-1">
-          <UtensilsIcon class="text-blue-500" :size="20" />
+          <PlusIcon  class="text-blue-500" :size="20" />
         </div>
         <span class="text-xs text-gray-700 text-center">Más</span>
       </div>
@@ -144,105 +144,110 @@
       <div class="mb-6">
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-semibold text-gray-800">Recomendados</h2>
-    <span class="text-blue-600 text-sm font-medium">Ver todos</span>
-  </div>
+    <a href="paginas/locales.vue" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>  </div>
   <div class="overflow-x-auto whitespace-nowrap pb-4">
     <div class="inline-flex space-x-4">
-      <!-- Tarjeta 1 -->
-      <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
-        <div class="h-32 bg-gray-300 relative">
-          <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <ClockIcon class="text-blue-600 mr-1" :size="12" />
-            <span>25-35 min</span>
-          </div>
-          <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-            <HeartIcon class="text-gray-400" :size="16" />
-          </div>
-        </div>
-        <div class="p-3">
-          <h3 class="font-semibold text-gray-800">Cafetería Central</h3>
-          <div class="flex items-center text-xs text-gray-500 mt-1">
-            <StarIcon class="text-yellow-400 fill-current" :size="12" />
-            <span class="ml-1">4.8</span>
-            <span class="mx-1">•</span>
-            <span>$$$</span>
-            <span class="mx-1">•</span>
-            <span>Cafetería</span>
-          </div>
-        </div>
+      <div class="flex space-x-4">
+  <!-- Tarjeta 1 -->
+  <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
+    <div class="h-32 bg-gray-300 relative">
+      <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1498654896293-37a3987ea343?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fGNhZmV0ZXJpYXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Cafetería Central" />
+      <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
+        <ClockIcon class="text-blue-600 mr-1" :size="12" />
+        <span>25-35 min</span>
       </div>
+      <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
+        <HeartIcon class="text-gray-400" :size="16" />
+      </div>
+    </div>
+    <div class="p-3">
+      <h3 class="font-semibold text-gray-800">Cafetería Central</h3>
+      <div class="flex items-center text-xs text-gray-500 mt-1">
+        <StarIcon class="text-yellow-400 fill-current" :size="12" />
+        <span class="ml-1">4.8</span>
+        <span class="mx-1">•</span>
+        <span>$$$</span>
+        <span class="mx-1">•</span>
+        <span>Cafetería</span>
+      </div>
+    </div>
+  </div>
 
-      <!-- Tarjeta 2 -->
-      <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
-        <div class="h-32 bg-gray-300 relative">
-          <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <ClockIcon class="text-blue-600 mr-1" :size="12" />
-            <span>15-25 min</span>
-          </div>
-          <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-            <HeartIcon class="text-gray-400" :size="16" />
-          </div>
-        </div>
-        <div class="p-3">
-          <h3 class="font-semibold text-gray-800">Pizzería Italiana</h3>
-          <div class="flex items-center text-xs text-gray-500 mt-1">
-            <StarIcon class="text-yellow-400 fill-current" :size="12" />
-            <span class="ml-1">4.5</span>
-            <span class="mx-1">•</span>
-            <span>$$</span>
-            <span class="mx-1">•</span>
-            <span>Pizzería</span>
-          </div>
-        </div>
+  <!-- Tarjeta 2 -->
+  <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
+    <div class="h-32 bg-gray-300 relative">
+      <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1565084854426-94235c657ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBpenplcmlhJTIwaXRhbGlhbmF8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Pizzería Italiana" />
+      <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
+        <ClockIcon class="text-blue-600 mr-1" :size="12" />
+        <span>15-25 min</span>
       </div>
+      <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
+        <HeartIcon class="text-gray-400" :size="16" />
+      </div>
+    </div>
+    <div class="p-3">
+      <h3 class="font-semibold text-gray-800">Pizzería Italiana</h3>
+      <div class="flex items-center text-xs text-gray-500 mt-1">
+        <StarIcon class="text-yellow-400 fill-current" :size="12" />
+        <span class="ml-1">4.5</span>
+        <span class="mx-1">•</span>
+        <span>$$</span>
+        <span class="mx-1">•</span>
+        <span>Pizzería</span>
+      </div>
+    </div>
+  </div>
 
-      <!-- Tarjeta 3 -->
-      <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
-        <div class="h-32 bg-gray-300 relative">
-          <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <ClockIcon class="text-blue-600 mr-1" :size="12" />
-            <span>20-30 min</span>
-          </div>
-          <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-            <HeartIcon class="text-gray-400" :size="16" />
-          </div>
-        </div>
-        <div class="p-3">
-          <h3 class="font-semibold text-gray-800">Sushi Express</h3>
-          <div class="flex items-center text-xs text-gray-500 mt-1">
-            <StarIcon class="text-yellow-400 fill-current" :size="12" />
-            <span class="ml-1">4.7</span>
-            <span class="mx-1">•</span>
-            <span>$$$</span>
-            <span class="mx-1">•</span>
-            <span>Sushi</span>
-          </div>
-        </div>
+  <!-- Tarjeta 3 -->
+  <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
+    <div class="h-32 bg-gray-300 relative">
+      <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1617957718112-8c994534b999?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c3VzaGklMjBleHByZXNzfGVufDB8fDB8fHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Sushi Express" />
+      <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
+        <ClockIcon class="text-blue-600 mr-1" :size="12" />
+        <span>20-30 min</span>
       </div>
+      <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
+        <HeartIcon class="text-gray-400" :size="16" />
+      </div>
+    </div>
+    <div class="p-3">
+      <h3 class="font-semibold text-gray-800">Sushi Express</h3>
+      <div class="flex items-center text-xs text-gray-500 mt-1">
+        <StarIcon class="text-yellow-400 fill-current" :size="12" />
+        <span class="ml-1">4.7</span>
+        <span class="mx-1">•</span>
+        <span>$$$</span>
+        <span class="mx-1">•</span>
+        <span>Sushi</span>
+      </div>
+    </div>
+  </div>
 
-      <!-- Tarjeta 4 -->
-      <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
-        <div class="h-32 bg-gray-300 relative">
-          <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-            <ClockIcon class="text-blue-600 mr-1" :size="12" />
-            <span>10-20 min</span>
-          </div>
-          <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-            <HeartIcon class="text-gray-400" :size="16" />
-          </div>
-        </div>
-        <div class="p-3">
-          <h3 class="font-semibold text-gray-800">Burger King</h3>
-          <div class="flex items-center text-xs text-gray-500 mt-1">
-            <StarIcon class="text-yellow-400 fill-current" :size="12" />
-            <span class="ml-1">4.2</span>
-            <span class="mx-1">•</span>
-            <span>$$</span>
-            <span class="mx-1">•</span>
-            <span>Hamburguesas</span>
-          </div>
-        </div>
+  <!-- Tarjeta 4 -->
+  <div class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
+    <div class="h-32 bg-gray-300 relative">
+      <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1553909384-b7430e90f454?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YnVyZ2VyJTIwa2luZ3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="Burger King" />
+      <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
+        <ClockIcon class="text-blue-600 mr-1" :size="12" />
+        <span>10-20 min</span>
       </div>
+      <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
+        <HeartIcon class="text-gray-400" :size="16" />
+      </div>
+    </div>
+    <div class="p-3">
+      <h3 class="font-semibold text-gray-800">Burger King</h3>
+      <div class="flex items-center text-xs text-gray-500 mt-1">
+        <StarIcon class="text-yellow-400 fill-current" :size="12" />
+        <span class="ml-1">4.2</span>
+        <span class="mx-1">•</span>
+        <span>$$</span>
+        <span class="mx-1">•</span>
+        <span>Hamburguesas</span>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>
@@ -353,38 +358,42 @@
 </div> 
     <!-- Footer -->
     <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <HomeIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Inicio</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <HeartIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <ShoppingBagIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <div @click="toggleProfileMenu" class="cursor-pointer">
-            <UserIcon class="text-blue-600" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Perfil</span>
-          <div v-if="isProfileMenuOpen" class="absolute bottom-10 bg-white shadow-lg rounded-lg p-2">
-            <div @click="selectProfile('Cliente')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Cliente</div>
-            <div @click="selectProfile('Driver')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Driver</div>
-            <div @click="selectProfile('Local')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Local</div>
-          </div>
-        </div>
+  <div class="flex justify-around items-center">
+    <div class="flex flex-col items-center">
+      <a href="paginas/Dashboard_Cliente.vue" class="flex flex-col items-center">
+        <HomeIcon class="text-blue-600" :size="20" />
+        <span class="text-xs text-blue-600 mt-1">Inicio</span>
+      </a>
+    </div>
+    <div class="flex flex-col items-center">
+      <a href="paginas/Favoritos.vue" class="flex flex-col items-center">
+        <HeartIcon class="text-blue-600" :size="20" />
+        <span class="text-xs text-blue-600 mt-1">Favoritos</span>
+      </a>
+    </div>
+    <div class="flex flex-col items-center relative">
+      <a href="paginas/Carrito.vue" class="flex flex-col items-center"></a>
+      <div class="bg-blue-600 rounded-full p-2">
+        <ShoppingCartIcon class="text-white" :size="20" />
       </div>
-    </footer>
+      <span class="text-xs text-blue-600 mt-1">Carrito</span>
+    </div>
+    <div class="flex flex-col items-center">
+      <a href="paginas/" class="flex flex-col items-center">
+        <ShoppingBagIcon class="text-blue-600" :size="20" />
+        <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+      </a>
+    </div>
+    <div class="flex flex-col items-center">
+      <a href="paginas/Perfil.vue" class="flex flex-col items-center">
+        <div class="cursor-pointer">
+          <SettingsIcon class="text-blue-600" :size="20" />
+        </div>
+        <span class="text-xs text-blue-600 mt-1">Configuración</span>
+      </a>
+    </div>
+  </div>
+</footer>
     
   </div>
 </template>
@@ -394,6 +403,7 @@ import { ref, onMounted } from 'vue';
 import { 
   Truck as TruckIcon, 
   Bell as BellIcon, 
+  Settings as SettingsIcon,
   ShoppingCart as ShoppingCartIcon, 
   User as UserIcon, 
   MapPin as MapPinIcon, 
@@ -404,8 +414,8 @@ import {
   ShoppingBag as ShoppingBagIcon,
   Pizza as PizzaIcon,
   Coffee as CoffeeIcon,
-  Salad as SaladIcon,
-  Utensils as UtensilsIcon,
+  Smartphone as SmartphoneIcon,
+  Plus as PlusIcon ,
   Clock as ClockIcon,
   Star as StarIcon
 } from 'lucide-vue-next';

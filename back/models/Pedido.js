@@ -39,7 +39,7 @@ const Pedido = sequelize.define(
     },
     fecha_pedido: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     fecha_entrega: {
       type: DataTypes.DATE,

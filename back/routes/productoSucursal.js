@@ -1,6 +1,8 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
 const {
+ // getAllProductosBySucursal,
+  getSucursalesByProducto,
   getAllProductosBySucursal,
   createProductoSucursal,
   updateProductoSucursal,
@@ -16,9 +18,11 @@ const validarErrores = (req, res, next) => {
   }
   next();
 };
+// Obtener todas las sucursales de un producto
+router.get("/:id_producto", [param("id_producto").isInt().withMessage("ID de producto inválido")], validarErrores, getSucursalesByProducto);
 
 // Obtener todos los productos de una sucursal
-router.get("/:id_direccion_local", [param("id_direccion_local").isInt().withMessage("ID inválido")], validarErrores, getAllProductosBySucursal);
+router.get("/sucursal/:id_direccion_local", [param("id_direccion_local").isInt().withMessage("ID inválido")], validarErrores, getAllProductosBySucursal);
 
 // Crear un nuevo producto en una sucursal
 router.post(

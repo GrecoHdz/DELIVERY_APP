@@ -25,6 +25,10 @@ const PedidoDetalle = sequelize.define(
       type: DataTypes.JSON,
       allowNull: false,
     },
+    extras: {
+      type: DataTypes.JSON,
+      allowNull: false,
+    },
     cantidad: {
       type: DataTypes.INTEGER,
       allowNull: false,

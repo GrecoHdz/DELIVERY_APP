@@ -67,11 +67,11 @@ const updateProductoExtra = async (req, res) => {
 
 // Eliminar un extra de un producto
 const deleteProductoExtra = async (req, res) => {
-  const { id_producto } = req.params;
+  const { id_producto, nombre } = req.params;
 
   try {
     const extra = await ProductoExtra.findOne({
-      where: { id_producto },
+      where: { id_producto, nombre },
     });
 
     if (!extra) {

@@ -26,7 +26,7 @@ const getLocalById = async (req, res) => {
 // Crear un nuevo local
 const createLocal = async (req, res) => {
   const { id_cliente } = req.params;
-  const { nombre_local, apertura, cierre, rtn, imagen_url, pedidos_restantes, usuario_empleado} = req.body;
+  const { nombre_local, apertura, cierre, rtn, imagen_url, pedidos_restantes} = req.body;
 
   try {
     const local = await Local.create({
@@ -37,7 +37,6 @@ const createLocal = async (req, res) => {
       rtn,
       imagen_url,
       pedidos_restantes,
-      usuario_empleado,
     });
     res.status(201).json({ message: "Local creado exitosamente" });
   } catch (error) {
@@ -57,7 +56,7 @@ const createLocal = async (req, res) => {
 // Actualizar un local
 const updateLocal = async (req, res) => {
   const { id } = req.params;
-  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, activo, pedidos_restantes, usuario_empleado } = req.body;
+  const { id_cliente, id_membresia, nombre_local, apertura, cierre, rtn, imagen_url, activo, pedidos_restantes, recomendaciones_restantes, usuario_empleado } = req.body;
 
   try {
     const local = await Local.findByPk(id);
@@ -75,6 +74,7 @@ const updateLocal = async (req, res) => {
       imagen_url,
       activo,
       pedidos_restantes,
+      recomendaciones_restantes,
       usuario_empleado,
     });
 

@@ -1,5 +1,4 @@
-const PedidoDetalle = require("../models/PedidoDetalle");
-
+const PedidoDetalle = require("../models/PedidoDetalle");  
 // Obtener todos los detalles de pedidos
 const getAllDetalles = async (req, res) => {
   try {
@@ -26,7 +25,7 @@ const getDetalleById = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: "Error al obtener el detalle de pedido", error });
   }
-};
+}; 
 
 // Crear un nuevo detalle de pedido
 const createDetalle = async (req, res) => {
@@ -38,6 +37,7 @@ const createDetalle = async (req, res) => {
     cantidad,
     subtotal,
     atributos,
+    extras,
   } = req.body;
 
   try {
@@ -49,6 +49,7 @@ const createDetalle = async (req, res) => {
       cantidad,
       subtotal,
       atributos,
+      extras,
     });
 
     res.status(201).json({ message: "Detalle de pedido creado exitosamente" });
@@ -117,7 +118,7 @@ const deleteDetalle = async (req, res) => {
 
 module.exports = {
   getAllDetalles,
-  getDetalleById,
+  getDetalleById, 
   createDetalle,
   updateDetalle,
   deleteDetalle,

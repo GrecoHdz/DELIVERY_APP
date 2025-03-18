@@ -6,8 +6,7 @@ const {
   createDetalle,
   updateDetalle,
   deleteDetalle,
-} = require("../controllers/pedidoDetalleController");
-
+} = require("../controllers/pedidoDetalleController"); 
 const router = express.Router();
 
 const validarErrores = (req, res, next) => {
@@ -16,8 +15,7 @@ const validarErrores = (req, res, next) => {
     return res.status(400).json({ errores: errors.array() });
   }
   next();
-};
-
+}; 
 // Obtener todos los detalles de pedidos
 router.get("/", getAllDetalles);
 
@@ -49,10 +47,16 @@ router.post(
       .isDecimal()
       .withMessage("El subtotal debe ser un número decimal válido"),
     body("atributos")
+    .optional()
       .isObject()
       .withMessage("Los atributos deben ser un objeto JSON válido"),
       body("notas")
       .optional(),
+      body("extras")
+      .optional()
+        .isObject()
+        .withMessage("Los extras deben ser un objeto JSON válido"),
+       
   ],
   validarErrores,
   createDetalle

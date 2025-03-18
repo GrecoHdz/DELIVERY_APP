@@ -46,6 +46,9 @@ const Local = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 5,
     },
+    recomendaciones_restantes: {
+      type: DataTypes.INTEGER,
+    },
     usuario_empleado: {
       type: DataTypes.STRING(55),
       allowNull: true,

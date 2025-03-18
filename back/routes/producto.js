@@ -6,7 +6,8 @@ const {
   getProductoById,
   createProducto,
   updateProducto,
-  deleteProducto, 
+  deleteProducto,
+  getProductosByLocal,
 } = require("../controllers/productoController");
 
 const router = express.Router();
@@ -18,10 +19,12 @@ const validarErrores = (req, res, next) => {
   }
   next();
 };
- 
 
 // Obtener todos los productos
 router.get("/", getProductos);
+
+// Obtener todos los productos por id_local
+router.get("/:id_local", getProductosByLocal);
 
 // Obtener un producto por su ID
 router.get(
@@ -37,20 +40,44 @@ router.post(
   upload.single("imagen"), // Middleware de subida de imagen
   [
     param("id_local").isInt().withMessage("El ID debe ser un número entero"),
-    body("id_subcategoria").isInt().withMessage("ID de subcategoría inválido"),
+    body("id_subcategoria").optional().isInt().withMessage("ID de subcategoría inválido"),
     body("nombre_producto")
       .notEmpty()
       .withMessage("El nombre del producto es obligatorio")
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
-    body("descripcion_producto").notEmpty().withMessage("La descripción es obligatoria"),
+    body("descripcion_producto").optional(),
     body("precio").isDecimal().withMessage("El precio debe ser un número decimal válido"),
-    body("imagen_url").optional(),
+    body("preciooferta").optional().isDecimal().withMessage("El precio de oferta debe ser un número decimal válido"),
+    body("precioofertafinal").optional().isDecimal().withMessage("El precio final debe ser un número decimal válido"),
+    body("preciofinal").isDecimal().withMessage("El precio final debe ser un número decimal"),
+    body("imagen_url")
+      .optional()
+      .isURL()
+      .withMessage("La URL de la imagen debe ser válida"),
+    body("imagen_url").optional().isURL().withMessage("La URL de la imagen debe ser válida"),
     body("imagen_public_id").optional(),
   ],
   validarErrores,
   createProducto
 );
+
+// Ruta para subir imagen a Cloudinary
+router.post("/upload", upload.single("imagen"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No se ha proporcionado una imagen" });
+    }
+
+    // Obtener la URL de la imagen subida
+    const imageUrl = req.file.path;
+
+    res.status(200).json({ imageUrl });
+  } catch (error) {
+    console.error("Error al subir imagen:", error);
+    res.status(500).json({ message: "Error al subir la imagen", error });
+  }
+});
 
 // Actualizar un producto
 router.put(
@@ -61,26 +88,36 @@ router.put(
       .optional()
       .isInt()
       .withMessage("El ID del local debe ser un número entero"),
-      body("id_subcategoria")
+    body("id_subcategoria")
       .optional()
       .isInt()
-      .withMessage("ID de subcategoria inválido"),
-      body("nombre_producto")
+      .withMessage("ID de subcategoría inválido"),
+    body("nombre_producto")
       .optional()
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
-      body("descripcion_producto")
-      .optional(),
-      body("precio")
+    body("descripcion_producto").optional(),
+    body("precio")
       .optional()
       .isDecimal()
       .withMessage("El precio debe ser un número decimal válido"),
+    body("preciooferta")
+    .optional({ nullable: true })
+    .isDecimal()
+    .withMessage("El precio oferta debe ser un número decimal"),
+    body("precioofertafinal")
+    .optional({ nullable: true })
+    .isDecimal()
+    .withMessage("El precio de oferta final debe ser un número decimal"),
+    body("preciofinal")
+    .optional()
+    .isDecimal()
+    .withMessage("El precio final debe ser un número decimal"),
     body("imagen_url")
       .optional()
       .isURL()
       .withMessage("La URL de la imagen debe ser válida"),
-    body("imagen_public_id")
-      .optional(),
+    body("imagen_public_id").optional(),
     body("activo")
       .optional()
       .isBoolean()

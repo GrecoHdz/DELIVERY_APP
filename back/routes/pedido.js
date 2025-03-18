@@ -3,6 +3,7 @@ const { body, param, validationResult } = require("express-validator");
 const {
   getAllPedidos,
   getPedidoById,
+  getCarritoCount,
   createPedido,
   updatePedido,
   deletePedido,
@@ -17,6 +18,8 @@ const validarErrores = (req, res, next) => {
   }
   next();
 };
+// Ruta para obtener el conteo de productos en el carrito
+router.get('/count/:id_cliente', getCarritoCount);
 
 // Obtener todos los pedidos
 router.get("/", getAllPedidos);
@@ -32,8 +35,7 @@ router.post(
     body("id_local").isInt().withMessage("ID de local inválido"),
     body("id_direccion_cliente").isInt().withMessage("ID de dirección de cliente inválido"),
     body("id_direccion_local").isInt().withMessage("ID de dirección de local inválido"),
-    body("fecha_pedido").isISO8601().withMessage("La fecha del pedido debe ser válida"),
-  ],
+    ],
   validarErrores,
   createPedido
 );
@@ -63,6 +65,8 @@ router.put(
       .optional()
       .isIn(["pendiente_local", "pendiente_deposito", "preparando_pedido", "en_camino", "entregado"])
       .withMessage("Estado no válido"),
+      body("fecha_pedido").isISO8601().withMessage("La fecha del pedido debe ser válida"),
+ 
   ],
   validarErrores,
   updatePedido

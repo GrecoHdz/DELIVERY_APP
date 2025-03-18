@@ -7,7 +7,27 @@
           <TruckIcon :size="24" />
           <span>DeliveryPro</span>
         </div>
+        
         <div class="header-controls">
+          <!-- Selector de fuente de datos y notificaciones a la derecha -->
+        <div class="flex items-center space-x-4">
+          <div class="relative inline-block">
+            <select 
+              v-model="dataSource" 
+              class="pl-3 pr-8 py-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @change="fetchOrders"
+              :disabled="loading"
+            >
+              <option value="mock">Datos de ejemplo</option>
+              <option value="api">API Local</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+              <ChevronDownIcon :size="14" class="text-gray-500 dark:text-gray-400" />
+            </div>
+            <div v-if="loading" class="absolute right-10 top-1">
+              <div class="w-4 h-4 border-2 border-t-blue-600 border-blue-600 rounded-full animate-spin"></div> </div>
+            </div>
+          </div>
           <select
             v-model="selectedProfile"
             class="profile-selector"
@@ -17,7 +37,7 @@
             <option value="Delivery">Delivery</option>
             <option value="Admin">Admin</option>
             <option value="SuperAdmin">SuperAdmin</option>
-          </select>
+          </select>        
           <div class="notification-icon">
             <BellIcon :size="20" />
             <div
@@ -549,66 +569,19 @@ import {
   Package as PackageIcon,
   Send as SendIcon,
   PackageSearch as PackageSearchIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Menu as MenuIcon,
+  ChevronDown as ChevronDownIcon,
+  RefreshCw as RefreshCwIcon
 } from "lucide-vue-next";
 
-// Theme
-const isDarkMode = ref(false);
+// Fuente de datos
+const dataSource = ref('mock');
+const loading = ref(false);
+const error = ref(null);
 
-// Filtrar pedidos pendientes sin ofertas enviadas
-const pendingOrdersNotSent = computed(() => {
-  return pendingOrders.value.filter(order => !order.fareSent);
-});
-
-onMounted(() => {
-  // Comprobar tema al montar el componente
-  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    isDarkMode.value = true;
-  }
-
-  // Escuchar cambios en el tema
-  if (typeof window !== 'undefined') {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-      if (event.matches) {
-        isDarkMode.value = true;
-      } else {
-        isDarkMode.value = false;
-      }
-    });
-  }
-  
-  // Simular nuevos pedidos después de un tiempo
-  setTimeout(() => {
-    if (pendingOrders.value.length < 5) {
-      pendingOrders.value.push({
-        id: 105,
-        time: new Date().toISOString(),
-        productCount: 4,
-        storeLocation: "Pollo Campero - Metro Centro",
-        destination: "Col. Palmira",
-        fullDestination: "Col. Palmira, Calle Principal #23, Casa azul con balcón y rejas blancas",
-        products: [
-          { id: 6, name: "Pollo Frito", quantity: 2 },
-          { id: 7, name: "Papas Fritas", quantity: 1 },
-          { id: 8, name: "Refresco", quantity: 1 },
-        ],
-        fareSent: false,
-        fareAmount: null
-      });
-      
-      showToast("Nuevo pedido", "Tienes un nuevo pedido disponible", "info");
-    }
-  }, 10000);
-});
-
-// Perfil seleccionado
-const selectedProfile = ref("Delivery");
-
-// Pestañas
-const activeTab = ref("pending");
-
-// Datos de ejemplo para pedidos pendientes
-const pendingOrders = ref([
+// Datos mockup para pedidos (pendientes y aceptados)
+const mockPendingOrders = [
   {
     id: 101,
     time: "2023-12-15T10:30:00",
@@ -650,10 +623,9 @@ const pendingOrders = ref([
     fareSent: false,
     fareAmount: null
   },
-]);
+];
 
-// Datos de ejemplo para pedidos aceptados
-const acceptedOrders = ref([
+const mockAcceptedOrders = [
   {
     id: 104,
     clientName: "Juan Pérez",
@@ -673,7 +645,159 @@ const acceptedOrders = ref([
       { id: 7, name: "Refresco Grande", quantity: 1 }
     ]
   },
-]);
+];
+
+// Theme
+const isDarkMode = ref(false);
+
+// Sidebar
+const isSidebarOpen = ref(false);
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
+
+// Perfil seleccionado
+const selectedProfile = ref("Delivery");
+
+// Pestañas
+const activeTab = ref("pending");
+
+// Datos para pedidos
+const pendingOrders = ref([]);
+const acceptedOrders = ref([]);
+
+// Filtrar pedidos pendientes sin ofertas enviadas
+const pendingOrdersNotSent = computed(() => {
+  return pendingOrders.value.filter(order => !order.fareSent);
+});
+
+// Función principal para obtener los pedidos según la fuente de datos
+const fetchOrders = async () => {
+  loading.value = true;
+  error.value = null;
+  pendingOrders.value = [];
+  acceptedOrders.value = [];
+
+  try {
+    if (dataSource.value === 'mock') {
+      // Simular retardo de red para datos mock
+      await new Promise(resolve => setTimeout(resolve, 800));
+      pendingOrders.value = [...mockPendingOrders];
+      acceptedOrders.value = [...mockAcceptedOrders];
+    } else {
+      // Obtener datos reales de la API
+      const response = await fetch('http://localhost:4000/pedidos');
+      
+      if (!response.ok) {
+        throw new Error(`Error al obtener pedidos: ${response.status}`);
+      }
+      
+      const allOrders = await response.json();
+      
+      // Mapear datos de la API al formato esperado
+      const mappedOrders = await mapOrdersFromAPI(allOrders);
+      
+      // Dividir en pendientes y aceptados
+      pendingOrders.value = mappedOrders.pendingOrders;
+      acceptedOrders.value = mappedOrders.acceptedOrders;
+    }
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    error.value = dataSource.value === 'mock' 
+      ? 'Error al cargar los datos de ejemplo. Por favor intenta de nuevo.' 
+      : 'Error al conectar con la API local. Asegúrate que http://localhost:4000 esté disponible.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Mapear datos de la API al formato esperado por la UI
+const mapOrdersFromAPI = async (apiOrders) => {
+  try {
+    // Obtener detalles de pedidos
+    const detallesResponse = await fetch('http://localhost:4000/carrito');
+    if (!detallesResponse.ok) {
+      throw new Error(`Error al obtener detalles de pedidos: ${detallesResponse.status}`);
+    }
+    const detalles = await detallesResponse.json();
+    
+    // Obtener información de clientes
+    const clientesResponse = await fetch('http://localhost:4000/clientes');
+    if (!clientesResponse.ok) {
+      throw new Error(`Error al obtener clientes: ${clientesResponse.status}`);
+    }
+    const clientes = await clientesResponse.json();
+    
+    // Arreglos para separar pedidos
+    const pendingOrders = [];
+    const acceptedOrders = [];
+    
+    // Procesar cada pedido
+    apiOrders.forEach(pedido => {
+      // Encontrar detalles asociados al pedido
+      const pedidoDetalles = detalles.filter(d => d.id_pedido === pedido.id_pedido);
+      
+      // Encontrar cliente asociado al pedido
+      const cliente = clientes.find(c => c.id_cliente === pedido.id_cliente);
+      
+      // Extraer productos del pedido
+      const products = pedidoDetalles.map(detalle => ({
+        id: detalle.id_pedido_detalle,
+        name: detalle.nombre_producto,
+        quantity: detalle.cantidad,
+        price: parseFloat(detalle.precio_unitario)
+      }));
+      
+      // Formatear la ubicación del local (simulada para este ejemplo)
+      const storeLocation = `Local #${pedido.id_local} - Plaza ${Math.floor(Math.random() * 100)}`;
+      
+      // Crear objeto base del pedido
+      const baseOrder = {
+        id: pedido.id_pedido,
+        time: pedido.fecha_pedido,
+        productCount: products.length,
+        storeLocation: storeLocation,
+        destination: `Dirección #${pedido.id_direccion_cliente}`,
+        fullDestination: `Dirección completa para ID ${pedido.id_direccion_cliente}`, // En un caso real, obtener de la API
+        products: products
+      };
+      
+      // Separar pedidos según su estado
+      if (pedido.estado === 'pendiente_local' || pedido.estado === 'pendiente_deposito') {
+        // Este pedido está pendiente para drivers
+        pendingOrders.push({
+          ...baseOrder,
+          fareSent: false,
+          fareAmount: null
+        });
+      } else if (pedido.estado === 'preparando_pedido' || pedido.estado === 'en_camino') {
+        // Este pedido ya está asignado/aceptado
+        acceptedOrders.push({
+          ...baseOrder,
+          clientName: cliente ? cliente.nombre : 'Cliente sin nombre',
+          clientPhone: cliente ? cliente.telefono : 'Sin teléfono',
+          prepTime: pedido.tiempo_preparacion_estimado || 15,
+          fare: 85, // Valor de ejemplo, en un caso real debería venir de la API
+          acceptedAt: pedido.fecha_pedido,
+          isPickedUp: pedido.estado === 'en_camino',
+          isDelivered: pedido.estado === 'entregado',
+          progress: pedido.estado === 'preparando_pedido' ? 33 : 
+                  pedido.estado === 'en_camino' ? 66 : 
+                  pedido.estado === 'entregado' ? 100 : 33
+        });
+      }
+    });
+    
+    return {
+      pendingOrders,
+      acceptedOrders
+    };
+  } catch (error) {
+    console.error('Error mapping API data:', error);
+    throw error;
+  }
+};
 
 // Formatear fecha
 const formatDate = (dateString) => {
@@ -787,6 +911,17 @@ const closeFareModal = () => {
 const sendFare = () => {
   if (!fareAmount.value) return;
   
+  // Si estamos usando la API, intentar enviar la tarifa
+  if (dataSource.value === 'api') {
+    // Aquí se implementaría la llamada a la API para enviar la tarifa
+    // Por ejemplo:
+    // fetch(`http://localhost:4000/pedidos/${selectedOrderId.value}/fare`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ fare: fareAmount.value })
+    // });
+  }
+  
   const order = pendingOrders.value.find(o => o.id === selectedOrderId.value);
   if (order) {
     order.fareSent = true;
@@ -830,49 +965,51 @@ const sendFare = () => {
       // Para usuarios normales, mostrar que la tarifa fue enviada y esperar respuesta
       showToast("Tarifa enviada", `Has enviado una tarifa de L. ${fareAmount.value} para el pedido #${selectedOrderId.value}`, "success");
       
-      // Simular respuesta del cliente después de un tiempo
-      setTimeout(() => {
-        const orderIndex = pendingOrders.value.findIndex(o => o.id === selectedOrderId.value);
-        
-        // 70% de probabilidad de aceptación
-        if (Math.random() > 0.3) {
-          // Aceptar oferta
-          acceptedOrders.value.unshift({
-            id: order.id,
-            clientName: "Cliente " + order.id,
-            clientPhone: "9" + Math.floor(Math.random() * 900 + 100) + "-" + Math.floor(Math.random() * 9000 + 1000),
-            productCount: order.productCount,
-            storeLocation: order.storeLocation,
-            destination: order.destination,
-            fullDestination: order.fullDestination,
-            prepTime: Math.floor(Math.random() * 10) + 10,
-            fare: parseInt(fareAmount.value),
-            acceptedAt: new Date().toISOString(),
-            isPickedUp: false,
-            isDelivered: false,
-            progress: 33,
-            products: order.products
-          });
+      // Simular respuesta del cliente después de un tiempo (solo para datos mock)
+      if (dataSource.value === 'mock') {
+        setTimeout(() => {
+          const orderIndex = pendingOrders.value.findIndex(o => o.id === selectedOrderId.value);
           
-          // Eliminar de pendientes
-          pendingOrders.value.splice(orderIndex, 1);
-          
-          // Ajustar índice de tarjeta actual si es necesario
-          if (currentCardIndex.value >= pendingOrdersNotSent.value.length) {
-            currentCardIndex.value = Math.max(0, pendingOrdersNotSent.value.length - 1);
+          // 70% de probabilidad de aceptación
+          if (Math.random() > 0.3) {
+            // Aceptar oferta
+            acceptedOrders.value.unshift({
+              id: order.id,
+              clientName: "Cliente " + order.id,
+              clientPhone: "9" + Math.floor(Math.random() * 900 + 100) + "-" + Math.floor(Math.random() * 9000 + 1000),
+              productCount: order.productCount,
+              storeLocation: order.storeLocation,
+              destination: order.destination,
+              fullDestination: order.fullDestination,
+              prepTime: Math.floor(Math.random() * 10) + 10,
+              fare: parseInt(fareAmount.value),
+              acceptedAt: new Date().toISOString(),
+              isPickedUp: false,
+              isDelivered: false,
+              progress: 33,
+              products: order.products
+            });
+            
+            // Eliminar de pendientes
+            pendingOrders.value.splice(orderIndex, 1);
+            
+            // Ajustar índice de tarjeta actual si es necesario
+            if (currentCardIndex.value >= pendingOrdersNotSent.value.length) {
+              currentCardIndex.value = Math.max(0, pendingOrdersNotSent.value.length - 1);
+            }
+            
+            showToast("¡Tarifa aceptada!", `Tu tarifa para el pedido #${order.id} ha sido aceptada`, "success");
+            
+            // Cambiar a la pestaña de aceptados
+            activeTab.value = "accepted";
+          } else {
+            // Rechazar oferta
+            order.fareSent = false;
+            order.fareAmount = null;
+            showToast("Tarifa rechazada", `Tu tarifa para el pedido #${order.id} fue rechazada`, "error");
           }
-          
-          showToast("¡Tarifa aceptada!", `Tu tarifa para el pedido #${order.id} ha sido aceptada`, "success");
-          
-          // Cambiar a la pestaña de aceptados
-          activeTab.value = "accepted";
-        } else {
-          // Rechazar oferta
-          order.fareSent = false;
-          order.fareAmount = null;
-          showToast("Tarifa rechazada", `Tu tarifa para el pedido #${order.id} fue rechazada`, "error");
-        }
-      }, Math.floor(Math.random() * 3000) + 2000);
+        }, Math.floor(Math.random() * 3000) + 2000);
+      }
     }
   }
   
@@ -882,6 +1019,15 @@ const sendFare = () => {
 // Auto asignación para admin/superadmin
 const autoAssignOrder = (orderId) => {
   if (selectedProfile.value === 'Admin' || selectedProfile.value === 'SuperAdmin') {
+    // Si estamos usando la API, intentar auto-asignar el pedido
+    if (dataSource.value === 'api') {
+      // Aquí se implementaría la llamada a la API para auto-asignar
+      // Por ejemplo:
+      // fetch(`http://localhost:4000/pedidos/${orderId}/auto-assign`, {
+      //   method: 'POST'
+      // });
+    }
+    
     const order = pendingOrders.value.find(o => o.id === orderId);
     if (order) {
       // Tarifa fija para auto-asignación
@@ -948,6 +1094,15 @@ const skipOrder = (orderId) => {
 
 // Cancelar oferta
 const cancelOffer = (orderId) => {
+  // Si estamos usando la API, intentar cancelar la oferta
+  if (dataSource.value === 'api') {
+    // Aquí se implementaría la llamada a la API para cancelar la oferta
+    // Por ejemplo:
+    // fetch(`http://localhost:4000/pedidos/${orderId}/cancel-fare`, {
+    //   method: 'POST'
+    // });
+  }
+  
   const order = pendingOrders.value.find(o => o.id === orderId);
   if (order) {
     order.fareSent = false;
@@ -1014,6 +1169,17 @@ const confirmPickupWithTime = () => {
 
 // Marcar como recogido
 const markAsPickedUp = (orderId, estimatedTime) => {
+  // Si estamos usando la API, intentar marcar como recogido
+  if (dataSource.value === 'api') {
+    // Aquí se implementaría la llamada a la API para marcar como recogido
+    // Por ejemplo:
+    // fetch(`http://localhost:4000/pedidos/${orderId}/pickup`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ estimatedTime })
+    // });
+  }
+  
   const order = acceptedOrders.value.find((o) => o.id === orderId);
   if (order) {
     order.isPickedUp = true;
@@ -1025,6 +1191,15 @@ const markAsPickedUp = (orderId, estimatedTime) => {
 
 // Marcar como entregado
 const markAsDelivered = (orderId) => {
+  // Si estamos usando la API, intentar marcar como entregado
+  if (dataSource.value === 'api') {
+    // Aquí se implementaría la llamada a la API para marcar como entregado
+    // Por ejemplo:
+    // fetch(`http://localhost:4000/pedidos/${orderId}/deliver`, {
+    //   method: 'POST'
+    // });
+  }
+  
   const order = acceptedOrders.value.find((o) => o.id === orderId);
   if (order) {
     order.isDelivered = true;
@@ -1079,6 +1254,51 @@ const showToast = (title, message, type = "info") => {
 const dismissToast = (id) => {
   toasts.value = toasts.value.filter(toast => toast.id !== id);
 };
+
+// Inicializar la aplicación
+onMounted(() => {
+  // Comprobar tema al montar el componente
+  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    isDarkMode.value = true;
+  }
+
+  // Escuchar cambios en el tema
+  if (typeof window !== 'undefined') {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      if (event.matches) {
+        isDarkMode.value = true;
+      } else {
+        isDarkMode.value = false;
+      }
+    });
+  }
+  
+  // Cargar pedidos iniciales
+  fetchOrders();
+  
+  // Simular nuevos pedidos después de un tiempo (solo si usamos datos mock)
+  setTimeout(() => {
+    if (dataSource.value === 'mock' && pendingOrders.value.length < 5) {
+      pendingOrders.value.push({
+        id: 105,
+        time: new Date().toISOString(),
+        productCount: 4,
+        storeLocation: "Pollo Campero - Metro Centro",
+        destination: "Col. Palmira",
+        fullDestination: "Col. Palmira, Calle Principal #23, Casa azul con balcón y rejas blancas",
+        products: [
+          { id: 6, name: "Pollo Frito", quantity: 2 },
+          { id: 7, name: "Papas Fritas", quantity: 1 },
+          { id: 8, name: "Refresco", quantity: 1 },
+        ],
+        fareSent: false,
+        fareAmount: null
+      });
+      
+      showToast("Nuevo pedido", "Tienes un nuevo pedido disponible", "info");
+    }
+  }, 10000);
+});
 </script>
 
 <style scoped>
