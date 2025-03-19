@@ -1,43 +1,53 @@
 <template>
     <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
-      <!-- Header -->
-      <header class="bg-white shadow-md p-4">
-        <div class="flex justify-between items-center">
-          <!-- Sidebar a la izquierda -->
-          <div @click="toggleSidebar" class="cursor-pointer">
-            <MenuIcon class="text-blue-600" :size="24" />
+  <!-- Header (mantenido igual) -->
+  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <TruckIcon class="text-blue-600" :size="24" />
+        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
+          <option value="Cliente">Cliente</option>
+          <option value="Local">Local</option>
+          <option value="Delivery">Delivery</option>
+        </select>
+        <div class="relative cursor-pointer" @click="showNotifications">
+          <BellIcon class="text-blue-600" :size="24" />
+          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+            {{ unreadNotifications.length }}
           </div>
-          <!-- Nombre de la app en el centro -->
-          <div class="flex items-center space-x-2">
-            <TruckIcon class="text-blue-600" :size="24" />
-            <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-          </div>
-          <!-- Notificaciones a la derecha -->
-          <div class="relative">
-            <BellIcon class="text-blue-600" :size="24" />
-            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">3</div>
-          </div>
-        </div>
-      </header>
-  
-      <!-- Sidebar -->
-      <div
-        class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50"
-        :class="{ 'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen }"
-      >
-        <div class="p-4">
-          <h2 class="text-lg font-bold mb-4">Opciones</h2>
-          <ul class="space-y-2">
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Idioma</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Cerrar sesión</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Ver mi local</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Ser driver</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Perfil</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Configuración</a></li>
-            <li><a href="#" class="text-gray-700 hover:text-blue-600">Soporte</a></li>
-          </ul>
         </div>
       </div>
+    </header>
+
+    <!-- Modal de Notificaciones (mantenido igual) -->
+    <transition name="fade">
+      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
+        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
+        <div v-if="notifications.length > 0">
+          <div
+            v-for="(notification, index) in notifications"
+            :key="index"
+            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+            @click="markAsRead(notification.id)"
+            :class="{ 'bg-gray-100': notification.read }"
+          >
+            <p class="text-sm text-gray-700">{{ notification.message }}</p>
+            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
+          </div>
+        </div>
+        <div v-else class="text-sm text-gray-500">
+          No tienes notificaciones nuevas.
+        </div>
+        <button
+          @click="closeNotifications"
+          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
+        >
+          Cerrar
+        </button>
+      </div>
+    </transition>
   
       <!-- Contenido Principal -->
       <div class="container mx-auto p-4 pb-24">
@@ -175,40 +185,44 @@
         </div>
       </div>
   
-      <!-- Footer -->
-      <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-        <div class="flex justify-around items-center">
-          <div class="flex flex-col items-center">
+    <!-- Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
+      <div class="flex justify-around items-center">
+        <div class="flex flex-col items-center">
+          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
             <HomeIcon class="text-blue-600" :size="20" />
             <span class="text-xs text-blue-600 mt-1">Inicio</span>
-          </div>
-          <div class="flex flex-col items-center">
+          </a>
+        </div>
+        <div class="flex flex-col items-center">
+          <a href="/Favoritos" class="flex flex-col items-center">
             <HeartIcon class="text-blue-600" :size="20" />
             <span class="text-xs text-blue-600 mt-1">Favoritos</span>
+          </a>
+        </div>
+        <div class="flex flex-col items-center relative">
+          <a href="/Carrito" class="flex flex-col items-center"></a>
+          <div class="bg-blue-600 rounded-full p-2">
+            <ShoppingCartIcon class="text-white" :size="20" />
           </div>
-          <div class="flex flex-col items-center relative">
-            <div class="bg-blue-600 rounded-full p-2">
-              <ShoppingCartIcon class="text-white" :size="20" />
-            </div>
-            <span class="text-xs text-blue-600 mt-1">Carrito</span>
-          </div>
-          <div class="flex flex-col items-center">
+          <span class="text-xs text-blue-600 mt-1">Carrito</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <a href="PedidosCliente" class="flex flex-col items-center">
             <ShoppingBagIcon class="text-blue-600" :size="20" />
             <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-          </div>
-          <div class="flex flex-col items-center relative">
-            <div @click="toggleProfileMenu" class="cursor-pointer">
-              <UserIcon class="text-blue-600" :size="20" />
-            </div>
-            <span class="text-xs text-blue-600 mt-1">Perfil</span>
-            <div v-if="isProfileMenuOpen" class="absolute bottom-10 bg-white shadow-lg rounded-lg p-2">
-              <div @click="selectProfile('Cliente')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Cliente</div>
-              <div @click="selectProfile('Driver')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Driver</div>
-              <div @click="selectProfile('Local')" class="cursor-pointer text-sm text-gray-700 hover:bg-blue-100 p-2 rounded">Local</div>
-            </div>
-          </div>
+          </a>
         </div>
-      </footer>
+        <div class="flex flex-col items-center">
+          <a href="/Perfil" class="flex flex-col items-center">
+            <div class="cursor-pointer">
+              <SettingsIcon class="text-blue-600" :size="20" />
+            </div>
+            <span class="text-xs text-blue-600 mt-1">Configuración</span>
+          </a>
+        </div>
+      </div>
+    </footer>
     </div>
   </template>
   
@@ -227,9 +241,55 @@
     Search as SearchIcon,
     Clock as ClockIcon,
     Store as StoreIcon,
-    Check as CheckIcon
+    Check as CheckIcon,
+    Settings as SettingsIcon,
   } from 'lucide-vue-next';
   
+const isModalOpen = ref(false);
+const selectedProfile = ref("Cliente");
+const router = useRouter();
+
+// Funciones para el manejo de notificaciones
+const showNotifications = () => {
+  isModalOpen.value = true;
+};
+
+const closeNotifications = () => {
+  isModalOpen.value = false;
+  notifications.value.forEach((notification) => {
+    notification.read = true;
+  });
+};
+
+const markAsRead = (id) => {
+  const notification = notifications.value.find((n) => n.id === id);
+  if (notification) {
+    notification.read = true;
+  }
+};
+const notifications = ref([
+  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
+  { id: 2, message: "Nuevo descuento disponible.", read: false },
+  { id: 3, message: "Actualización de la app disponible.", read: true },
+]);
+const unreadNotifications = computed(() => {
+  return notifications.value.filter((notification) => !notification.read);
+});
+const redirectToProfile = () => {
+  switch (selectedProfile.value) {
+    case 'Cliente':
+      router.push('/Dashboard_Cliente');  
+      break;
+    case 'Local':
+      router.push('/Dashboard_Local');  
+      break;
+    case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+    default:
+      break;
+  }
+};
   // Estado para modo de datos (Demo/API)
   const isDemoMode = ref(true);
   const isLoading = ref(false);
@@ -243,8 +303,7 @@
   };
   
   // Perfil
-  const isProfileMenuOpen = ref(false);
-  const selectedProfile = ref("Cliente");
+  const isProfileMenuOpen = ref(false); 
   
   const toggleProfileMenu = () => {
     isProfileMenuOpen.value = !isProfileMenuOpen.value;

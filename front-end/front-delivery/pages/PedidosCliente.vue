@@ -1,45 +1,55 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 pb-20">
-      <!-- Header -->
-      <header class="bg-white- shadow-md p-4">
-        <div class="flex justify-between items-center">
-          <!-- Sidebar a la izquierda -->
-          <div @click="toggleSidebar" class="cursor-pointer">
-            <MenuIcon class="text-blue-600" :size="24" />
-          </div>
-          <!-- Nombre de la app en el centro -->
-          <div class="flex items-center space-x-2">
-            <TruckIcon class="text-blue-600" :size="24" />
-            <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-          </div>
-          <!-- Notificaciones a la derecha -->
-          <div class="relative">
-            <BellIcon class="text-blue-600" :size="24" />
-           </div>
-        </div>
-      </header>
-   
-    <!-- Sidebar -->
-    <div
-      class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50"
-      :class="{ 'translate-x-0': isSidebarOpen, '-translate-x-full': !isSidebarOpen }"
-    >
-      <div class="p-4">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold">Opciones</h2>
-          <svg @click="toggleSidebar" class="text-gray-700 cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </div>
-        <ul class="space-y-2">
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Idioma</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Ser driver</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Registrar local</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Perfil</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Soporte</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Configuración</a></li>
-          <li><a href="#" class="text-gray-700 hover:text-blue-600">Cerrar sesión</a></li>
-        </ul>
+ <!-- Header (mantenido igual) -->
+ <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <TruckIcon class="text-blue-600" :size="24" />
+        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
       </div>
-    </div>
+      <div class="flex items-center space-x-4">
+        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
+          <option value="Cliente">Cliente</option>
+          <option value="Local">Local</option>
+          <option value="Delivery">Delivery</option>
+        </select>
+        <div class="relative cursor-pointer" @click="showNotifications">
+          <BellIcon class="text-blue-600" :size="24" />
+          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+            {{ unreadNotifications.length }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Modal de Notificaciones (mantenido igual) -->
+    <transition name="fade">
+      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
+        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
+        <div v-if="notifications.length > 0">
+          <div
+            v-for="(notification, index) in notifications"
+            :key="index"
+            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+            @click="markAsRead(notification.id)"
+            :class="{ 'bg-gray-100': notification.read }"
+          >
+            <p class="text-sm text-gray-700">{{ notification.message }}</p>
+            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
+          </div>
+        </div>
+        <div v-else class="text-sm text-gray-500">
+          No tienes notificaciones nuevas.
+        </div>
+        <button
+          @click="closeNotifications"
+          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
+        >
+          Cerrar
+        </button>
+      </div>
+    </transition>
+
+    
     <!-- Contenido Principal -->
     <div class="customer-orders-page p-4">
       <h1 class="text-2xl font-bold text-blue-600 mb-6">Mis Pedidos</h1>
@@ -741,29 +751,40 @@
     </transition>
 
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-gray-50 shadow-lg border-t border-gray-200 p-3">
+    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
       <div class="flex justify-around items-center">
         <div class="flex flex-col items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="text-blue-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          <span class="text-xs text-blue-600 mt-1">Inicio</span>
+          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
+            <HomeIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Inicio</span>
+          </a>
         </div>
         <div class="flex flex-col items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="text-blue-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-          <span class="text-xs text-blue-600 mt-1">Favoritos</span>
+          <a href="/Favoritos" class="flex flex-col items-center">
+            <HeartIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Favoritos</span>
+          </a>
         </div>
         <div class="flex flex-col items-center relative">
+          <a href="/Carrito" class="flex flex-col items-center"></a>
           <div class="bg-blue-600 rounded-full p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="text-white" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <ShoppingCartIcon class="text-white" :size="20" />
           </div>
           <span class="text-xs text-blue-600 mt-1">Carrito</span>
         </div>
         <div class="flex flex-col items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="text-blue-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-          <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+          <a href="PedidosCliente" class="flex flex-col items-center">
+            <ShoppingBagIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+          </a>
         </div>
         <div class="flex flex-col items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="text-blue-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <span class="text-xs text-blue-600 mt-1">Perfil</span>
+          <a href="/Perfil" class="flex flex-col items-center">
+            <div class="cursor-pointer">
+              <SettingsIcon class="text-blue-600" :size="20" />
+            </div>
+            <span class="text-xs text-blue-600 mt-1">Configuración</span>
+          </a>
         </div>
       </div>
     </footer>
@@ -778,12 +799,12 @@
 import { 
   Truck as TruckIcon, 
   Bell as BellIcon,
+  Settings as SettingsIcon,
   Home as HomeIcon,
   Menu as MenuIcon,
   Heart as HeartIcon,
   ShoppingCart as ShoppingCartIcon,
   ShoppingBag as ShoppingBagIcon,
-  Settings as SettingsIcon,
   Search as SearchIcon,
   ChevronDown as ChevronDownIcon,
   PackageX as PackageXIcon,

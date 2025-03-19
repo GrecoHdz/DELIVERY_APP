@@ -463,6 +463,50 @@ import {
   RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
 
+const isModalOpen = ref(false); 
+const router = useRouter();
+
+// Funciones para el manejo de notificaciones
+const showNotifications = () => {
+  isModalOpen.value = true;
+};
+
+const closeNotifications = () => {
+  isModalOpen.value = false;
+  notifications.value.forEach((notification) => {
+    notification.read = true;
+  });
+};
+
+const markAsRead = (id) => {
+  const notification = notifications.value.find((n) => n.id === id);
+  if (notification) {
+    notification.read = true;
+  }
+};
+const notifications = ref([
+  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
+  { id: 2, message: "Nuevo descuento disponible.", read: false },
+  { id: 3, message: "Actualización de la app disponible.", read: true },
+]);
+const unreadNotifications = computed(() => {
+  return notifications.value.filter((notification) => !notification.read);
+});
+const redirectToProfile = () => {
+  switch (selectedProfile.value) {
+    case 'Cliente':
+      router.push('/Dashboard_Cliente');  
+      break;
+    case 'Local':
+      router.push('/Dashboard_Local');  
+      break;
+    case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+    default:
+      break;
+  }
+};
 // Sidebar
 const isSidebarOpen = ref(false);
 
@@ -472,7 +516,7 @@ const toggleSidebar = () => {
 
 // Perfil
 const isProfileMenuOpen = ref(false);
-const selectedProfile = ref("Cliente");
+const selectedProfile = ref("Local");
 
 const toggleProfileMenu = () => {
   isProfileMenuOpen.value = !isProfileMenuOpen.value;

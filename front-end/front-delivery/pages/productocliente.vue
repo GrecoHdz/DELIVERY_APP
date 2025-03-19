@@ -1,54 +1,48 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-    <!-- Header con diseño moderno -->
-    <header class="bg-white shadow-lg px-6 py-4">
-      <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 rounded-lg">
-            <TruckIcon class="text-white" :size="26" />
-          </div>
-          <span class="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">DeliveryPro</span>
-        </div>
-        <div class="flex items-center space-x-5">
-          <select v-model="selectedProfile" class="p-2 text-center bg-white border-2 border-indigo-500 text-indigo-600 rounded-full font-bold focus:outline-none focus:ring-2 focus:ring-indigo-300 transition-all">
-            <option value="Cliente">Cliente</option>
-            <option value="Local">Local</option>
-            <option value="Delivery">Delivery</option>
-          </select>
-          <div class="relative cursor-pointer" @click="showNotifications">
-            <div class="p-2 bg-indigo-100 rounded-full hover:bg-indigo-200 transition-all">
-              <BellIcon class="text-indigo-600" :size="24" />
-            </div>
-            <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {{ unreadNotifications.length }}
-            </div>
+  <!-- Header (mantenido igual) -->
+  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <TruckIcon class="text-blue-600" :size="24" />
+        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
+          <option value="Cliente">Cliente</option>
+          <option value="Local">Local</option>
+          <option value="Delivery">Delivery</option>
+        </select>
+        <div class="relative cursor-pointer" @click="showNotifications">
+          <BellIcon class="text-blue-600" :size="24" />
+          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+            {{ unreadNotifications.length }}
           </div>
         </div>
       </div>
-    </header> 
-    
-    <!-- Modal de Notificaciones -->
+    </header>
+
+    <!-- Modal de Notificaciones (mantenido igual) -->
     <transition name="fade">
-      <div v-if="isModalOpen" class="absolute top-20 right-6 bg-white shadow-2xl rounded-xl p-4 w-72 z-50 border border-indigo-100">
-        <h3 class="font-bold text-lg mb-3 text-indigo-600">Notificaciones</h3>
-        <div v-if="notifications.length > 0" class="max-h-80 overflow-y-auto">
+      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
+        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
+        <div v-if="notifications.length > 0">
           <div
             v-for="(notification, index) in notifications"
             :key="index"
-            class="p-3 mb-2 hover:bg-indigo-50 rounded-lg cursor-pointer transition-all"
+            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
             @click="markAsRead(notification.id)"
-            :class="{ 'bg-indigo-50': notification.read }"
+            :class="{ 'bg-gray-100': notification.read }"
           >
             <p class="text-sm text-gray-700">{{ notification.message }}</p>
-            <span v-if="!notification.read" class="text-xs text-indigo-500 font-medium mt-1 block">Nueva</span>
+            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
           </div>
         </div>
-        <div v-else class="text-sm text-gray-500 p-3 text-center">
+        <div v-else class="text-sm text-gray-500">
           No tienes notificaciones nuevas.
         </div>
         <button
           @click="closeNotifications"
-          class="mt-3 w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg py-2 hover:from-blue-600 hover:to-indigo-700 transition-all font-medium"
+          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
         >
           Cerrar
         </button>
@@ -350,44 +344,40 @@
     </transition>
 
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-indigo-100 p-3 z-20">
-      <div class="max-w-7xl mx-auto">
-        <div class="flex justify-around items-center">
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <HomeIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Inicio</span>
+    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
+      <div class="flex justify-around items-center">
+        <div class="flex flex-col items-center">
+          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
+            <HomeIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Inicio</span>
+          </a>
+        </div>
+        <div class="flex flex-col items-center">
+          <a href="/Favoritos" class="flex flex-col items-center">
+            <HeartIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Favoritos</span>
+          </a>
+        </div>
+        <div class="flex flex-col items-center relative">
+          <a href="/Carrito" class="flex flex-col items-center"></a>
+          <div class="bg-blue-600 rounded-full p-2">
+            <ShoppingCartIcon class="text-white" :size="20" />
           </div>
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <HeartIcon class="text-indigo-600" :size="20" />
+          <span class="text-xs text-blue-600 mt-1">Carrito</span>
+        </div>
+        <div class="flex flex-col items-center">
+          <a href="PedidosCliente" class="flex flex-col items-center">
+            <ShoppingBagIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+          </a>
+        </div>
+        <div class="flex flex-col items-center">
+          <a href="/Perfil" class="flex flex-col items-center">
+            <div class="cursor-pointer">
+              <SettingsIcon class="text-blue-600" :size="20" />
             </div>
-            <span class="text-xs text-indigo-600 mt-1">Favoritos</span>
-          </div>
-          <div class="flex flex-col items-center relative">
-  <div class="bg-blue-600 rounded-full p-2 relative">
-    <ShoppingCartIcon class="text-white" :size="20" />
-    <span 
-      v-if="carritoIndicador" 
-      class="absolute top-0 right-0 bg-red-500 w-2.5 h-2.5 rounded-full"
-    ></span>
-  </div>
-  <span class="text-xs text-blue-600 mt-1">Carrito</span>
-</div>
-
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <ShoppingBagIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Pedidos</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full cursor-pointer">
-              <SettingsIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Configuración</span>
-          </div>
+            <span class="text-xs text-blue-600 mt-1">Configuración</span>
+          </a>
         </div>
       </div>
     </footer>
@@ -418,7 +408,25 @@ import {
   Info as InfoIcon,
   RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
-
+ 
+const selectedProfile = ref("Cliente");
+const router = useRouter(); 
+ 
+const redirectToProfile = () => {
+  switch (selectedProfile.value) {
+    case 'Cliente':
+      router.push('/Dashboard_Cliente');  
+      break;
+    case 'Local':
+      router.push('/Dashboard_Local');  
+      break;
+    case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+    default:
+      break;
+  }
+};
 // Estado para alternar entre API y mock data
 const useApiData = ref(false);
 const loading = ref(false);
@@ -432,8 +440,7 @@ const localId = ref(10); // ID fijo del local para este ejemplo
 const id_cliente = 18; // Reemplazar con el ID del cliente real
 const id_direccion_cliente = 3; // Reemplazar con el ID de la dirección del cliente real
 const idPedido = ref(null);
-const carritoIndicador = ref(false); 
-const selectedProfile = ref("Cliente");
+const carritoIndicador = ref(false);  
 
 // Variables para almacenar datos
 const localName = ref("Mini Sper Diprocon");

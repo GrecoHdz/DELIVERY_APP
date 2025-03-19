@@ -30,7 +30,9 @@
           </div>
           <select
             v-model="selectedProfile"
+            @change="redirectToProfile"
             class="profile-selector"
+            
           >
             <option value="Cliente">Cliente</option>
             <option value="Local">Local</option>
@@ -307,27 +309,17 @@
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-content">
-        <div class="footer-item">
-          <HomeIcon :size="16" />
-          <span>Inicio</span>
+        <div class="flex flex-col items-center">
+          <a href="/PedidosDrivers" class="flex flex-col items-center">
+            <HomeIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Inicio</span>
+          </a>
         </div>
-        <div class="footer-item">
-          <HeartIcon :size="16" />
-          <span>Favoritos</span>
-        </div>
-        <div class="footer-item">
-          <div class="footer-item-circle">
-            <ShoppingCartIcon :size="16" />
-          </div>
-          <span>Carrito</span>
-        </div>
-        <div class="footer-item active">
-          <ShoppingBagIcon :size="16" />
-          <span>Pedidos</span>
-        </div>
-        <div class="footer-item">
-          <SettingsIcon :size="16" />
-          <span>Ajustes</span>
+        <div class="flex flex-col items-center">
+          <a href="PedidosDrivers" class="flex flex-col items-center">
+            <ShoppingBagIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+          </a>
         </div>
       </div>
     </footer>
@@ -574,7 +566,27 @@ import {
   ChevronDown as ChevronDownIcon,
   RefreshCw as RefreshCwIcon
 } from "lucide-vue-next";
-
+const redirectToProfile = () => {
+  switch (selectedProfile.value) {
+    case 'Cliente':
+      router.push('/Dashboard_Cliente');  
+      break;
+    case 'Local':
+      router.push('/Dashboard_Local');  
+      break;
+    case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+      case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+      case 'Delivery':
+      router.push('/Dashboard_Superadmin');  
+      break;
+    default:
+      break;
+  }
+};
 // Fuente de datos
 const dataSource = ref('mock');
 const loading = ref(false);

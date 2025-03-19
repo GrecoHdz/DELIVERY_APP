@@ -1,31 +1,53 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
-    <!-- Header -->
-    <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
+  <!-- Header (mantenido igual) -->
+  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
       <div class="flex items-center space-x-2">
         <TruckIcon class="text-blue-600" :size="24" />
-        <span class="font-bold text-xl text-blue-600">DeliveryApp</span>
+        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
       </div>
       <div class="flex items-center space-x-4">
-        <select
-          v-model="selectedProfile"
-          class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none"
-        >
+        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
           <option value="Cliente">Cliente</option>
           <option value="Local">Local</option>
           <option value="Delivery">Delivery</option>
         </select>
         <div class="relative cursor-pointer" @click="showNotifications">
           <BellIcon class="text-blue-600" :size="24" />
-          <div
-            v-if="unreadNotifications.length > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1"
-          >
+          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
             {{ unreadNotifications.length }}
           </div>
         </div>
       </div>
     </header>
+
+    <!-- Modal de Notificaciones (mantenido igual) -->
+    <transition name="fade">
+      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
+        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
+        <div v-if="notifications.length > 0">
+          <div
+            v-for="(notification, index) in notifications"
+            :key="index"
+            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+            @click="markAsRead(notification.id)"
+            :class="{ 'bg-gray-100': notification.read }"
+          >
+            <p class="text-sm text-gray-700">{{ notification.message }}</p>
+            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
+          </div>
+        </div>
+        <div v-else class="text-sm text-gray-500">
+          No tienes notificaciones nuevas.
+        </div>
+        <button
+          @click="closeNotifications"
+          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
+        >
+          Cerrar
+        </button>
+      </div>
+    </transition>
 
     <!-- Contenido Principal del Dashboard -->
     <div class="dashboard-container p-4">
@@ -238,9 +260,11 @@
           <HomeIcon class="text-blue-600" :size="20" />
           <span class="text-xs text-blue-600 mt-1">Inicio</span>
         </div>
-        <div class="flex flex-col items-center cursor-pointer" @click="currentTab = 'orders'">
-          <ShoppingBagIcon class="text-blue-600" :size="20" />
-          <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+        <div class="flex flex-col items-center">
+          <a href="PedidosDrivers" class="flex flex-col items-center">
+            <ShoppingBagIcon class="text-blue-600" :size="20" />
+            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
+          </a>
         </div>
       </div>
     </footer>
@@ -257,6 +281,50 @@ import {
   Info as InfoIcon,
 } from "lucide-vue-next";
 
+const isModalOpen = ref(false); 
+const router = useRouter();
+
+// Funciones para el manejo de notificaciones
+const showNotifications = () => {
+  isModalOpen.value = true;
+};
+
+const closeNotifications = () => {
+  isModalOpen.value = false;
+  notifications.value.forEach((notification) => {
+    notification.read = true;
+  });
+};
+
+const markAsRead = (id) => {
+  const notification = notifications.value.find((n) => n.id === id);
+  if (notification) {
+    notification.read = true;
+  }
+};
+const notifications = ref([
+  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
+  { id: 2, message: "Nuevo descuento disponible.", read: false },
+  { id: 3, message: "Actualización de la app disponible.", read: true },
+]);
+const unreadNotifications = computed(() => {
+  return notifications.value.filter((notification) => !notification.read);
+});
+const redirectToProfile = () => {
+  switch (selectedProfile.value) {
+    case 'Cliente':
+      router.push('/Dashboard_Cliente');  
+      break;
+    case 'Local':
+      router.push('/Dashboard_Local');  
+      break;
+    case 'Delivery':
+      router.push('/Dashboard_Driver');  
+      break;
+    default:
+      break;
+  }
+};
 // Datos de ejemplo para historial de pedidos
 const orders = ref([
   {
@@ -276,9 +344,7 @@ const orders = ref([
     payment: 15.99,
   },
 ]);
-
-// Notificaciones
-const unreadNotifications = ref([]);
+ 
 const selectedProfile = ref("Delivery");
 
 // Estadísticas de entrega
