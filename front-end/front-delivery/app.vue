@@ -274,7 +274,7 @@
         </div>
 
         <!-- Afiliar -->  
-        <div class="af mb-6"> 
+        <div class="af mb-6" style="text-align: center"> 
           <div class="p-4 text-white">
             <h3 class="font-bold text-lg">¡Afiliate con Nosotros!🚀</h3>
             <p class="text-sm" style="margin: 10px">Afiliate como local y <span class="font-bold">aumenta tus ventas</span> o unete como delivery y <span class="font-bold">gana dinero con cada entrega</span></p>

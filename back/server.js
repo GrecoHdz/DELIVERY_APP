@@ -43,6 +43,7 @@ const configRoutes = require('./routes/configRoutes')
  const autoEnRentaRoutes = require("./routes/autoEnRenta"); 
 const pedidodetalleRoutes= require("./routes/pedidoDetalle");
 const estadisticasRoutes = require("./routes/estadisticas");
+const quejaLocalRoutes = require("./routes/quejaLocalRoutes");
 const app = express();  
 
 // Middlewares
@@ -94,6 +95,7 @@ app.use("/pagorentarauto", pagoRentarAutoRoutes);
 app.use("/rentarauto", rentarAutoRoutes);
 app.use("/autoenrenta", autoEnRentaRoutes);
 app.use("/estadisticas", estadisticasRoutes);
+app.use("/quejalocal",quejaLocalRoutes)
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;
