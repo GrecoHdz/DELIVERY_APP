@@ -9,7 +9,7 @@ const Usuario = sequelize.define("Usuario", {
   },
   id_rol: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: {
       model: "Roles", // Nombre de la tabla referenciada
       key: "id_rol", // Clave primaria de la tabla referenciada
@@ -54,6 +54,14 @@ const Usuario = sequelize.define("Usuario", {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
+  reset_token: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  reset_token_expires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  }
 }, {
   timestamps: false, // Desactiva los timestamps automáticos de Sequelize
   tableName: "Usuarios", // Nombre de la tabla en la base de datos

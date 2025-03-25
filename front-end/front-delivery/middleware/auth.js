@@ -1,9 +1,8 @@
 export default function ({ store, redirect }) {
-    // Verifica si hay un token en el store
-    const token = store.state.auth.token || localStorage.getItem('token');
+  // Restaurar la sesión si existe
+  store.dispatch('auth/restoreSession')
   
-    if (!token) {
-      // Si no hay token, redirige al login
-      return redirect('/login');
-    }
+  if (!store.state.auth.loggedIn) {
+    return redirect('/login')
   }
+}

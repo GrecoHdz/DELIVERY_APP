@@ -1,27 +1,9 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 pb-20">
- <!-- Header (mantenido igual) -->
- <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <TruckIcon class="text-blue-600" :size="24" />
-        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-          <option value="Cliente">Cliente</option>
-          <option value="Local">Local</option>
-          <option value="Delivery">Delivery</option>
-        </select>
-        <div class="relative cursor-pointer" @click="showNotifications">
-          <BellIcon class="text-blue-600" :size="24" />
-          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-            {{ unreadNotifications.length }}
-          </div>
-        </div>
-      </div>
-    </header>
+    <!-- Header -->
+    <HeaderComponent />
 
-    <!-- Modal de Notificaciones (mantenido igual) -->
+    <!-- Modal de Notificaciones -->
     <transition name="fade">
       <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
         <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
@@ -146,11 +128,11 @@
               ></div>
             </div>
 
-            <!-- Estados del pedido -->
+            <!-- Estados del pedido - Con etiqueta "Pendiente" más visible -->
             <div class="flex justify-between px-4 py-2 text-xs text-gray-600 border-b">
               <div class="flex flex-col items-center">
-                <div :class="['rounded-full w-4 h-4 mb-1', getStateClass('pendiente_local')]"></div>
-                <span>Pendiente</span>
+                <div :class="['rounded-full w-4 h-4 mb-1', getStateClass('pendiente_local', order.estado)]"></div>
+                <span class="font-medium">Pendiente</span>
               </div>
               <div class="flex flex-col items-center" v-if="order.metodo_pago === 'transferencia'">
                 <div :class="['rounded-full w-4 h-4 mb-1', getStateClass('pendiente_deposito', order.estado)]"></div>
@@ -242,8 +224,44 @@
               </div>
             </div>
 
-            <!-- Estado: en_camino - Mostrar mapa -->
-            <div v-if="order.estado === 'en_camino' && order.tipo_pedido === 'domicilio'" class="p-4 border-b">
+  <!-- Resumen de productos -->
+<div class="p-4 border-b">
+  <h4 class="font-medium mb-2">Resumen del pedido</h4>
+  <div class="space-y-2 max-h-40 overflow-y-auto">
+    <div
+      v-for="(item, index) in order.items"
+      :key="index"
+      class="flex justify-between text-sm"
+    >
+      <div>
+        <span class="font-medium">{{ item.cantidad }}x</span> {{ item.nombre_producto }}
+        <div v-if="item.atributos && Object.keys(item.atributos).length > 0" class="text-xs text-gray-500 ml-6">
+          <div v-for="(value, key) in item.atributos" :key="key">
+            {{ key }}: {{ value }}
+          </div>
+        </div>
+        <div v-if="item.extras && item.extras.length > 0" class="text-xs text-gray-500 ml-6">
+          <div>Extras: {{ item.extras.join(', ') }}</div>
+        </div>
+      </div>
+      <div class="font-medium">${{ formatPrice(item.subtotal) }}</div>
+    </div>
+  </div>
+  <div class="mt-3 pt-3 border-t flex justify-between font-bold">
+    <div>Total</div>
+    <div>${{ formatPrice(calculateOrderTotal(order)) }}</div>
+  </div>
+
+  <!-- Pago al delivery (resaltado) -->
+  <div class="mt-3 pt-3 border-t flex justify-between font-bold text-green-500">
+    <div>Pago al Driver (Al recibir)</div>
+    <div>${{ order.pago_delivery }}</div>
+  </div>
+</div>
+
+
+          <!-- Estado: en_camino - Mostrar mapa -->
+          <div v-if="order.estado === 'en_camino' && order.tipo_pedido === 'domicilio'" class="p-4 border-b">
               <button 
                 @click="showMapModal(order)" 
                 class="w-full bg-blue-100 text-blue-800 p-3 rounded-lg flex items-center justify-center hover:bg-blue-200 transition"
@@ -251,37 +269,12 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="mr-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
                 Ver Ubicación en Mapa
               </button>
+              <div class="mt-4 p-3 bg-gray-100 rounded-lg text-center">
+    <p class="text-gray-700">Tu código de entrega es:</p>
+    <strong class="text-xl text-blue-600">{{ order.codigo_entrega }}</strong>
+    <p class="text-gray-600">Por favor, proporciona este código al conductor para recibir tu pedido.</p>
+  </div>
             </div>
-
-            <!-- Resumen de productos -->
-            <div class="p-4 border-b">
-              <h4 class="font-medium mb-2">Resumen del pedido</h4>
-              <div class="space-y-2 max-h-40 overflow-y-auto">
-                <div 
-                  v-for="(item, index) in order.items" 
-                  :key="index"
-                  class="flex justify-between text-sm"
-                >
-                  <div>
-                    <span class="font-medium">{{ item.cantidad }}x</span> {{ item.nombre_producto }}
-                    <div v-if="item.atributos && Object.keys(item.atributos).length > 0" class="text-xs text-gray-500 ml-6">
-                      <div v-for="(value, key) in item.atributos" :key="key">
-                        {{ key }}: {{ value }}
-                      </div>
-                    </div>
-                    <div v-if="item.extras && item.extras.length > 0" class="text-xs text-gray-500 ml-6">
-                      <div>Extras: {{ item.extras.join(', ') }}</div>
-                    </div>
-                  </div>
-                  <div class="font-medium">${{ formatPrice(item.subtotal) }}</div>
-                </div>
-              </div>
-              <div class="mt-3 pt-3 border-t flex justify-between font-bold">
-                <div>Total</div>
-                <div>${{ formatPrice(calculateOrderTotal(order)) }}</div>
-              </div>
-            </div>
-
             <!-- Método de pago y tipo de entrega -->
             <div class="p-4 flex flex-wrap gap-3">
               <div class="flex-1 min-w-[140px] bg-gray-100 p-2 rounded text-sm">
@@ -305,6 +298,16 @@
                 Cancelar Pedido
               </button>
 
+                <!-- Botón para contactar al conductor (solo disponible en estado en camino) -->
+  <button
+    v-if="order.estado === 'en_camino'"
+    @click="contactDriver(order)"
+    class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-200 transition"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 inline" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2l-8.5 8.5a3 3 0 0 1-4.5-1.5L2 16.5l1.5 1.5 4-4a3 3 0 0 1 4.5 1.5L22 5.5 22 2z"></path><path d="M6 9l6 6"></path></svg>
+    Contactar
+  </button>
+
               <!-- Botón para reportar problema (solo disponible en estado entregado) -->
               <button 
                 v-if="order.estado === 'entregado'"
@@ -312,11 +315,6 @@
                 class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg hover:bg-orange-200 transition"
               >
                 Reportar Problema
-              </button>
-
-              <!-- Botón para contactar al comercio -->
-              <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                Contactar
               </button>
             </div>
           </div>
@@ -653,7 +651,7 @@
       </div>
     </transition>
 
-    <!-- Modal para mostrar mapa -->
+    <!-- Modal para mostrar mapa (simplificado sin información del conductor) -->
     <transition name="fade">
       <div v-if="showMapModalFlag" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
@@ -664,28 +662,8 @@
             </button>
           </div>
           
-          <div class="relative h-[60vh]">
+          <div class="h-[60vh]">
             <div id="map" class="h-full w-full"></div>
-            <div class="absolute bottom-4 left-4 right-4 bg-white p-3 rounded-lg shadow-lg">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="text-sm font-medium">Tiempo estimado de llegada:</div>
-                  <div class="text-xl font-bold text-blue-600">{{ currentOrder?.tiempo_llegada_estimado || 15 }} minutos</div>
-                </div>
-                <div>
-                  <div class="text-sm font-medium">Repartidor:</div>
-                  <div class="flex items-center">
-                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="text-gray-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    </div>
-                    <span class="font-medium">{{ currentOrder?.driver?.nombre || 'Juan Pérez' }}</span>
-                  </div>
-                </div>
-                <button class="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition">
-                  Contactar
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -751,73 +729,70 @@
     </transition>
 
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
-            <HomeIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Inicio</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Favoritos" class="flex flex-col items-center">
-            <HeartIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <a href="/Carrito" class="flex flex-col items-center"></a>
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="PedidosCliente" class="flex flex-col items-center">
-            <ShoppingBagIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Perfil" class="flex flex-col items-center">
-            <div class="cursor-pointer">
-              <SettingsIcon class="text-blue-600" :size="20" />
-            </div>
-            <span class="text-xs text-blue-600 mt-1">Configuración</span>
-          </a>
-        </div>
-      </div>
-    </footer>
+    <FooterComponent />
   </div>
 </template>
 
-<script>
-// Importaciones que se realizarían en Nuxt
- import { ref, computed, onMounted } from 'vue'
-// import axios from 'axios'
-// import io from 'socket.io-client'
-import { 
-  Truck as TruckIcon, 
-  Bell as BellIcon,
-  Settings as SettingsIcon,
-  Home as HomeIcon,
-  Menu as MenuIcon,
-  Heart as HeartIcon,
-  ShoppingCart as ShoppingCartIcon,
-  ShoppingBag as ShoppingBagIcon,
-  Search as SearchIcon,
-  ChevronDown as ChevronDownIcon,
-  PackageX as PackageXIcon,
-  Tag as TagIcon,
-  Plus as PlusIcon,
-  Minus as MinusIcon,
-  X as XIcon,
-  CheckCircle as CheckCircleIcon,
-  AlertCircle as AlertCircleIcon,
-  AlertTriangle as AlertTriangleIcon,
-  Info as InfoIcon,
-  RefreshCw as RefreshCwIcon
-} from 'lucide-vue-next';
+<script setup>
+  import { ref, computed, onMounted } from 'vue';
+  import {
+    Truck as TruckIcon, 
+    Bell as BellIcon,
+    Settings as SettingsIcon,
+    Home as HomeIcon,
+    Menu as MenuIcon,
+    Heart as HeartIcon,
+    ShoppingCart as ShoppingCartIcon,
+    ShoppingBag as ShoppingBagIcon,
+    Search as SearchIcon,
+    ChevronDown as ChevronDownIcon,
+    PackageX as PackageXIcon,
+    Tag as TagIcon,
+    Plus as PlusIcon,
+    Minus as MinusIcon,
+    X as XIcon,
+    CheckCircle as CheckCircleIcon,
+    AlertCircle as AlertCircleIcon,
+    AlertTriangle as AlertTriangleIcon,
+    Info as InfoIcon,
+    RefreshCw as RefreshCwIcon
+  } from 'lucide-vue-next';
+   
+const selectedProfile = ref("Cliente");
+const isSidebarOpen = ref(false);
+const activeTab = ref('active');
+const error = ref(null);
+const loading = ref(false);
+const expandedOrders = ref([]); 
+const dataSource = ref('mock');
+const orders = ref([]);
+const filterDate = ref('');
+const filterRestaurantName = ref('');
+const showPaymentModalFlag = ref(false);
+const showComplaintModalFlag = ref(false);
+const showMapModalFlag = ref(false);
+const showCancelConfirmModalFlag = ref(false);
+const showLocationModalFlag = ref(false);
+const locationModalType = ref('local');
+const currentOrder = ref(null);
+const receiptImage = ref(null);
+const receiptImageUrl = ref(null);
+const receiptNumber = ref('');
+const uploadingImage = ref(false);
+const uploadError = ref(null);
+const complaintText = ref('');
+const complaintImage = ref(null);
+const complaintImageUrl = ref(null);
+const uploadingComplaintImage = ref(false);
+const socket = ref(null);
+const map = ref(null);
+const locationMap = ref(null);
+const isModalOpen = ref(false);
+const notifications = ref([]);
+const unreadNotifications = computed(() => {
+  return notifications.value.filter(n => !n.read);
+});
+
 // Funciones para el manejo de notificaciones
 const showNotifications = () => {
   isModalOpen.value = true;
@@ -829,894 +804,851 @@ const closeNotifications = () => {
     notification.read = true;
   });
 };
-const isModalOpen = ref(false); 
-const notificationsEnabled = ref(true);
-const selectedProfile = ref("Cliente");
-export default {
-  name: 'CustomerOrdersPage',
-  data() {
-    return {
-      // Control de UI
-      isSidebarOpen: false,
-      activeTab: 'active',
-      error: null,
-      loading: false,
-      expandedOrders: [], 
-      // Fuente de datos
-      dataSource: 'mock',
+
+const markAsRead = (id) => {
+  const notification = notifications.value.find(n => n.id === id);
+  if (notification) {
+    notification.read = true;
+  }
+};
+
+// Control de UI
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
+};
+
+const resetFilters = () => {
+  filterDate.value = '';
+  filterRestaurantName.value = '';
+};
+
+const toggleOrderDetails = (orderId) => {
+  if (expandedOrders.value.includes(orderId)) {
+    expandedOrders.value = expandedOrders.value.filter(id => id !== orderId);
+  } else {
+    expandedOrders.value.push(orderId);
+  }
+};
+
+// Formateo de datos
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+};
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+};
+
+const formatPrice = (price) => {
+  if (!price) return '0.00';
+  return parseFloat(price).toFixed(2);
+};
+
+const calculateOrderTotal = (order) => {
+  if (!order || !order.items || !Array.isArray(order.items)) return 0;
+  return order.items.reduce((total, item) => total + parseFloat(item.subtotal || 0), 0);
+};
+
+const getPrettyPaymentMethod = (method) => {
+  const methods = {
+    'efectivo': 'Efectivo',
+    'transferencia': 'Transferencia bancaria',
+    'tarjeta': 'Tarjeta de crédito/débito'
+  };
+  return methods[method] || method;
+};
+
+const getPrettyDeliveryType = (type) => {
+  const types = {
+    'domicilio': 'Entrega a domicilio',
+    'recoger': 'Recoger en local',
+    'comer_local': 'Comer en local'
+  };
+  return types[type] || type;
+};
+
+const getStatusText = (status) => {
+  const statusMap = {
+    'pendiente_local': 'Pendiente de aceptación',
+    'pendiente_deposito': 'Pendiente de pago',
+    'preparando_pedido': 'En preparación',
+    'en_camino': 'En camino',
+    'entregado': 'Entregado',
+    'cancelado': 'Cancelado',
+    'rechazado': 'Rechazado'
+  };
+  return statusMap[status] || status;
+};
+
+const getStatusBadgeClass = (status) => {
+  const classMap = {
+    'pendiente_local': 'bg-blue-100 text-blue-800', // Cambiado para mejor contraste
+    'pendiente_deposito': 'bg-yellow-100 text-yellow-800',
+    'preparando_pedido': 'bg-orange-100 text-orange-800',
+    'en_camino': 'bg-blue-100 text-blue-800',
+    'entregado': 'bg-green-100 text-green-800',
+    'cancelado': 'bg-red-100 text-red-800',
+    'rechazado': 'bg-red-100 text-red-800'
+  };
+  return classMap[status] || 'bg-gray-100 text-gray-800';
+};
+
+// Fixed to properly fill the Pendiente circle when it's the current state
+const getStateClass = (state, currentState) => {
+  // Devuelve la clase para el círculo de estado en la barra de progreso
+  const states = ['pendiente_local', 'pendiente_deposito', 'preparando_pedido', 'en_camino', 'entregado'];
+  const currentIndex = states.indexOf(currentState);
+  const stateIndex = states.indexOf(state);
+  
+  if (stateIndex < 0) return 'bg-gray-300'; // Estado no válido
+  
+  if (stateIndex <= currentIndex) {
+    return 'bg-blue-600'; // Estado completado o actual
+  }
+  
+  return 'bg-gray-300'; // Estado pendiente
+};
+
+const getProgressPercentage = (currentState) => {
+  // Calcula el porcentaje para la barra de progreso
+  const states = ['pendiente_local', 'pendiente_deposito', 'preparando_pedido', 'en_camino', 'entregado'];
+  const stateIndex = states.indexOf(currentState);
+  
+  if (stateIndex < 0) return 0;
+  
+  return (stateIndex / (states.length - 1)) * 100;
+};
+
+// Gestión del redirect de perfil
+const redirectToProfile = () => {
+  const profileRoutes = {
+    'Cliente': '/Dashboard_Cliente',
+    'Local': '/Dashboard_Local',
+    'Delivery': '/Dashboard_Delivery'
+  };
+  
+  const route = profileRoutes[selectedProfile.value];
+  if (route) {
+    window.location.href = route;
+  }
+};
+
+// Computed properties
+const activeOrders = computed(() => {
+  return orders.value.filter(order => 
+    !['entregado', 'cancelado', 'rechazado'].includes(order.estado)
+  );
+});
+
+const pastOrders = computed(() => {
+  return orders.value.filter(order => 
+    ['entregado', 'cancelado', 'rechazado'].includes(order.estado)
+  );
+});
+
+const filteredPastOrders = computed(() => {
+  let filtered = [...pastOrders.value];
+  
+  // Filtrar por fecha
+  if (filterDate.value) {
+    const filterDateObj = new Date(filterDate.value);
+    filtered = filtered.filter(order => {
+      const orderDate = new Date(order.fecha_pedido);
+      return orderDate.toDateString() === filterDateObj.toDateString();
+    });
+  }
+  
+  // Filtrar por nombre de restaurante
+  if (filterRestaurantName.value.trim() !== '') {
+    const searchTerm = filterRestaurantName.value.toLowerCase();
+    filtered = filtered.filter(order => 
+      order.local?.nombre?.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  return filtered;
+});
+
+// Gestión de datos
+const fetchOrders = async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    if (dataSource.value === 'api') {
+      // Lógica para obtener datos de la API
+      // const response = await axios.get('http://localhost:4000/pedidos');
+      // orders.value = response.data;
       
-      // Datos de pedidos
-      orders: [],
-      
-      // Filtros de historial
-      filterDate: '',
-      filterRestaurantName: '',
-      
-      // Estado de modales
-      showPaymentModalFlag: false,
-      showComplaintModalFlag: false,
-      showMapModalFlag: false,
-      showCancelConfirmModalFlag: false,
-      showLocationModalFlag: false,
-      locationModalType: 'local', // 'local' o 'cliente'
-      
-      // Datos para modal de pago
-      currentOrder: null,
-      receiptImage: null,
-      receiptImageUrl: null,
-      receiptNumber: '',
-      uploadingImage: false,
-      uploadError: null,
-      
-      // Datos para modal de queja
-      complaintText: '',
-      complaintImage: null,
-      complaintImageUrl: null,
-      uploadingComplaintImage: false,
-      
-      // Socket.io
-      socket: null,
-      
-      // Para mapa
-      map: null,
-      locationMap: null
+      // Simulamos error de API para propósitos de demo
+      error.value = "No se pudo conectar a la API. Usando datos de ejemplo.";
+      dataSource.value = 'mock';
+      await fetchMockData();
+    } else {
+      await fetchMockData();
     }
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    error.value = "Error al cargar los pedidos. Por favor intenta nuevamente.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+const fetchMockData = async () => {
+  // Simulación de datos para demostración
+  orders.value = [
+  // New pending order as requested
+  {
+    id_pedido: 106,
+    id_cliente: 1,
+    id_local: 7,
+    id_direccion_cliente: 10,
+    id_direccion_local: 7,
+    fecha_pedido: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutos atrás
+    estado: 'pendiente_local',
+    metodo_pago: 'efectivo',
+    tipo_pedido: 'domicilio',
+    pago_delivery: 2.00, // Pago al delivery
+    local: {
+      nombre: 'McDonald\'s',
+      telefono: '98761234'
+    },
+    direccion_cliente: {
+      direccion: 'Ceutec, La Ceiba',
+      latitud: 15.768179164281971,
+      longitud: -86.78981884103158
+    },
+    direccion_local: {
+      direccion: 'Mall Megaplaza, Local 12, La Ceiba',
+      latitud: 15.771274584888115,
+      longitud: -86.79179628996306
+    },
+    items: [
+      {
+        id_pedido_detalle: 209,
+        nombre_producto: 'Big Mac',
+        cantidad: 1,
+        precio_unitario: 7.99,
+        subtotal: 7.99
+      },
+      {
+        id_pedido_detalle: 210,
+        nombre_producto: 'McFlurry Oreo',
+        cantidad: 1,
+        precio_unitario: 3.50,
+        subtotal: 3.50
+      }
+    ]
   },
-  computed: {
-    // Filtrar pedidos activos (no entregados, no cancelados, no rechazados)
-    activeOrders() {
-      return this.orders.filter(order => 
-        !['entregado', 'cancelado', 'rechazado'].includes(order.estado)
-      );
+  {
+    id_pedido: 101,
+    id_cliente: 1,
+    id_local: 5,
+    id_driver: 3,
+    id_direccion_cliente: 10,
+    id_direccion_local: 5,
+    tiempo_preparacion_estimado: 20,
+    tiempo_llegada_estimado: 15,
+    fecha_pedido: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hora atrás
+    estado: 'en_camino',
+    metodo_pago: 'efectivo',
+    tipo_pedido: 'domicilio',
+    codigo_entrega: '4519',
+    pago_delivery: 3.50, // Pago al delivery
+    local: {
+      nombre: 'Burger King',
+      telefono: '12345678'
     },
-    
-    // Filtrar pedidos pasados (entregados, cancelados o rechazados)
-    pastOrders() {
-      return this.orders.filter(order => 
-        ['entregado', 'cancelado', 'rechazado'].includes(order.estado)
-      );
+    direccion_cliente: {
+      direccion: 'Ceutec, La Ceiba',
+      latitud: 15.768179164281971,
+      longitud: -86.78981884103158
     },
-    
-    // Aplicar filtros a pedidos pasados
-    filteredPastOrders() {
-      let filtered = [...this.pastOrders];
-      
-      // Filtrar por fecha
-      if (this.filterDate) {
-        const filterDateObj = new Date(this.filterDate);
-        filtered = filtered.filter(order => {
-          const orderDate = new Date(order.fecha_pedido);
-          return orderDate.toDateString() === filterDateObj.toDateString();
-        });
+    direccion_local: {
+      direccion: 'Mall Megaplaza, Local 45',
+      latitud: 15.771274584888115,
+      longitud: -86.79179628996306
+    },
+    items: [
+      {
+        id_pedido_detalle: 201,
+        nombre_producto: 'Whopper',
+        cantidad: 2,
+        precio_unitario: 5.99,
+        subtotal: 11.98,
+        atributos: {
+          'Tipo de pan': 'Normal',
+          'Tamaño': 'Grande'
+        },
+        extras: ['Queso extra', 'Bacon']
+      },
+      {
+        id_pedido_detalle: 202,
+        nombre_producto: 'Papas Fritas',
+        cantidad: 1,
+        precio_unitario: 2.50,
+        subtotal: 2.50,
+        atributos: {
+          'Tamaño': 'Grande'
+        },
+        extras: []
       }
-      
-      // Filtrar por nombre de restaurante
-      if (this.filterRestaurantName.trim() !== '') {
-        const searchTerm = this.filterRestaurantName.toLowerCase();
-        filtered = filtered.filter(order => 
-          order.local?.nombre?.toLowerCase().includes(searchTerm)
-        );
-      }
-      
-      return filtered;
-    }
+    ]
   },
-  methods: {
-    // Control de UI
-    toggleSidebar() {
-      this.isSidebarOpen = !this.isSidebarOpen;
+  {
+    id_pedido: 102,
+    id_cliente: 1,
+    id_local: 8,
+    id_direccion_cliente: 10,
+    id_direccion_local: 8,
+    tiempo_preparacion_estimado: 30,
+    fecha_pedido: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutos atrás
+    estado: 'pendiente_deposito',
+    metodo_pago: 'transferencia',
+    tipo_pedido: 'domicilio',
+    has_deposit: false,
+    pago_delivery: 4.00, // Pago al delivery
+    local: {
+      nombre: 'Sushi Express',
+      telefono: '87654321'
     },
-    
-    resetFilters() {
-      this.filterDate = '';
-      this.filterRestaurantName = '';
+    direccion_cliente: {
+      direccion: 'Calle Principal 123, Ciudad'
     },
-    
-    toggleOrderDetails(orderId) {
-      if (this.expandedOrders.includes(orderId)) {
-        this.expandedOrders = this.expandedOrders.filter(id => id !== orderId);
-      } else {
-        this.expandedOrders.push(orderId);
+    direccion_local: {
+      direccion: 'Av. Central 456, Ciudad'
+    },
+    cuenta_bancaria: {
+      banco: 'Banco Nacional',
+      titular: 'Sushi Express S.A.',
+      numero: '1234-5678-9012-3456',
+      tipo: 'Cuenta Corriente'
+    },
+    items: [
+      {
+        id_pedido_detalle: 203,
+        nombre_producto: 'Combo Sushi',
+        cantidad: 1,
+        precio_unitario: 15.99,
+        subtotal: 15.99,
+        atributos: {},
+        extras: ['Wasabi extra', 'Gari extra']
       }
-    },
-    
-    // Formateo de datos
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    },
-    
-    formatDateTime(dateString) {
-      if (!dateString) return 'N/A';
-      const date = new Date(dateString);
-      return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-    },
-    
-    formatPrice(price) {
-      if (!price) return '0.00';
-      return parseFloat(price).toFixed(2);
-    },
-    
-    calculateOrderTotal(order) {
-      if (!order || !order.items || !Array.isArray(order.items)) return 0;
-      return order.items.reduce((total, item) => total + parseFloat(item.subtotal || 0), 0);
-    },
-    
-    getPrettyPaymentMethod(method) {
-      const methods = {
-        'efectivo': 'Efectivo',
-        'transferencia': 'Transferencia bancaria',
-        'tarjeta': 'Tarjeta de crédito/débito'
-      };
-      return methods[method] || method;
-    },
-    
-    getPrettyDeliveryType(type) {
-      const types = {
-        'domicilio': 'Entrega a domicilio',
-        'recoger': 'Recoger en local',
-        'comer_local': 'Comer en local'
-      };
-      return types[type] || type;
-    },
-    
-    getStatusText(status) {
-      const statusMap = {
-        'pendiente_local': 'Pendiente de aceptación',
-        'pendiente_deposito': 'Pendiente de pago',
-        'preparando_pedido': 'En preparación',
-        'en_camino': 'En camino',
-        'entregado': 'Entregado',
-        'cancelado': 'Cancelado',
-        'rechazado': 'Rechazado'
-      };
-      return statusMap[status] || status;
-    },
-    
-    getStatusBadgeClass(status) {
-      const classMap = {
-        'pendiente_local': 'bg-gray-100 text-gray-800',
-        'pendiente_deposito': 'bg-yellow-100 text-yellow-800',
-        'preparando_pedido': 'bg-orange-100 text-orange-800',
-        'en_camino': 'bg-blue-100 text-blue-800',
-        'entregado': 'bg-green-100 text-green-800',
-        'cancelado': 'bg-red-100 text-red-800',
-        'rechazado': 'bg-red-100 text-red-800'
-      };
-      return classMap[status] || 'bg-gray-100 text-gray-800';
-    },
-    
-    getStateClass(state, currentState) {
-      // Devuelve la clase para el círculo de estado en la barra de progreso
-      const states = ['pendiente_local', 'pendiente_deposito', 'preparando_pedido', 'en_camino', 'entregado'];
-      const currentIndex = states.indexOf(currentState);
-      const stateIndex = states.indexOf(state);
-      
-      if (stateIndex < 0) return 'bg-gray-300'; // Estado no válido
-      
-      if (stateIndex < currentIndex || state === currentState) {
-        return 'bg-blue-600'; // Estado completado o actual
-      }
-      
-      return 'bg-gray-300'; // Estado pendiente
-    },
-    
-    getProgressPercentage(currentState) {
-      // Calcula el porcentaje para la barra de progreso
-      const states = ['pendiente_local', 'pendiente_deposito', 'preparando_pedido', 'en_camino', 'entregado'];
-      const stateIndex = states.indexOf(currentState);
-      
-      if (stateIndex < 0) return 0;
-      
-      return (stateIndex / (states.length - 1)) * 100;
-    },
-    
-    // Gestión de datos
-    async fetchOrders() {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        if (this.dataSource === 'api') {
-          // Lógica para obtener datos de la API
-          // const response = await axios.get('http://localhost:4000/pedidos');
-          // this.orders = response.data;
-          
-          // Simulamos error de API para propósitos de demo
-          // Descomenta la línea de arriba y borra esto cuando tengas la API funcionando
-          this.error = "No se pudo conectar a la API. Usando datos de ejemplo.";
-          this.dataSource = 'mock';
-          await this.fetchMockData();
-        } else {
-          await this.fetchMockData();
-        }
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-        this.error = "Error al cargar los pedidos. Por favor intenta nuevamente.";
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    async fetchMockData() {
-      // Simulación de datos para demostración
-      this.orders = [
-        {
-          id_pedido: 101,
-          id_cliente: 1,
-          id_local: 5,
-          id_driver: 3,
-          id_direccion_cliente: 10,
-          id_direccion_local: 5,
-          tiempo_preparacion_estimado: 20,
-          tiempo_llegada_estimado: 15,
-          fecha_pedido: new Date(Date.now() - 60 * 60 * 1000).toISOString(), // 1 hora atrás
-          estado: 'en_camino',
-          metodo_pago: 'efectivo',
-          tipo_pedido: 'domicilio',
-          local: {
-            nombre: 'Burger King',
-            telefono: '12345678'
-          },
-          direccion_cliente: {
-            direccion: 'Ceutec, La Ceiba',
-            latitud: 15.768179164281971, 
-            longitud: -86.78981884103158
-          },
-          direccion_local: {
-            direccion: 'Mall Megaplaza, Local 45, La Ceiba',
-            latitud: 15.771274584888115, 
-            longitud: -86.79179628996306
-          },
-          items: [
-            {
-              id_pedido_detalle: 201,
-              nombre_producto: 'Whopper',
-              cantidad: 2,
-              precio_unitario: 5.99,
-              subtotal: 11.98,
-              atributos: {
-                'Tipo de pan': 'Normal',
-                'Tamaño': 'Grande'
-              },
-              extras: ['Queso extra', 'Bacon']
-            },
-            {
-              id_pedido_detalle: 202,
-              nombre_producto: 'Papas Fritas',
-              cantidad: 1,
-              precio_unitario: 2.50,
-              subtotal: 2.50,
-              atributos: {
-                'Tamaño': 'Grande'
-              },
-              extras: []
-            }
-          ]
-        },
-        {
-          id_pedido: 102,
-          id_cliente: 1,
-          id_local: 8,
-          id_direccion_cliente: 10,
-          id_direccion_local: 8,
-          tiempo_preparacion_estimado: 30,
-          fecha_pedido: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutos atrás
-          estado: 'pendiente_deposito',
-          metodo_pago: 'transferencia',
-          tipo_pedido: 'domicilio',
-          has_deposit: false,
-          local: {
-            nombre: 'Sushi Express',
-            telefono: '87654321'
-          },
-          direccion_cliente: {
-            direccion: 'Calle Principal 123, Ciudad'
-          },
-          direccion_local: {
-            direccion: 'Av. Central 456, Ciudad'
-          },
-          cuenta_bancaria: {
-            banco: 'Banco Nacional',
-            titular: 'Sushi Express S.A.',
-            numero: '1234-5678-9012-3456',
-            tipo: 'Cuenta Corriente'
-          },
-          items: [
-            {
-              id_pedido_detalle: 203,
-              nombre_producto: 'Combo Sushi',
-              cantidad: 1,
-              precio_unitario: 15.99,
-              subtotal: 15.99,
-              atributos: {},
-              extras: ['Wasabi extra', 'Gari extra']
-            }
-          ]
-        },
-        {
-          id_pedido: 103,
-          id_cliente: 1,
-          id_local: 3,
-          id_direccion_cliente: 10,
-          id_direccion_local: 3,
-          fecha_pedido: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 días atrás
-          fecha_entrega: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
-          estado: 'entregado',
-          metodo_pago: 'efectivo',
-          tipo_pedido: 'domicilio',
-          local: {
-            nombre: 'Pizza Hut',
-            telefono: '12343211'
-          },
-          items: [
-            {
-              id_pedido_detalle: 204,
-              nombre_producto: 'Pizza Hawaiana',
-              cantidad: 1,
-              precio_unitario: 12.99,
-              subtotal: 12.99
-            },
-            {
-              id_pedido_detalle: 205,
-              nombre_producto: 'Coca-Cola',
-              cantidad: 2,
-              precio_unitario: 1.50,
-              subtotal: 3.00
-            }
-          ]
-        },
-        {
-          id_pedido: 104,
-          id_cliente: 1,
-          id_local: 9,
-          id_direccion_cliente: 10,
-          id_direccion_local: 9,
-          fecha_pedido: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días atrás
-          estado: 'rechazado',
-          razon_rechazo: 'El local está cerrando en este momento y no podemos procesar más pedidos.',
-          metodo_pago: 'efectivo',
-          tipo_pedido: 'domicilio',
-          local: {
-            nombre: 'Taco Bell',
-            telefono: '98765432'
-          },
-          items: [
-            {
-              id_pedido_detalle: 206,
-              nombre_producto: 'Combo Tacos',
-              cantidad: 1,
-              precio_unitario: 8.99,
-              subtotal: 8.99
-            }
-          ]
-        },
-        {
-          id_pedido: 105,
-          id_cliente: 1,
-          id_local: 12,
-          id_direccion_cliente: 10,
-          id_direccion_local: 12,
-          tiempo_preparacion_estimado: 15,
-          fecha_pedido: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutos atrás
-          estado: 'preparando_pedido',
-          metodo_pago: 'tarjeta',
-          tipo_pedido: 'comer_local',
-          local: {
-            nombre: 'Café Delicioso',
-            telefono: '56781234'
-          },
-          items: [
-            {
-              id_pedido_detalle: 207,
-              nombre_producto: 'Desayuno Completo',
-              cantidad: 1,
-              precio_unitario: 9.99,
-              subtotal: 9.99
-            },
-            {
-              id_pedido_detalle: 208,
-              nombre_producto: 'Café Americano',
-              cantidad: 1,
-              precio_unitario: 2.50,
-              subtotal: 2.50
-            }
-          ]
-        }
-      ];
-      
-      // Simulación de carga
-      await new Promise(resolve => setTimeout(resolve, 800));
-    },
-    
-    // Modales de pago
-    showPaymentModal(order) {
-      this.currentOrder = order;
-      this.receiptImage = null;
-      this.receiptImageUrl = null;
-      this.receiptNumber = '';
-      this.uploadError = null;
-      this.showPaymentModalFlag = true;
-    },
-    
-    closePaymentModal() {
-      this.showPaymentModalFlag = false;
-      setTimeout(() => {
-        this.currentOrder = null;
-        this.receiptImage = null;
-        this.receiptImageUrl = null;
-      }, 300);
-    },
-    
-    triggerFileInput() {
-      this.$refs.fileInput.click();
-    },
-    
-    handleFileChange(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      // Validación del archivo
-      if (!file.type.match('image.*')) {
-        this.uploadError = 'Por favor selecciona una imagen';
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        this.uploadError = 'La imagen no debe superar los 5MB';
-        return;
-      }
-      
-      this.receiptImage = file;
-      this.receiptImageUrl = URL.createObjectURL(file);
-      this.uploadError = null;
-    },
-    
-    removeImage() {
-      this.receiptImage = null;
-      if (this.receiptImageUrl) {
-        URL.revokeObjectURL(this.receiptImageUrl);
-      }
-      this.receiptImageUrl = null;
-      this.$refs.fileInput.value = '';
-    },
-    
-    async submitPaymentReceipt() {
-      if (!this.receiptImage) {
-        this.uploadError = 'Por favor adjunta un comprobante de pago';
-        return;
-      }
-      
-      this.uploadingImage = true;
-      
-      try {
-        // Simular subida de imagen a Cloudinary
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Aquí iría el código real para subir a Cloudinary y guardar en la API
-        /*
-        const formData = new FormData();
-        formData.append('file', this.receiptImage);
-        formData.append('upload_preset', 'tu_preset');
-        
-        const response = await axios.post('https://api.cloudinary.com/v1_1/tu_cloud_name/image/upload', formData);
-        const imageUrl = response.data.secure_url;
-        
-        await axios.post('http://localhost:4000/pagos/transferencia', {
-          id_pedido: this.currentOrder.id_pedido,
-          num_comprobante: this.receiptNumber,
-          imagen_url: imageUrl
-        });
-        */
-        
-        // Actualizar el estado localmente
-        const orderIndex = this.orders.findIndex(order => order.id_pedido === this.currentOrder.id_pedido);
-        if (orderIndex >= 0) {
-          this.orders[orderIndex].estado = 'preparando_pedido';
-          this.orders[orderIndex].has_deposit = true;
-        }
-        
-        this.closePaymentModal();
-        
-        // Mostrar notificación de éxito
-        alert('Pago registrado correctamente. El local procesará tu pedido pronto.');
-        
-      } catch (err) {
-        console.error("Error submitting payment:", err);
-        this.uploadError = "Error al procesar el pago. Por favor intenta nuevamente.";
-      } finally {
-        this.uploadingImage = false;
-      }
-    },
-    
-    // Modales de queja
-    showComplaintModal(order) {
-      this.currentOrder = order;
-      this.complaintText = '';
-      this.complaintImage = null;
-      this.complaintImageUrl = null;
-      this.showComplaintModalFlag = true;
-    },
-    
-    closeComplaintModal() {
-      this.showComplaintModalFlag = false;
-      setTimeout(() => {
-        this.currentOrder = null;
-        this.complaintText = '';
-        this.complaintImage = null;
-        this.complaintImageUrl = null;
-      }, 300);
-    },
-    
-    triggerComplaintFileInput() {
-      this.$refs.complaintFileInput.click();
-    },
-    
-    handleComplaintFileChange(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      // Validación del archivo
-      if (!file.type.match('image.*')) {
-        alert('Por favor selecciona una imagen');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        alert('La imagen no debe superar los 5MB');
-        return;
-      }
-      
-      this.complaintImage = file;
-      this.complaintImageUrl = URL.createObjectURL(file);
-    },
-    
-    removeComplaintImage() {
-      this.complaintImage = null;
-      if (this.complaintImageUrl) {
-        URL.revokeObjectURL(this.complaintImageUrl);
-      }
-      this.complaintImageUrl = null;
-      this.$refs.complaintFileInput.value = '';
-    },
-    
-    async submitComplaint() {
-      if (!this.complaintText || this.complaintText.trim() === '') {
-        alert('Por favor describe el problema');
-        return;
-      }
-      
-      this.uploadingComplaintImage = true;
-      
-      try {
-        // Simular envío y procesamiento
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Aquí iría el código real para subir a Cloudinary y guardar en la API
-        /*
-        let imageUrl = null;
-        
-        if (this.complaintImage) {
-          const formData = new FormData();
-          formData.append('file', this.complaintImage);
-          formData.append('upload_preset', 'tu_preset');
-          
-          const response = await axios.post('https://api.cloudinary.com/v1_1/tu_cloud_name/image/upload', formData);
-          imageUrl = response.data.secure_url;
-        }
-        
-        await axios.post('http://localhost:4000/quejalocal', {
-          id_cliente: 1, // Esto vendría del usuario autenticado
-          id_local: this.currentOrder.id_local,
-          id_pedido: this.currentOrder.id_pedido,
-          comentario: this.complaintText,
-          imagen_url: imageUrl
-        });
-        */
-        
-        // Actualizar el pedido localmente
-        const orderIndex = this.orders.findIndex(order => order.id_pedido === this.currentOrder.id_pedido);
-        if (orderIndex >= 0) {
-          this.orders[orderIndex].queja = {
-            comentario: this.complaintText,
-            imagen_url: this.complaintImageUrl,
-            fecha: new Date().toISOString()
-          };
-        }
-        
-        this.closeComplaintModal();
-        
-        // Mostrar notificación de éxito
-        alert('Tu reporte ha sido enviado. El restaurante revisará tu caso pronto.');
-        
-      } catch (err) {
-        console.error("Error submitting complaint:", err);
-        alert("Error al enviar el reporte. Por favor intenta nuevamente.");
-      } finally {
-        this.uploadingComplaintImage = false;
-      }
-    },
-    
-    // Modal de mapa
-    showMapModal(order) {
-      this.currentOrder = order;
-      this.showMapModalFlag = true;
-      
-      // Inicializar mapa en el siguiente tick
-      this.$nextTick(() => {
-        this.initMap();
-      });
-    },
-    
-    closeMapModal() {
-      this.showMapModalFlag = false;
-      if (this.map) {
-        this.map.remove();
-        this.map = null;
-      }
-    },
-    
-    initMap() {
-      if (!window.L) {
-        console.error('Leaflet not loaded');
-        return;
-      }
-      
-      // Eliminar mapa existente si lo hay
-      if (this.map) {
-        this.map.remove();
-      }
-      
-      // Crear nuevo mapa
-      this.map = L.map('map').setView([14.0818, -87.2068], 13);
-      
-      // Agregar capa de mapa
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(this.map);
-      
-      if (this.currentOrder) {
-        // Marcar ubicación del cliente
-        if (this.currentOrder.direccion_cliente?.latitud && this.currentOrder.direccion_cliente?.longitud) {
-          const clientMarker = L.marker([
-            this.currentOrder.direccion_cliente.latitud,
-            this.currentOrder.direccion_cliente.longitud
-          ]).addTo(this.map);
-          
-          clientMarker.bindPopup("Tu ubicación").openPopup();
-        }
-        
-        // Marcar ubicación del local
-        if (this.currentOrder.direccion_local?.latitud && this.currentOrder.direccion_local?.longitud) {
-          const localIcon = L.divIcon({
-            html: `<div class="bg-blue-600 p-1 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                   </div>`,
-            className: '',
-            iconSize: [24, 24]
-          });
-          
-          const restaurantMarker = L.marker([
-            this.currentOrder.direccion_local.latitud,
-            this.currentOrder.direccion_local.longitud
-          ], { icon: localIcon }).addTo(this.map);
-          
-          restaurantMarker.bindPopup(this.currentOrder.local?.nombre || "Restaurante");
-        }
-        
-        // Ubicación simulada del repartidor
-        if (this.currentOrder.estado === 'en_camino') {
-          // Calcular punto intermedio entre cliente y local para simular posición del repartidor
-          const clientLat = this.currentOrder.direccion_cliente?.latitud || 15.771569671157208;
-          const clientLng = this.currentOrder.direccion_cliente?.longitud || -86.79169616596653;
-          const localLat = this.currentOrder.direccion_local?.latitud || 15.768209275604825;
-          const localLng = this.currentOrder.direccion_local?.longitud ||  -86.79169616596653;
-          
-          const driverLat = (clientLat + localLat) / 2;
-          const driverLng = (clientLng + localLng) / 2;
-          
-                    
-          // Dibujar ruta
-          const polyline = L.polyline([
-            [localLat, localLng],
-            [driverLat, driverLng],
-            [clientLat, clientLng]
-          ], {color: 'blue', dashArray: '5, 10'}).addTo(this.map);
-          
-          // Ajustar la vista
-          this.map.fitBounds(polyline.getBounds(), {padding: [50, 50]});
-        } else {
-          // Si no hay ruta, centrar en el cliente
-          this.map.setView([clientLat, clientLng], 13);
-        }
-      }
-    },
-    
-    // Modal de ubicación
-    showLocationModal(order, type) {
-      this.currentOrder = order;
-      this.locationModalType = type;
-      this.showLocationModalFlag = true;
-      
-      // Inicializar mapa en el siguiente tick
-      this.$nextTick(() => {
-        this.initLocationMap();
-      });
-    },
-    
-    closeLocationModal() {
-      this.showLocationModalFlag = false;
-      if (this.locationMap) {
-        this.locationMap.remove();
-        this.locationMap = null;
-      }
-    },
-    
-    initLocationMap() {
-      if (!window.L) {
-        console.error('Leaflet not loaded');
-        return;
-      }
-      
-      // Eliminar mapa existente si lo hay
-      if (this.locationMap) {
-        this.locationMap.remove();
-      }
-      
-      // Obtener las coordenadas según el tipo
-      let lat, lng, title;
-      
-      if (this.locationModalType === 'local') {
-        lat = this.currentOrder?.direccion_local?.latitud || 15.771569671157208;
-        lng = this.currentOrder?.direccion_local?.longitud || -86.79169616596653;
-        title = this.currentOrder?.local?.nombre || 'Restaurante';
-      } else {
-        lat = this.currentOrder?.direccion_cliente?.latitud || 15.768209275604825;
-        lng = this.currentOrder?.direccion_cliente?.longitud ||  -86.78990644952853;
-        title = 'Tu ubicación';
-      }
-      
-      // Crear nuevo mapa
-      this.locationMap = L.map('location-map').setView([lat, lng], 15);
-      
-      // Agregar capa de mapa
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(this.locationMap);
-      
-      // Agregar marcador
-      const marker = L.marker([lat, lng]).addTo(this.locationMap);
-      marker.bindPopup(title).openPopup();
-    },
-    
-    // Cancelación de pedido
-    confirmCancelOrder(order) {
-      this.currentOrder = order;
-      this.showCancelConfirmModalFlag = true;
-    },
-    
-    closeCancelConfirmModal() {
-      this.showCancelConfirmModalFlag = false;
-      setTimeout(() => {
-        this.currentOrder = null;
-      }, 300);
-    },
-    
-    async cancelOrder() {
-      try {
-        // Simular cancelación
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Actualizar estado localmente
-        const orderIndex = this.orders.findIndex(order => order.id_pedido === this.currentOrder.id_pedido);
-        if (orderIndex >= 0) {
-          this.orders[orderIndex].estado = 'cancelado';
-        }
-        
-        this.closeCancelConfirmModal();
-        
-        // Mostrar notificación
-        alert('Pedido cancelado correctamente');
-        
-      } catch (err) {
-        console.error("Error cancelling order:", err);
-        alert("Error al cancelar el pedido. Por favor intenta nuevamente.");
-      }
-    },
-    
-    // Reordenar pedido anterior
-    reorderItems(order) {
-      // Aquí iría la lógica para reordenar
-      alert('Función de reordenar en desarrollo. Esta acción enviaría los productos al carrito.');
-    },
-    
-    // Socket.io para actualizaciones en tiempo real
-    initSocket() {
-      // Inicializar socket.io para recibir actualizaciones en tiempo real
-      /*
-      this.socket = io('http://localhost:4000');
-      
-      this.socket.on('connect', () => {
-        console.log('Socket conectado');
-        
-        // Suscribirse a actualizaciones de pedidos del cliente (id_cliente vendría de la sesión)
-        this.socket.emit('subscribe_customer_orders', { id_cliente: 1 });
-      });
-      
-      this.socket.on('order_update', (updatedOrder) => {
-        // Actualizar el pedido en la lista local
-        const index = this.orders.findIndex(order => order.id_pedido === updatedOrder.id_pedido);
-        if (index >= 0) {
-          this.orders.splice(index, 1, updatedOrder);
-        }
-      });
-      
-      this.socket.on('disconnect', () => {
-        console.log('Socket desconectado');
-      });
-      */
-    }
+    ]
   },
-  mounted() {
-    // Inicializar datos
-    this.fetchOrders();
+  {
+    id_pedido: 103,
+    id_cliente: 1,
+    id_local: 3,
+    id_direccion_cliente: 10,
+    id_direccion_local: 3,
+    fecha_pedido: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 días atrás
+    fecha_entrega: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
+    estado: 'entregado',
+    metodo_pago: 'efectivo',
+    tipo_pedido: 'domicilio',
+    pago_delivery: 3.00, // Pago al delivery
+    local: {
+      nombre: 'Pizza Hut',
+      telefono: '12343211'
+    },
+    items: [
+      {
+        id_pedido_detalle: 204,
+        nombre_producto: 'Pizza Hawaiana',
+        cantidad: 1,
+        precio_unitario: 12.99,
+        subtotal: 12.99
+      },
+      {
+        id_pedido_detalle: 205,
+        nombre_producto: 'Coca-Cola',
+        cantidad: 2,
+        precio_unitario: 1.50,
+        subtotal: 3.00
+      }
+    ]
+  },
+  {
+    id_pedido: 104,
+    id_cliente: 1,
+    id_local: 9,
+    id_direccion_cliente: 10,
+    id_direccion_local: 9,
+    fecha_pedido: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 días atrás
+    estado: 'rechazado',
+    razon_rechazo: 'El local está cerrando en este momento y no podemos procesar más pedidos.',
+    metodo_pago: 'efectivo',
+    tipo_pedido: 'domicilio',
+    pago_delivery: 2.50, // Pago al delivery
+    local: {
+      nombre: 'Taco Bell',
+      telefono: '98765432'
+    },
+    items: [
+      {
+        id_pedido_detalle: 206,
+        nombre_producto: 'Combo Tacos',
+        cantidad: 1,
+        precio_unitario: 8.99,
+        subtotal: 8.99
+      }
+    ]
+  },
+  {
+    id_pedido: 105,
+    id_cliente: 1,
+    id_local: 12,
+    id_direccion_cliente: 10,
+    id_direccion_local: 12,
+    tiempo_preparacion_estimado: 15,
+    fecha_pedido: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutos atrás
+    estado: 'preparando_pedido',
+    metodo_pago: 'tarjeta',
+    tipo_pedido: 'comer_local',
+    pago_delivery: 0.00, // Pago al delivery (no aplica para comer en local)
+    local: {
+      nombre: 'Café Delicioso',
+      telefono: '56781234'
+    },
+    items: [
+      {
+        id_pedido_detalle: 207,
+        nombre_producto: 'Desayuno Completo',
+        cantidad: 1,
+        precio_unitario: 9.99,
+        subtotal: 9.99
+      },
+      {
+        id_pedido_detalle: 208,
+        nombre_producto: 'Café Americano',
+        cantidad: 1,
+        precio_unitario: 2.50,
+        subtotal: 2.50
+      }
+    ]
+  }
+];
+
+  
+  // Simulación de carga
+  await new Promise(resolve => setTimeout(resolve, 800));
+};
+
+// Modales de pago
+const showPaymentModal = (order) => {
+  currentOrder.value = order;
+  receiptImage.value = null;
+  receiptImageUrl.value = null;
+  receiptNumber.value = '';
+  uploadError.value = null;
+  showPaymentModalFlag.value = true;
+};
+
+const closePaymentModal = () => {
+  showPaymentModalFlag.value = false;
+  setTimeout(() => {
+    currentOrder.value = null;
+    receiptImage.value = null;
+    receiptImageUrl.value = null;
+  }, 300);
+};
+
+const triggerFileInput = () => {
+  if (document.querySelector('input[type="file"]')) {
+    document.querySelector('input[type="file"]').click();
+  }
+};
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validación del archivo
+  if (!file.type.match('image.*')) {
+    uploadError.value = 'Por favor selecciona una imagen';
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) { // 5MB
+    uploadError.value = 'La imagen no debe superar los 5MB';
+    return;
+  }
+  
+  receiptImage.value = file;
+  receiptImageUrl.value = URL.createObjectURL(file);
+  uploadError.value = null;
+};
+
+const removeImage = () => {
+  receiptImage.value = null;
+  if (receiptImageUrl.value) {
+    URL.revokeObjectURL(receiptImageUrl.value);
+  }
+  receiptImageUrl.value = null;
+};
+
+const submitPaymentReceipt = async () => {
+  if (!receiptImage.value) {
+    uploadError.value = 'Por favor adjunta un comprobante de pago';
+    return;
+  }
+  
+  uploadingImage.value = true;
+  
+  try {
+    // Simular subida de imagen a Cloudinary
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Inicializar socket para actualizaciones en tiempo real
-    this.initSocket();
-    
-    // Detectar preferencia de color
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
+    // Actualizar el estado localmente
+    const orderIndex = orders.value.findIndex(order => order.id_pedido === currentOrder.value.id_pedido);
+    if (orderIndex >= 0) {
+      orders.value[orderIndex].estado = 'preparando_pedido';
+      orders.value[orderIndex].has_deposit = true;
     }
     
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-      if (event.matches) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+    closePaymentModal();
+    
+    // Mostrar notificación de éxito
+    alert('Pago registrado correctamente. El local procesará tu pedido pronto.');
+    
+  } catch (err) {
+    console.error("Error submitting payment:", err);
+    uploadError.value = "Error al procesar el pago. Por favor intenta nuevamente.";
+  } finally {
+    uploadingImage.value = false;
+  }
+};
+
+// Modales de queja
+const showComplaintModal = (order) => {
+  currentOrder.value = order;
+  complaintText.value = '';
+  complaintImage.value = null;
+  complaintImageUrl.value = null;
+  showComplaintModalFlag.value = true;
+};
+
+const closeComplaintModal = () => {
+  showComplaintModalFlag.value = false;
+  setTimeout(() => {
+    currentOrder.value = null;
+    complaintText.value = '';
+    complaintImage.value = null;
+    complaintImageUrl.value = null;
+  }, 300);
+};
+
+const triggerComplaintFileInput = () => {
+  if (document.querySelector('input[ref="complaintFileInput"]')) {
+    document.querySelector('input[ref="complaintFileInput"]').click();
+  }
+};
+
+const handleComplaintFileChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validación del archivo
+  if (!file.type.match('image.*')) {
+    alert('Por favor selecciona una imagen');
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) { // 5MB
+    alert('La imagen no debe superar los 5MB');
+    return;
+  }
+  
+  complaintImage.value = file;
+  complaintImageUrl.value = URL.createObjectURL(file);
+};
+
+const removeComplaintImage = () => {
+  complaintImage.value = null;
+  if (complaintImageUrl.value) {
+    URL.revokeObjectURL(complaintImageUrl.value);
+  }
+  complaintImageUrl.value = null;
+};
+
+const submitComplaint = async () => {
+  if (!complaintText.value || complaintText.value.trim() === '') {
+    alert('Por favor describe el problema');
+    return;
+  }
+  
+  uploadingComplaintImage.value = true;
+  
+  try {
+    // Simular envío y procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Actualizar el pedido localmente
+    const orderIndex = orders.value.findIndex(order => order.id_pedido === currentOrder.value.id_pedido);
+    if (orderIndex >= 0) {
+      orders.value[orderIndex].queja = {
+        comentario: complaintText.value,
+        imagen_url: complaintImageUrl.value,
+        fecha: new Date().toISOString()
+      };
+    }
+    
+    closeComplaintModal();
+    
+    // Mostrar notificación de éxito
+    alert('Tu reporte ha sido enviado. El restaurante revisará tu caso pronto.');
+    
+  } catch (err) {
+    console.error("Error submitting complaint:", err);
+    alert("Error al enviar el reporte. Por favor intenta nuevamente.");
+  } finally {
+    uploadingComplaintImage.value = false;
+  }
+};
+
+// Modal de mapa
+const showMapModal = (order) => {
+  currentOrder.value = order;
+  showMapModalFlag.value = true;
+  
+  // Inicializar mapa en el siguiente tick
+  setTimeout(() => {
+    initMap();
+  }, 0);
+};
+
+const closeMapModal = () => {
+  showMapModalFlag.value = false;
+  if (map.value) {
+    map.value.remove();
+    map.value = null;
+  }
+};
+
+const initMap = () => {
+  if (!window.L) {
+    loadLeaflet().then(() => {
+      createMap();
+    });
+  } else {
+    createMap();
+  }
+};
+
+const createMap = () => {
+  // Eliminar mapa existente si lo hay
+  if (map.value) {
+    map.value.remove();
+  }
+  
+  // Obtener el contenedor del mapa
+  const mapContainer = document.getElementById('map');
+  if (!mapContainer) return;
+  
+  // Crear nuevo mapa
+  map.value = L.map('map').setView([15.7699, -86.7953], 14);
+  
+  // Agregar capa de mapa
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map.value);
+  
+  if (currentOrder.value) {
+    // Posiciones
+    const clientLat = currentOrder.value.direccion_cliente?.latitud || 15.768179164281971;
+    const clientLng = currentOrder.value.direccion_cliente?.longitud || -86.78981884103158;
+    const localLat = currentOrder.value.direccion_local?.latitud || 15.771274584888115;
+    const localLng = currentOrder.value.direccion_local?.longitud || -86.79179628996306;
+    
+    // Marcar ubicación del cliente
+    const clientMarker = L.marker([clientLat, clientLng]).addTo(map.value);
+    clientMarker.bindPopup("Tu ubicación").openPopup();
+    
+    // Marcar ubicación del local
+    const localIcon = L.divIcon({
+      html: `<div class="bg-blue-600 p-1 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="text-white" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+             </div>`,
+      className: '',
+      iconSize: [24, 24]
     });
     
-    // Cargar Leaflet desde CDN si no está disponible
-    if (!window.L) {
-      const linkElement = document.createElement('link');
-      linkElement.rel = 'stylesheet';
-      linkElement.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
-      document.head.appendChild(linkElement);
+    const restaurantMarker = L.marker([localLat, localLng], { icon: localIcon }).addTo(map.value);
+    restaurantMarker.bindPopup(currentOrder.value.local?.nombre || "Restaurante");
+    
+    
+      // Calcular punto intermedio entre cliente y local para simular posición del repartidor
+      const driverLat = (clientLat + localLat) / 2;
+      const driverLng = (clientLng + localLng) / 2;
+       
+       
       
-      const scriptElement = document.createElement('script');
-      scriptElement.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
-      document.head.appendChild(scriptElement);
-    }
-  },
-  beforeUnmount() {
-    // Limpiar socket al desmontar
-    if (this.socket) {
-      this.socket.disconnect();
-    }
+      // Dibujar ruta
+      const polyline = L.polyline([
+        [localLat, localLng],
+        [driverLat, driverLng],
+        [clientLat, clientLng]
+      ], {color: 'blue', dashArray: '5, 10'}).addTo(map.value);
+      
+      // Ajustar la vista
+      map.value.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+    
   }
-}
+};
+
+// Modal de ubicación
+const showLocationModal = (order, type) => {
+  currentOrder.value = order;
+  locationModalType.value = type;
+  showLocationModalFlag.value = true;
+  
+  // Inicializar mapa en el siguiente tick
+  setTimeout(() => {
+    initLocationMap();
+  }, 0);
+};
+
+const closeLocationModal = () => {
+  showLocationModalFlag.value = false;
+  if (locationMap.value) {
+    locationMap.value.remove();
+    locationMap.value = null;
+  }
+};
+
+const initLocationMap = () => {
+  if (!window.L) {
+    loadLeaflet().then(() => {
+      createLocationMap();
+    });
+  } else {
+    createLocationMap();
+  }
+};
+
+const createLocationMap = () => {
+  // Eliminar mapa existente si lo hay
+  if (locationMap.value) {
+    locationMap.value.remove();
+  }
+  
+  // Obtener las coordenadas según el tipo
+  let lat, lng, title;
+  
+  if (locationModalType.value === 'local') {
+    lat = currentOrder.value?.direccion_local?.latitud || 15.771569671157208;
+    lng = currentOrder.value?.direccion_local?.longitud || -86.79169616596653;
+    title = currentOrder.value?.local?.nombre || 'Restaurante';
+  } else {
+    lat = currentOrder.value?.direccion_cliente?.latitud || 15.768209275604825;
+    lng = currentOrder.value?.direccion_cliente?.longitud ||  -86.78990644952853;
+    title = 'Tu ubicación';
+  }
+  
+  // Crear nuevo mapa
+  const mapContainer = document.getElementById('location-map');
+  if (!mapContainer) return;
+  
+  locationMap.value = L.map('location-map').setView([lat, lng], 15);
+  
+  // Agregar capa de mapa
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(locationMap.value);
+  
+  // Agregar marcador
+  const marker = L.marker([lat, lng]).addTo(locationMap.value);
+  marker.bindPopup(title).openPopup();
+};
+
+// Cargar Leaflet dinámicamente
+const loadLeaflet = () => {
+  return new Promise((resolve, reject) => {
+    if (window.L) {
+      resolve();
+      return;
+    }
+
+    // Cargar CSS de Leaflet
+    const linkElement = document.createElement('link');
+    linkElement.rel = 'stylesheet';
+    linkElement.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+    document.head.appendChild(linkElement);
+    
+    // Cargar JS de Leaflet
+    const scriptElement = document.createElement('script');
+    scriptElement.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
+    scriptElement.onload = () => resolve();
+    scriptElement.onerror = () => reject(new Error('No se pudo cargar Leaflet'));
+    document.head.appendChild(scriptElement);
+  });
+};
+
+// Cancelación de pedido
+const confirmCancelOrder = (order) => {
+  currentOrder.value = order;
+  showCancelConfirmModalFlag.value = true;
+};
+
+const closeCancelConfirmModal = () => {
+  showCancelConfirmModalFlag.value = false;
+  setTimeout(() => {
+    currentOrder.value = null;
+  }, 300);
+};
+
+const cancelOrder = async () => {
+  try {
+    // Simular cancelación
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Actualizar estado localmente
+    const orderIndex = orders.value.findIndex(order => order.id_pedido === currentOrder.value.id_pedido);
+    if (orderIndex >= 0) {
+      orders.value[orderIndex].estado = 'cancelado';
+    }
+    
+    closeCancelConfirmModal();
+    
+    // Mostrar notificación
+    alert('Pedido cancelado correctamente');
+    
+  } catch (err) {
+    console.error("Error cancelling order:", err);
+    alert("Error al cancelar el pedido. Por favor intenta nuevamente.");
+  }
+};
+
+// Reordenar pedido anterior
+const reorderItems = (order) => {
+  // Aquí iría la lógica para reordenar
+  alert('Función de reordenar en desarrollo. Esta acción enviaría los productos al carrito.');
+};
+
+// Inicialización y renderizado a página
+onMounted(() => {
+  // Inicializar datos
+  fetchOrders();
+  
+  // Detectar preferencia de color
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.classList.add('dark');
+  }
+  
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+    if (event.matches) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  });
+});
 </script>
 
 <style>
@@ -1744,13 +1676,13 @@ export default {
   opacity: 0;
 }
 
-/* Soporte para modo oscuro */
+/* Soporte para modo oscuro - manteniendo header y footer blancos */
 @media (prefers-color-scheme: dark) {
   .dark body {
     @apply bg-gray-900 text-white;
   }
   
-  .dark .bg-white {
+  .dark .bg-white:not(header):not(footer) {
     @apply bg-gray-800;
   }
   
@@ -1769,7 +1701,6 @@ export default {
   .dark .bg-gray-100 {
     @apply bg-gray-700;
   }
-   
   
   .dark .modal-content {
     @apply bg-gray-800;

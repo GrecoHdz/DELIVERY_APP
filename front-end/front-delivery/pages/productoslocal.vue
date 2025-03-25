@@ -1,25 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-  <!-- Header (mantenido igual) -->
-  <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <TruckIcon class="text-blue-600" :size="24" />
-        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-          <option value="Cliente">Cliente</option>
-          <option value="Local">Local</option>
-          <option value="Delivery">Delivery</option>
-        </select>
-        <div class="relative cursor-pointer" @click="showNotifications">
-          <BellIcon class="text-blue-600" :size="24" />
-          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-            {{ unreadNotifications.length }}
-          </div>
-        </div>
-      </div>
-    </header>
+     <!-- Header -->
+     <HeaderLocal />
 
     <!-- Modal de Notificaciones (mantenido igual) -->
     <transition name="fade">
@@ -434,23 +416,26 @@
           </button>
   
           <div class="flex">
-            <template v-for="page in paginationNumbers" :key="page">
-              <button
-                v-if="page !== '...'"
-                @click="currentPage = page"
-                :class="currentPage === page ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent' : 'text-gray-700 hover:bg-indigo-50 border-indigo-200'"
-                class="px-3.5 py-2 rounded-lg border transition-colors mx-0.5 text-sm font-medium"
-              >
-                {{ page }}
-              </button>
-              <span
-                v-else
-                class="px-3 py-2 text-gray-500 mx-0.5 text-sm font-medium flex items-end"
-              >
-                ...
-              </span>
-            </template>
-          </div>
+  <template v-for="page in paginationNumbers">
+    <button
+      v-if="page !== '...'"
+      :key="`page-${page}`"
+      @click="currentPage = page"
+      :class="currentPage === page ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent' : 'text-gray-700 hover:bg-indigo-50 border-indigo-200'"
+      class="px-3.5 py-2 rounded-lg border transition-colors mx-0.5 text-sm font-medium"
+    >
+      {{ page }}
+    </button>
+    <span
+      v-else
+      :key="`ellipsis-${page}`"
+      class="px-3 py-2 text-gray-500 mx-0.5 text-sm font-medium flex items-end"
+    >
+      ...
+    </span>
+  </template>
+</div>
+
   
           <button
             @click="currentPage < totalPages && currentPage++"
@@ -1109,43 +1094,8 @@
       </div>
     </transition>
   
-    <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-indigo-100 p-3 z-20">
-      <div class="max-w-7xl mx-auto">
-        <div class="flex justify-around items-center">
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <HomeIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Inicio</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <HeartIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Favoritos</span>
-          </div>
-          <div class="flex flex-col items-center relative">
-            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-full shadow-md">
-              <ShoppingCartIcon class="text-white" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Carrito</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full">
-              <ShoppingBagIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Pedidos</span>
-          </div>
-          <div class="flex flex-col items-center">
-            <div class="p-2 bg-indigo-50 rounded-full cursor-pointer">
-              <SettingsIcon class="text-indigo-600" :size="20" />
-            </div>
-            <span class="text-xs text-indigo-600 mt-1">Configuración</span>
-          </div>
-        </div>
-      </div>
-    </footer>
+     <!-- Footer -->
+     <FooterLocal />
   </div>
 </template>
   
@@ -1194,24 +1144,9 @@
   const isModalOpen = ref(false); 
 const router = useRouter(); 
  
-const redirectToProfile = () => {
-  switch (selectedProfile.value) {
-    case 'Cliente':
-      router.push('/Dashboard_Cliente');  
-      break;
-    case 'Local':
-      router.push('/Dashboard_Local');  
-      break;
-    case 'Delivery':
-      router.push('/Dashboard_Driver');  
-      break;
-    default:
-      break;
-  }
-};
+ 
   // Estados generales
-  const loading = ref(false);
-  const selectedProfile = ref('Local');
+  const loading = ref(false); 
   const appMode = ref('production'); // demo o production
   const currentPage = ref(1);
   const pageSize = ref(9);
@@ -1223,17 +1158,7 @@ const redirectToProfile = () => {
   const currentModal = ref(null);
   const selectedProduct = ref(null);
   const localId = ref(null);
-  
-  // Notificaciones 
-  const notifications = ref([
-  { id: 1, message: 'Tu pedido #123 ha sido enviado', read: false },
-  { id: 2, message: 'Descuento especial este fin de semana', read: false },
-  { id: 3, message: 'Nueva versión de la app disponible', read: true }
-  ]);
-  
-  const unreadNotifications = computed(() => {
-  return notifications.value.filter(n => !n.read);
-  });
+   
   
   // Toast notifications
   const toast = ref({
@@ -1384,22 +1309,7 @@ const redirectToProfile = () => {
   const activeRecommendations = recommendations.value.filter(r => r.activo).length;
   return recommendationLimits[currentPlan.value] - activeRecommendations;
   });
-  
-  // Métodos para notificaciones
-  const showNotifications = () => {
-  isModalOpen.value = true;
-  };
-  
-  const closeNotifications = () => {
-  isModalOpen.value = false;
-  };
-  
-  const markAsRead = (id) => {
-  const notification = notifications.value.find(n => n.id === id);
-  if (notification) {
-  notification.read = true;
-  }
-  };
+   
   
   // Métodos de utilidad
   const formatPrice = (price) => {

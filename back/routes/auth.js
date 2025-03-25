@@ -1,5 +1,5 @@
 const express = require("express");
-const { login, generateTokens } = require("../controllers/authController");
+const { login, generateTokens, forgotPassword, resetPassword } = require("../controllers/authController");
 const { body, validationResult } = require("express-validator");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
@@ -49,5 +49,11 @@ router.post("/session", async (req, res) => {
     res.status(401).json({ message: "Refresh token inválido o expirado" });
   }
 });
+
+// Ruta para solicitar recuperación de contraseña
+router.post('/forgot-password', forgotPassword);
+
+// Ruta para restablecer la contraseña
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

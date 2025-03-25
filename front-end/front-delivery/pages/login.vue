@@ -1,136 +1,280 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
- 
-    <!-- Contenido Principal: Formulario de Login -->
-    <div class="flex justify-center items-center min-h-[calc(100vh-120px)] p-4">
-      <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-        <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Iniciar Sesión</h2>
-        <form @submit.prevent="handleLogin">
-          <div class="mb-4">
-            <label for="usuario" class="block text-sm font-medium text-gray-700">Usuario</label>
-            <input
-              v-model="usuario"
-              type="text"
-              id="usuario"
-              placeholder="Ingresa tu usuario"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <div class="mb-6">
-            <label for="clave" class="block text-sm font-medium text-gray-700">Contraseña</label>
-            <input
-              v-model="clave"
-              type="password"
-              id="clave"
-              placeholder="Ingresa tu contraseña"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-all duration-300"
-          >
-            Iniciar Sesión
-          </button>
-        </form>
-        <div class="mt-4 text-center">
-          <label class="flex items-center justify-center space-x-2">
-            <input
-              type="checkbox"
-              v-model="useMockData"
-              class="form-checkbox h-4 w-4 text-blue-600"
-            />
-            <span class="text-sm text-gray-700">Usar Mock Data</span>
-          </label>
-        </div>
-        <div v-if="errorMessage" class="mt-4 text-center text-red-500 text-sm">
-          {{ errorMessage }}
-        </div>
-        <div v-if="successMessage" class="mt-4 text-center text-green-500 text-sm">
-          {{ successMessage }}
-        </div>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="header">
+        <h1>Iniciar Sesión</h1>
+        <p class="subtitle">Ingresa tus credenciales para acceder</p>
       </div>
+      
+      <form @submit.prevent="handleLogin" class="form">
+        <div class="form-group">
+          <label for="username">Usuario</label>
+          <div class="input-group">
+            <User class="icon" />
+            <input 
+              type="text" 
+              v-model="username" 
+              id="username" 
+              required 
+              placeholder="Ingresa tu usuario"
+              :disabled="loading"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <div class="input-group">
+            <Lock class="icon" />
+            <input 
+              type="password" 
+              v-model="password" 
+              id="password" 
+              required 
+              placeholder="Ingresa tu contraseña"
+              :disabled="loading"
+            />
+          </div>
+        </div>
+        <button type="submit" :disabled="loading" class="submit-btn">
+          <Loader2 v-if="loading" class="spinner" />
+          {{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+        </button>
+
+        <div v-if="error" class="error-message">
+          <AlertCircle class="icon" />
+          <p>{{ error }}</p>
+        </div>
+
+        <div class="links">
+          <nuxt-link to="/register" class="link">
+            <UserPlus class="icon" />
+            Registrarse
+          </nuxt-link>
+          <nuxt-link to="/forgot-password" class="link">
+            <KeyRound class="icon" />
+            ¿Olvidaste tu contraseña?
+          </nuxt-link>
+        </div>
+      </form>
     </div>
- 
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import axios from 'axios'; // Importar Axios
-import {
-  Truck as TruckIcon,
-  Bell as BellIcon,
-  ShoppingCart as ShoppingCartIcon,
-  User as UserIcon,
-  Heart as HeartIcon,
-  Home as HomeIcon,
-  Menu as MenuIcon,
-  ShoppingBag as ShoppingBagIcon,
-  X as XIcon
-} from 'lucide-vue-next';
+import { User, Lock, Loader2, AlertCircle, UserPlus, KeyRound } from 'lucide-vue-next'
 
-// Sidebar
-const isSidebarOpen = ref(false);
-
-const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value;
-};
-
-// Perfil
-const isProfileMenuOpen = ref(false);
-const selectedProfile = ref("Cliente");
-
-const toggleProfileMenu = () => {
-  isProfileMenuOpen.value = !isProfileMenuOpen.value;
-};
-
-const selectProfile = (profile) => {
-  selectedProfile.value = profile;
-  isProfileMenuOpen.value = false;
-};
-
-// Login
-const usuario = ref("");
-const clave = ref("");
-const useMockData = ref(false);
-const errorMessage = ref("");
-const successMessage = ref("");
+const { login } = useAuth()
 const router = useRouter()
-const route = useRoute()
+
+const username = ref('')
+const password = ref('')
+const error = ref(null)
+const loading = ref(false)
+
 const handleLogin = async () => {
-  errorMessage.value = "";
-  successMessage.value = "";
+  loading.value = true
+  error.value = null
+  
+  try {
+    const user = await login({
+      usuario: username.value,
+      clave: password.value
+    })
 
-  if (useMockData.value) {
-    // Mock data
-    const mockUser = { usuario: "test", clave_hash: "$2a$10$examplehash" };
-    const isMatch = await bcrypt.compare(clave.value, mockUser.clave_hash);
-
-    if (usuario.value === mockUser.usuario && isMatch) {
-      successMessage.value = "Login exitoso con mock data!";
+    // Redirigir según el rol
+    if (user.role === 1) {
+      await router.push('/Dashboard_Cliente')
+    } else if (user.role === 2 || user.role === 3) {
+      await router.push('/Dashboard_Superadmin')
     } else {
-      errorMessage.value = "Usuario o contraseña incorrectos.";
+      error.value = 'Rol de usuario no válido'
     }
-  } else {
-    // API
-    try {
-      const response = await axios.post("http://localhost:4000/login", {
-        usuario: usuario.value,
-        clave: clave.value,
-      });
-
-      if (response.data.accessToken) {
-        successMessage.value = "Login exitoso!";
-        localStorage.setItem("token", response.data.accessToken);
-        router.replace(route.query.to ?? "/Dashboard_Cliente")
-      }
-    } catch (error) {
-      errorMessage.value = "Error en el login. Verifica tus credenciales.";
-      console.error("Error en la petición:", error);
-    }
+  } catch (err) {
+    error.value = err.message || 'Error al iniciar sesión'
+  } finally {
+    loading.value = false
   }
-};
+}
 </script>
+
+<style scoped>
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  color: #1e3c72;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #1e3c72;
+  font-weight: 500;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group .icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4facfe;
+}
+
+input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 2px solid #e1e1e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  border-color: #4facfe;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fde8e8;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error-message .icon {
+  color: #e74c3c;
+}
+
+.links {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  text-align: center;
+}
+
+.link {
+  color: #4facfe;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.link:hover {
+  color: #1e3c72;
+}
+
+.link .icon {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 480px) {
+  .login-box {
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+}
+</style>

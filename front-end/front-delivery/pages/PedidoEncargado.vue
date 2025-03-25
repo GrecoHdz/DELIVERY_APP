@@ -22,7 +22,7 @@
       </div>
 
       <!-- Botón de Ver Pedido -->
-      <button class="view-order-button mt-8 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-500 transition duration-200">
+      <button @click="$router.push('/Pedidos')" class="view-order-button mt-8 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-500 transition duration-200">
         Ver Pedido
       </button>
 

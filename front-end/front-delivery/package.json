@@ -11,14 +11,21 @@
   },
   "dependencies": {
     "@nuxt/ui": "^2.21.0",
+    "@nuxtjs/auth-next": "^5.0.0-1667386184.dfbbb54",
+    "@nuxtjs/axios": "^5.13.6",
     "@phosphor-icons/web": "^2.1.1",
     "axios": "^1.8.2",
     "chart.js": "^4.4.8",
     "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.477.0",
     "nuxt": "^3.15.4",
+    "socket.io-client": "^4.8.1",
     "vanilla-tilt": "^1.8.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.13",
+    "typescript": "^5.8.2"
   }
 }

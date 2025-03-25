@@ -1,25 +1,8 @@
+
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
-    <!-- Header (mantenido igual) -->
-    <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <TruckIcon class="text-blue-600" :size="24" />
-        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <select v-model="selectedProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-          <option value="Cliente">Cliente</option>
-          <option value="Local">Local</option>
-          <option value="Delivery">Delivery</option>
-        </select>
-        <div class="relative cursor-pointer" @click="showNotifications">
-          <BellIcon class="text-blue-600" :size="24" />
-          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-            {{ unreadNotifications.length }}
-          </div>
-        </div>
-      </div>
-    </header>
+     <!-- Header -->
+     <HeaderComponent />
 
     <!-- Modal de Notificaciones (mantenido igual) -->
     <transition name="fade">
@@ -349,6 +332,10 @@
               </option>
             </select>
           </div>
+          <div class="form-group">
+            <label for="clave">Clave:</label>
+            <input type="password" id="clave" v-model="user.clave" required>
+          </div>
           <div class="form-actions">
             <button type="button" class="cancel-button" @click="closeProfileModal">Cancelar</button>
             <button type="submit" class="save-button">Guardar Cambios</button>
@@ -386,43 +373,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
-            <HomeIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Inicio</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Favoritos" class="flex flex-col items-center">
-            <HeartIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <a href="/Carrito" class="flex flex-col items-center"></a>
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="PedidosCliente" class="flex flex-col items-center">
-            <ShoppingBagIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Perfil" class="flex flex-col items-center">
-            <div class="cursor-pointer">
-              <SettingsIcon class="text-blue-600" :size="20" />
-            </div>
-            <span class="text-xs text-blue-600 mt-1">Configuración</span>
-          </a>
-        </div>
-      </div>
-    </footer>
+    <FooterComponent />
   </div>
 </template>
 
@@ -450,8 +401,7 @@ import {
   FileText as FileTextIcon,
   HelpCircle as HelpCircleIcon,
   LogOut as LogOutIcon,
-  Loader as LoaderIcon,
-  Pencil
+  Loader as LoaderIcon, 
 } from 'lucide-vue-next';
 
 // Estado para seleccionar fuente de datos (Mock/API)
@@ -461,8 +411,7 @@ const dataLoading = ref(false);
 
 // Estado de la aplicación
 const activeTab = ref('personal');
-const isModalOpen = ref(false);
-const selectedProfile = ref("Cliente");
+const isModalOpen = ref(false); 
 const selectedLanguage = ref('es');
 const notificationsEnabled = ref(true);
 
@@ -483,19 +432,8 @@ const ciudades = ref([
   { id: 4, nombre: 'Puebla' },
   { id: 5, nombre: 'Tijuana' }
 ]);
-
-// Datos de notificaciones
-const notifications = ref([
-  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
-  { id: 2, message: "Nuevo descuento disponible.", read: false },
-  { id: 3, message: "Actualización de la app disponible.", read: true },
-]);
-
-// Computed para obtener las notificaciones no leídas
-const unreadNotifications = computed(() => {
-  return notifications.value.filter((notification) => !notification.read);
-});
-
+ 
+ 
 // Datos mock del usuario
 const user = ref({
   nombre: 'María López',
@@ -687,27 +625,7 @@ onMounted(() => {
     fetchUserData();
     fetchUserAddresses();
   }
-});
-
-// Funciones para el manejo de notificaciones
-const showNotifications = () => {
-  isModalOpen.value = true;
-};
-
-const closeNotifications = () => {
-  isModalOpen.value = false;
-  notifications.value.forEach((notification) => {
-    notification.read = true;
-  });
-};
-
-const markAsRead = (id) => {
-  const notification = notifications.value.find((n) => n.id === id);
-  if (notification) {
-    notification.read = true;
-  }
-};
-
+}); 
 // Funciones para edición de perfil
 const openProfileModal = () => {
   isProfileModalOpen.value = true;

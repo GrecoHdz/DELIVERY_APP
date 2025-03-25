@@ -16,7 +16,7 @@ const Cliente = sequelize.define(
     },
     id_ciudad: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: false
     },
     nombre: {
       type: DataTypes.STRING(255),

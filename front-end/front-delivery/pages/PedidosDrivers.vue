@@ -183,7 +183,7 @@
                     {{ order.isPickedUp ? 'En camino' : 'Por recoger' }}
                   </div>
                 </div>
-                <div class="order-fare">L. {{ order.fare }}</div>
+                <div class="order-fare">L. {{ Number(order.fare).toFixed(2) }}</div>
               </div>
               
               <div class="order-progress">
@@ -280,7 +280,7 @@
                 </button>
                 <button 
                   v-if="order.isPickedUp && !order.isDelivered" 
-                  @click="markAsDelivered(order.id)" 
+                  @click="showDeliveryCodeModal(order.id)" 
                   class="action-button deliver-button"
                 >
                   <CheckIcon :size="16" />
@@ -290,16 +290,7 @@
             </div>
             
             <div class="map-column">
-              <div class="map-preview">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  :src="getMapUrl(order.storeLocation, order.fullDestination)"
-                  allowfullscreen=""
-                  loading="lazy"
-                  referrerpolicy="no-referrer-when-downgrade"
-                ></iframe>
-              </div>
+              <div class="map-preview" :id="'map-' + order.id"></div>
             </div>
           </div>
         </div>
@@ -310,7 +301,7 @@
     <footer class="footer">
       <div class="footer-content">
         <div class="flex flex-col items-center">
-          <a href="/PedidosDrivers" class="flex flex-col items-center">
+          <a href="/Dashboard_Driver" class="flex flex-col items-center">
             <HomeIcon class="text-blue-600" :size="20" />
             <span class="text-xs text-blue-600 mt-1">Inicio</span>
           </a>
@@ -513,6 +504,50 @@
       </div>
     </div>
     
+    <!-- Modal para Código de Entrega -->
+    <div v-if="deliveryCodeModalOpen" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Confirmar Entrega</h3>
+          <button @click="closeDeliveryCodeModal" class="close-button">
+            <XIcon :size="16" />
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="estimated-time-info">
+            <p>Por favor, ingresa el código de entrega proporcionado por el cliente:</p>
+          </div>
+          
+          <div class="delivery-code-container">
+            <input
+              v-model="deliveryCode"
+              type="text"
+              placeholder="Código de entrega"
+              class="delivery-code-input"
+              maxlength="6"
+            />
+          </div>
+          
+          <div v-if="deliveryCodeError" class="delivery-code-error">
+            <AlertCircleIcon :size="16" />
+            <span>{{ deliveryCodeError }}</span>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="confirmDeliveryWithCode" class="modal-button confirm" :disabled="!deliveryCode">
+            <CheckIcon :size="16" />
+            <span>Confirmar Entrega</span>
+          </button>
+          <button @click="closeDeliveryCodeModal" class="modal-button cancel">
+            <XIcon :size="16" />
+            <span>Cancelar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Notificaciones Toast -->
     <div class="toast-container">
       <transition-group name="toast">
@@ -536,7 +571,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import {
   Truck as TruckIcon,
   Bell as BellIcon,
@@ -592,48 +627,68 @@ const dataSource = ref('mock');
 const loading = ref(false);
 const error = ref(null);
 
+// Configuración de direcciones para todos los pedidos
+const fixedLocations = {
+  cliente: {
+    direccion: 'Ceutec, La Ceiba',
+    latitud: 15.768179164281971,
+    longitud: -86.78981884103158
+  },
+  local: {
+    direccion: 'Mall Megaplaza, Local 45',
+    latitud: 15.771274584888115,
+    longitud: -86.79179628996306
+  }
+};
+
 // Datos mockup para pedidos (pendientes y aceptados)
 const mockPendingOrders = [
   {
     id: 101,
     time: "2023-12-15T10:30:00",
     productCount: 3,
-    storeLocation: "Burger King - Mall Multiplaza",
-    destination: "Col. Kennedy",
-    fullDestination: "Col. Kennedy, Calle Principal #456, Casa color blanco con portón negro cerca de la farmacia",
+    storeLocation: "Burger King - Mall Megaplaza",
+    destination: "Ceutec, La Ceiba",
+    fullDestination: "Ceutec, La Ceiba",
     products: [
       { id: 1, name: "Hamburguesa Clásica", quantity: 2 },
       { id: 2, name: "Papas Fritas", quantity: 1 },
     ],
     fareSent: false,
-    fareAmount: null
+    fareAmount: null,
+    direccion_cliente: fixedLocations.cliente,
+    direccion_local: fixedLocations.local
   },
   {
     id: 102,
     time: "2023-12-15T09:45:00",
     productCount: 5,
-    storeLocation: "Supermercado La Colonia - City Mall",
-    destination: "Colonia Las Flores",
-    fullDestination: "Colonia Las Flores #101, Edificio Azul, Apartamento 3B, frente al parque central",
+    storeLocation: "Supermercado La Colonia - Mall Megaplaza",
+    destination: "Ceutec, La Ceiba",
+    fullDestination: "Ceutec, La Ceiba",
     products: [
       { id: 3, name: "Pizza Pepperoni", quantity: 1 },
       { id: 4, name: "Refresco", quantity: 4 },
     ],
     fareSent: true,
-    fareAmount: 85
+    fareAmount: 85,
+    direccion_cliente: fixedLocations.cliente,
+    direccion_local: fixedLocations.local
   },
   {
     id: 103,
     time: "2023-12-15T08:20:00",
     productCount: 2,
-    storeLocation: "Farmacia Kielsa - Blvd. Morazán",
-    destination: "Res. Plaza",
-    fullDestination: "Res. Plaza, Bloque E, Casa #12, Portón café con un árbol de mango al frente",
+    storeLocation: "Farmacia Kielsa - Mall Megaplaza",
+    destination: "Ceutec, La Ceiba",
+    fullDestination: "Ceutec, La Ceiba",
     products: [
       { id: 5, name: "Medicamentos", quantity: 2 },
     ],
     fareSent: false,
-    fareAmount: null
+    fareAmount: null,
+    direccion_cliente: fixedLocations.cliente,
+    direccion_local: fixedLocations.local
   },
 ];
 
@@ -643,19 +698,22 @@ const mockAcceptedOrders = [
     clientName: "Juan Pérez",
     clientPhone: "9955-6677",
     productCount: 2,
-    storeLocation: "Plaza Mundo #112, Bulevar Suyapa",
-    destination: "Residencial Los Pinos",
-    fullDestination: "Residencial Los Pinos #131, Col. Miraflores, Casa verde de 2 plantas cerca del mini super",
+    storeLocation: "Plaza Mundo - Mall Megaplaza",
+    destination: "Ceutec, La Ceiba",
+    fullDestination: "Ceutec, La Ceiba",
     prepTime: 15,
     fare: 90,
     acceptedAt: "2023-12-15T14:30:00",
     isPickedUp: false,
     isDelivered: false,
     progress: 33,
+    deliveryCode: "123456",
     products: [
       { id: 6, name: "Hamburguesa Doble", quantity: 1 },
       { id: 7, name: "Refresco Grande", quantity: 1 }
-    ]
+    ],
+    direccion_cliente: fixedLocations.cliente,
+    direccion_local: fixedLocations.local
   },
 ];
 
@@ -678,6 +736,10 @@ const activeTab = ref("pending");
 // Datos para pedidos
 const pendingOrders = ref([]);
 const acceptedOrders = ref([]);
+
+// Mapa de Leaflet
+const maps = ref({});
+const mapInitialized = ref({});
 
 // Filtrar pedidos pendientes sin ofertas enviadas
 const pendingOrdersNotSent = computed(() => {
@@ -761,8 +823,8 @@ const mapOrdersFromAPI = async (apiOrders) => {
         price: parseFloat(detalle.precio_unitario)
       }));
       
-      // Formatear la ubicación del local (simulada para este ejemplo)
-      const storeLocation = `Local #${pedido.id_local} - Plaza ${Math.floor(Math.random() * 100)}`;
+      // Formatear la ubicación del local con Mall Megaplaza
+      const storeLocation = `Local #${pedido.id_local} - Mall Megaplaza`;
       
       // Crear objeto base del pedido
       const baseOrder = {
@@ -770,9 +832,12 @@ const mapOrdersFromAPI = async (apiOrders) => {
         time: pedido.fecha_pedido,
         productCount: products.length,
         storeLocation: storeLocation,
-        destination: `Dirección #${pedido.id_direccion_cliente}`,
-        fullDestination: `Dirección completa para ID ${pedido.id_direccion_cliente}`, // En un caso real, obtener de la API
-        products: products
+        destination: "Ceutec, La Ceiba",
+        fullDestination: "Ceutec, La Ceiba",
+        products: products,
+        direccion_cliente: fixedLocations.cliente,
+        direccion_local: fixedLocations.local,
+        deliveryCode: "123456" // Código de entrega fijo para todos los pedidos
       };
       
       // Separar pedidos según su estado
@@ -790,7 +855,7 @@ const mapOrdersFromAPI = async (apiOrders) => {
           clientName: cliente ? cliente.nombre : 'Cliente sin nombre',
           clientPhone: cliente ? cliente.telefono : 'Sin teléfono',
           prepTime: pedido.tiempo_preparacion_estimado || 15,
-          fare: 85, // Valor de ejemplo, en un caso real debería venir de la API
+          fare: parseFloat(pedido.tarifa || 85), // Asegurar que la tarifa sea un número
           acceptedAt: pedido.fecha_pedido,
           isPickedUp: pedido.estado === 'en_camino',
           isDelivered: pedido.estado === 'entregado',
@@ -923,6 +988,9 @@ const closeFareModal = () => {
 const sendFare = () => {
   if (!fareAmount.value) return;
   
+  // Convertir fareAmount a número
+  const numericFare = Number(fareAmount.value);
+  
   // Si estamos usando la API, intentar enviar la tarifa
   if (dataSource.value === 'api') {
     // Aquí se implementaría la llamada a la API para enviar la tarifa
@@ -930,14 +998,14 @@ const sendFare = () => {
     // fetch(`http://localhost:4000/pedidos/${selectedOrderId.value}/fare`, {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ fare: fareAmount.value })
+    //   body: JSON.stringify({ fare: numericFare })
     // });
   }
   
   const order = pendingOrders.value.find(o => o.id === selectedOrderId.value);
   if (order) {
     order.fareSent = true;
-    order.fareAmount = fareAmount.value;
+    order.fareAmount = numericFare;
     
     // Si es Admin o SuperAdmin, asignar automáticamente
     if (selectedProfile.value === 'Admin' || selectedProfile.value === 'SuperAdmin') {
@@ -953,12 +1021,15 @@ const sendFare = () => {
         destination: order.destination,
         fullDestination: order.fullDestination,
         prepTime: Math.floor(Math.random() * 10) + 10,
-        fare: parseInt(fareAmount.value),
+        fare: numericFare,
         acceptedAt: new Date().toISOString(),
         isPickedUp: false,
         isDelivered: false,
         progress: 33,
-        products: order.products
+        products: order.products,
+        direccion_cliente: order.direccion_cliente,
+        direccion_local: order.direccion_local,
+        deliveryCode: "123456" // Código de entrega para el nuevo pedido
       });
       
       // Eliminar de pendientes
@@ -975,7 +1046,7 @@ const sendFare = () => {
       activeTab.value = "accepted";
     } else {
       // Para usuarios normales, mostrar que la tarifa fue enviada y esperar respuesta
-      showToast("Tarifa enviada", `Has enviado una tarifa de L. ${fareAmount.value} para el pedido #${selectedOrderId.value}`, "success");
+      showToast("Tarifa enviada", `Has enviado una tarifa de L. ${numericFare} para el pedido #${selectedOrderId.value}`, "success");
       
       // Simular respuesta del cliente después de un tiempo (solo para datos mock)
       if (dataSource.value === 'mock') {
@@ -994,12 +1065,15 @@ const sendFare = () => {
               destination: order.destination,
               fullDestination: order.fullDestination,
               prepTime: Math.floor(Math.random() * 10) + 10,
-              fare: parseInt(fareAmount.value),
+              fare: numericFare,
               acceptedAt: new Date().toISOString(),
               isPickedUp: false,
               isDelivered: false,
               progress: 33,
-              products: order.products
+              products: order.products,
+              direccion_cliente: order.direccion_cliente,
+              direccion_local: order.direccion_local,
+              deliveryCode: "123456" // Código de entrega para el nuevo pedido
             });
             
             // Eliminar de pendientes
@@ -1059,7 +1133,10 @@ const autoAssignOrder = (orderId) => {
         isPickedUp: false,
         isDelivered: false,
         progress: 33,
-        products: order.products
+        products: order.products,
+        direccion_cliente: order.direccion_cliente,
+        direccion_local: order.direccion_local,
+        deliveryCode: "123456" // Código de entrega para el nuevo pedido
       });
       
       // Eliminar de pendientes
@@ -1179,6 +1256,42 @@ const confirmPickupWithTime = () => {
   closeEstimatedTimeModal();
 };
 
+// Modal para código de entrega
+const deliveryCodeModalOpen = ref(false);
+const deliveryCode = ref("");
+const deliveryCodeError = ref("");
+const deliveryOrderId = ref(null);
+
+const showDeliveryCodeModal = (orderId) => {
+  deliveryOrderId.value = orderId;
+  deliveryCode.value = "";
+  deliveryCodeError.value = "";
+  deliveryCodeModalOpen.value = true;
+};
+
+const closeDeliveryCodeModal = () => {
+  deliveryCodeModalOpen.value = false;
+  deliveryCode.value = "";
+  deliveryCodeError.value = "";
+  deliveryOrderId.value = null;
+};
+
+const confirmDeliveryWithCode = () => {
+  if (!deliveryCode.value) return;
+  
+  const order = acceptedOrders.value.find(o => o.id === deliveryOrderId.value);
+  if (order) {
+    // En un escenario real, el código vendría desde el servidor/API
+    // Aquí usamos el código fijo "123456" para la demostración
+    if (deliveryCode.value === order.deliveryCode) {
+      markAsDelivered(deliveryOrderId.value);
+      closeDeliveryCodeModal();
+    } else {
+      deliveryCodeError.value = "Código incorrecto. Por favor verifica e intenta de nuevo.";
+    }
+  }
+};
+
 // Marcar como recogido
 const markAsPickedUp = (orderId, estimatedTime) => {
   // Si estamos usando la API, intentar marcar como recogido
@@ -1231,15 +1344,157 @@ const getProgressWidth = (order) => {
   return `${order.progress}%`;
 };
 
-// Función para construir URL del mapa con origen, destino y ruta
-const getMapUrl = (origin, destination) => {
-  // Codifica las direcciones para incluirlas en el URL
-  const encodedOrigin = encodeURIComponent(origin);
-  const encodedDestination = encodeURIComponent(destination);
+// Inicializar mapa con Leaflet
+const initMap = (order) => {
+  // Verificar si el mapa ya está inicializado para esta orden
+  if (mapInitialized.value[order.id]) return;
   
-  // Construir URL de Google Maps con origen, destino y modo de dirección
-  return `https://www.google.com/maps/embed/v1/directions?key=YOUR_API_KEY&origin=${encodedOrigin}&destination=${encodedDestination}&mode=driving`;
+  // Esperar a que el DOM esté listo
+  setTimeout(() => {
+    const mapContainer = document.getElementById(`map-${order.id}`);
+    if (!mapContainer) return;
+    
+    // Limpiar el contenedor si ya tiene un mapa
+    if (maps.value[order.id]) {
+      maps.value[order.id].remove();
+      maps.value[order.id] = null;
+    }
+    
+    // Asegurarse de que Leaflet esté disponible
+    if (!window.L) {
+      console.error('Leaflet no está disponible');
+      return;
+    }
+    
+    // Inicializar mapa
+    const map = L.map(mapContainer, {
+      center: [order.direccion_cliente.latitud, order.direccion_cliente.longitud],
+      zoom: 13,
+      scrollWheelZoom: false,
+      zIndex: 1 // Asignar z-index bajo para que los modales aparezcan encima
+    });
+    
+    // Agregar capa de mapa base
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Crear marcadores personalizados
+    const storeIcon = L.icon({
+      iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/images/marker-icon.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    
+    const clientIcon = L.icon({
+      iconUrl: 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    
+    // Agregar marcadores
+    const storeMarker = L.marker([order.direccion_local.latitud, order.direccion_local.longitud], {icon: storeIcon})
+      .addTo(map)
+      .bindPopup("<b>Recoger aquí</b><br>" + order.storeLocation);
+    
+    const clientMarker = L.marker([order.direccion_cliente.latitud, order.direccion_cliente.longitud], {icon: clientIcon})
+      .addTo(map)
+      .bindPopup("<b>Entregar aquí</b><br>" + order.destination);
+    
+    // Dibujar ruta
+    const route = L.polyline([
+      [order.direccion_local.latitud, order.direccion_local.longitud],
+      [order.direccion_cliente.latitud, order.direccion_cliente.longitud]
+    ], {
+      color: '#5D5CDE',
+      weight: 5,
+      opacity: 0.7
+    }).addTo(map);
+    
+    // Ajustar la vista para que se vean ambos puntos
+    map.fitBounds(route.getBounds(), {
+      padding: [30, 30]
+    });
+    
+    // Guardar referencia al mapa
+    maps.value[order.id] = map;
+    mapInitialized.value[order.id] = true;
+  }, 100);
 };
+
+// Remover el mapa existente
+const clearMap = (orderId) => {
+  if (maps.value[orderId]) {
+    maps.value[orderId].remove();
+    maps.value[orderId] = null;
+    mapInitialized.value[orderId] = false;
+  }
+};
+
+// Reinicializar todos los mapas
+const reinitializeMaps = () => {
+  acceptedOrders.value.forEach(order => {
+    clearMap(order.id);
+    // Pequeño retraso para asegurar que el DOM esté listo
+    setTimeout(() => {
+      initMap(order);
+    }, 100);
+  });
+};
+
+// Carga dinámica de Leaflet
+const loadLeaflet = () => {
+  if (window.L) {
+    // Leaflet ya está cargado, inicializa los mapas
+    reinitializeMaps();
+    return Promise.resolve();
+  }
+  
+  return new Promise((resolve, reject) => {
+    // Cargar la hoja de estilos CSS si no está cargada
+    if (!document.querySelector('link[href*="leaflet.css"]')) {
+      const cssLink = document.createElement('link');
+      cssLink.rel = 'stylesheet';
+      cssLink.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css';
+      document.head.appendChild(cssLink);
+    }
+    
+    // Cargar el script JS si no está cargado
+    if (!document.querySelector('script[src*="leaflet.js"]')) {
+      const jsScript = document.createElement('script');
+      jsScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js';
+      jsScript.onload = () => {
+        reinitializeMaps();
+        resolve();
+      };
+      jsScript.onerror = reject;
+      document.head.appendChild(jsScript);
+    } else {
+      reinitializeMaps();
+      resolve();
+    }
+  });
+};
+
+// Observar cambios en la pestaña activa
+watch(activeTab, (newTab) => {
+  if (newTab === 'accepted' && acceptedOrders.value.length > 0) {
+    // Cargar Leaflet e inicializar los mapas cuando cambiamos a la pestaña de "Aceptados"
+    loadLeaflet();
+  }
+});
+
+// Observar cambios en los pedidos aceptados
+watch(acceptedOrders, (newAcceptedOrders) => {
+  if (activeTab.value === 'accepted' && newAcceptedOrders.length > 0) {
+    // Inicializar mapas para nuevos pedidos aceptados
+    loadLeaflet();
+  }
+});
 
 // Notificaciones
 const notifications = ref([
@@ -1295,16 +1550,18 @@ onMounted(() => {
         id: 105,
         time: new Date().toISOString(),
         productCount: 4,
-        storeLocation: "Pollo Campero - Metro Centro",
-        destination: "Col. Palmira",
-        fullDestination: "Col. Palmira, Calle Principal #23, Casa azul con balcón y rejas blancas",
+        storeLocation: "Pollo Campero - Mall Megaplaza",
+        destination: "Ceutec, La Ceiba",
+        fullDestination: "Ceutec, La Ceiba",
         products: [
           { id: 6, name: "Pollo Frito", quantity: 2 },
           { id: 7, name: "Papas Fritas", quantity: 1 },
           { id: 8, name: "Refresco", quantity: 1 },
         ],
         fareSent: false,
-        fareAmount: null
+        fareAmount: null,
+        direccion_cliente: fixedLocations.cliente,
+        direccion_local: fixedLocations.local
       });
       
       showToast("Nuevo pedido", "Tienes un nuevo pedido disponible", "info");
@@ -1911,6 +2168,22 @@ onMounted(() => {
 .map-column {
   min-height: 300px;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.map-preview {
+  height: 100%;
+  min-height: 300px;
+  background-color: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 1rem 1rem 0;
+  z-index: 1;
+}
+
+.dark .map-preview {
+  background-color: #374151;
 }
 
 .order-header {
@@ -2220,23 +2493,6 @@ onMounted(() => {
   color: #3b82f6;
 }
 
-.map-preview {
-  height: 100%;
-  min-height: 300px;
-  background-color: #f3f4f6;
-  position: relative;
-  overflow: hidden;
-  border-radius: 0 1rem 1rem 0;
-}
-
-.dark .map-preview {
-  background-color: #374151;
-}
-
-.map-preview iframe {
-  border: 0;
-}
-
 .order-actions {
   padding-top: 1rem;
 }
@@ -2451,7 +2707,7 @@ onMounted(() => {
   color: #3b82f6;
 }
 
-.fare-input-container, .time-input-container {
+.fare-input-container, .time-input-container, .delivery-code-container {
   position: relative;
   margin-bottom: 1rem;
 }
@@ -2477,7 +2733,7 @@ onMounted(() => {
   right: 1rem;
 }
 
-.fare-input, .time-input {
+.fare-input, .time-input, .delivery-code-input {
   width: 100%;
   padding: 1rem;
   font-size: 1rem;
@@ -2495,17 +2751,17 @@ onMounted(() => {
   padding-right: 5rem;
 }
 
-.dark .fare-input, .dark .time-input {
+.dark .fare-input, .dark .time-input, .dark .delivery-code-input {
   background-color: #374151;
   border-color: #4b5563;
   color: white;
 }
 
-.fare-input:focus, .time-input:focus {
+.fare-input:focus, .time-input:focus, .delivery-code-input:focus {
   border-color: #5D5CDE;
 }
 
-.dark .fare-input:focus, .dark .time-input:focus {
+.dark .fare-input:focus, .dark .time-input:focus, .dark .delivery-code-input:focus {
   border-color: #3b82f6;
 }
 
@@ -2567,6 +2823,15 @@ onMounted(() => {
 .estimated-time-info p {
   font-size: 1rem;
   line-height: 1.5;
+}
+
+.delivery-code-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .modal-footer {

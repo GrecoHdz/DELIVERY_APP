@@ -41,7 +41,7 @@ router.post(
       .isLength({ min: 3, max: 50 }).withMessage("El nombre de usuario debe tener entre 3 y 50 caracteres"),
     body("clave")
       .notEmpty().withMessage("La contraseña es obligatoria")
-      .isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
+      .isLength({ min: 5 }).withMessage("La contraseña debe tener al menos 5 caracteres"),
     body("email")
       .notEmpty().withMessage("El email es obligatorio")
       .isEmail().withMessage("El email debe ser válido"),
@@ -54,17 +54,18 @@ router.post(
     body("telefono")
       .optional()
       .isLength({ max: 20 }).withMessage("El teléfono no puede exceder los 20 caracteres"),
-      body("id_ciudad")
+    body("id_ciudad")
       .notEmpty()
-      .withMessage("La ciudad es obligatoria"),
-       body("fecha_nacimiento")
-        .optional()
-        .isDate()
-        .withMessage("La fecha de nacimiento debe ser una fecha válida"),
-      ],
+      .withMessage("La ciudad es obligatoria")
+      .isInt()
+      .withMessage("La ciudad debe ser un número entero"),
+    body("fecha_nacimiento")
+      .optional()
+      .isDate()
+      .withMessage("La fecha de nacimiento debe ser una fecha válida"),
+  ],
   validarErrores,
-  createUsuario,
-  createUsuarioRol,
+  createUsuario
 );
 
 // Actualizar un usuario

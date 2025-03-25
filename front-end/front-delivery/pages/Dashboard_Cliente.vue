@@ -1,53 +1,127 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
-    <!-- Header (mantenido igual) -->
-    <header class="bg-white shadow-md px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-2">
-        <TruckIcon class="text-blue-600" :size="24" />
-        <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <select v-model="selectedProfile" @change="redirectToProfile" class="p-1 text-center bg-transparent border-2 border-blue-600 text-blue-600 rounded-lg font-bold focus:outline-none">
-          <option value="Cliente">Cliente</option>
-          <option value="Local">Local</option>
-          <option value="Delivery">Delivery</option>
-        </select>
-        <div class="relative cursor-pointer" @click="showNotifications">
-          <BellIcon class="text-blue-600" :size="24" />
-          <div v-if="unreadNotifications.length > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
-            {{ unreadNotifications.length }}
-          </div>
-        </div>
-      </div>
-    </header>
+    <!-- Header -->
+    <HeaderComponent />
 
-    <!-- Modal de Notificaciones (mantenido igual) -->
-    <transition name="fade">
-      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
-        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
-        <div v-if="notifications.length > 0">
-          <div
-            v-for="(notification, index) in notifications"
-            :key="index"
-            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-            @click="markAsRead(notification.id)"
-            :class="{ 'bg-gray-100': notification.read }"
-          >
-            <p class="text-sm text-gray-700">{{ notification.message }}</p>
-            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
+<!-- Modal de Producto -->
+<transition name="modal">
+  <div v-if="selectedProduct" class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto z-10 overflow-hidden">
+        <!-- Header del modal -->
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-white">Detalles del Producto</h2>
+          <button @click="closeModal" class="text-white hover:text-indigo-100">
+            <XIcon :size="24" />
+          </button>
+        </div>
+        <div class="p-4">
+          <!-- Imagen del producto (reducida en altura) -->
+          <div class="rounded-xl overflow-hidden h-40 mb-4">
+            <img :src="selectedProduct.image || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" :alt="selectedProduct.name" class="w-full h-full object-cover" />
           </div>
+
+          <!-- Nombre y precio -->
+          <div class="flex justify-between items-start mb-3">
+            <h3 class="font-bold text-gray-800 text-lg">
+              {{ selectedProduct.name }}
+            </h3>
+            <div>
+              <div v-if="selectedProduct.discountedPrice" class="flex flex-col items-end">
+                <span class="line-through text-gray-500 text-sm">${{ formatPrice(selectedProduct.price) }}</span>
+                <span class="font-bold text-red-600 text-lg">${{ formatPrice(selectedProduct.discountedPrice) }}</span>
+              </div>
+              <div v-else class="font-bold text-indigo-600 text-lg">
+                ${{ formatPrice(selectedProduct.price) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Descripción (reducida en tamaño de fuente) -->
+          <p class="text-gray-600 text-sm mb-4">
+            {{ selectedProduct.description || 'Sin descripción disponible' }}
+          </p>
+
+          <!-- Cantidad -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+            <div class="flex items-center max-w-xs mx-auto">
+              <button 
+                @click="decrementQuantity" 
+                class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-l-lg flex items-center justify-center transition-colors"
+              >
+                <MinusIcon :size="16" />
+              </button>
+              <div class="flex-1 bg-indigo-50 h-8 flex items-center justify-center text-lg font-bold text-indigo-700">
+                {{ quantity }}
+              </div>
+              <button 
+                @click="incrementQuantity" 
+                class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-r-lg flex items-center justify-center transition-colors"
+              >
+                <PlusIcon :size="16" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Atributos (Sabor, Tamaño) -->
+          <div v-if="selectedProduct.attributes && selectedProduct.attributes.length > 0" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Atributos</label>
+            <div class="grid grid-cols-3 gap-2">
+              <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
+                  :class="['flex items-center justify-center p-2 rounded-lg cursor-pointer border transition-colors', 
+                            selectedAttribute === attribute.id 
+                              ? 'bg-indigo-600 text-white border-indigo-600' 
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']" 
+                  @click="selectedAttribute = attribute.id">
+                <div class="text-center">
+                  <div class="font-medium text-sm">{{ attribute.name }}: {{ attribute.value }}</div>
+                  <div v-if="attribute.price" class="text-xs mt-1" :class="selectedAttribute === attribute.id ? 'text-indigo-100' : 'text-gray-500'">
+                    +${{ formatPrice(attribute.price) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extras -->
+          <div v-if="selectedProduct.extras && selectedProduct.extras.length > 0" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Extras</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div v-for="extra in selectedProduct.extras" :key="extra.id" 
+                  :class="['flex items-center p-2 rounded-lg cursor-pointer border transition-colors', 
+                            extra.selected 
+                              ? 'bg-indigo-50 border-indigo-300' 
+                              : 'bg-white border-gray-200 hover:border-indigo-200']" 
+                  @click="extra.selected = !extra.selected">
+                <input 
+                  type="checkbox" 
+                  :checked="extra.selected" 
+                  class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                  @click.stop
+                >
+                <div class="ml-2">
+                  <div class="font-medium text-sm text-gray-700">{{ extra.name }}</div>
+                  <div class="text-xs text-gray-500">+${{ formatPrice(extra.price) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón de agregar al carrito -->
+          <button 
+            @click="addToCart(selectedProduct)" 
+            class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
+          >
+            <ShoppingCartIcon :size="16" />
+            <span>Agregar al Carrito - ${{ formatPrice(totalPrice) }}</span>
+          </button>
         </div>
-        <div v-else class="text-sm text-gray-500">
-          No tienes notificaciones nuevas.
-        </div>
-        <button
-          @click="closeNotifications"
-          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
-        >
-          Cerrar
-        </button>
       </div>
-    </transition>
+    </div>
+  </div>
+</transition>
 
     <!-- Contenido principal -->
     <div class="container mx-auto p-4" style="max-width: 99vw;">
@@ -175,46 +249,59 @@
         </div>
  
         <!-- Sección de Productos Recomendados -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-800">Recomendados</h2>
-            <a href="#" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
-          </div>
-          
-          <div v-if="products.length === 0" class="bg-white rounded-lg p-8 text-center">
-            <ShoppingBagIcon :size="48" class="mx-auto text-gray-300 mb-2" />
-            <p class="text-gray-500">No hay productos recomendados</p>
-          </div>
-          
-          <div v-else class="overflow-x-auto whitespace-nowrap pb-4">
-            <div class="inline-flex space-x-4">
-              <div class="flex space-x-4">
-                <!-- Tarjeta de Producto 1 -->
-                <div v-for="(product, index) in products.slice(0, 4)" :key="index" class="w-56 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0">
-                  <div class="h-32 bg-gray-300 relative">
-                    <img class="w-full h-full object-cover" :src="product.image" :alt="product.name" />
-                    <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-                      <HeartIcon class="text-gray-400" :size="16" />
-                    </div>
+            <div class="mb-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">Recomendados</h2>
+      <a href="/productocliente" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
+    </div>
+
+    <div v-if="products.length === 0" class="bg-white rounded-lg p-8 text-center">
+      <ShoppingBagIcon :size="48" class="mx-auto text-gray-300 mb-2" />
+      <p class="text-gray-500">No hay productos recomendados</p>
+    </div>
+
+    <div v-else class="overflow-x-auto whitespace-nowrap pb-4">
+      <div class="inline-flex space-x-4">
+        <div class="flex space-x-4">
+          <!-- Tarjetas de Productos Recomendados -->
+          <div v-for="(product, index) in products.slice(0, 7)" :key="index" class="w-60 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0" :class="{'offer': product.discountedPrice}">
+            <div class="h-32 bg-gray-300 relative">
+              <img class="w-full h-full object-cover" :src="product.image" :alt="product.name" />
+              <div class="absolute top-2 right-2 bg-white p-1 rounded-full cursor-pointer" @click="toggleFavorite(product)">
+                <HeartIcon :class="product.favorite ? 'fill-red-500' : 'fill-gray-50'" :size="16" />
+              </div>
+              <div v-if="product.discountedPrice" class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                Oferta
+              </div>
+            </div>
+            <div class="p-3">
+              <h3 class="font-semibold text-black-200">{{ product.name }}</h3>
+              <p class="text-xs text-gray-500 mt-1 mb-1 line-clamp-2">{{ product.description || 'Sin descripción disponible' }}</p>
+              <p class="text-xs text-gray-600 mb-2">{{ product.storeName || 'Tienda Local' }}</p>
+              <div class="flex items-center justify-between mt-2">
+                <div>
+                  <div v-if="product.discountedPrice" class="flex items-center gap-2">
+                    <span class="line-through text-gray-500 text-sm">${{ formatPrice(product.price) }}</span>
+                    <span class="font-bold text-red-600 text-xl">${{ formatPrice(product.discountedPrice) }}</span>
                   </div>
-                  <div class="p-3">
-                    <h3 class="font-semibold text-gray-800">{{ product.name }}</h3>
-                    <div class="flex items-center justify-between mt-2">
-                      <div class="text-sm font-bold text-blue-600">{{ product.price }}</div>
-                      <button class="bg-blue-600 text-white text-xs px-2 py-1 rounded">Agregar</button>
-                    </div>
+                  <div v-else class="font-bold text-indigo-600 text-xl">
+                    ${{ formatPrice(product.price) }}
                   </div>
                 </div>
+                <button @click="openProductModal(product)" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700 transition-colors">Agregar</button>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
         <!-- Sección de Locales con Diseño de Mosaico -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-800">Locales</h2>
-            <span class="text-blue-600 text-sm font-medium">Ver todos</span>
+            <a href="/locales" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
           </div>
           
           <div v-if="locales.length === 0" class="bg-white rounded-lg p-8 text-center">
@@ -230,20 +317,15 @@
             >
               <div class="h-40 bg-gray-300 relative">
                 <img class="w-full h-full object-cover" :src="local.imagen_url" :alt="local.nombre_local" />
-                <div class="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-                  <ClockIcon class="text-blue-600 mr-1" :size="12" />
-                  <span>{{ getRandomDeliveryTime() }}</span>
-                </div>
-                <div class="absolute top-2 right-2 bg-white p-1 rounded-full">
-                  <HeartIcon class="text-gray-400" :size="16" />
-                </div>
               </div>
               <div class="p-3">
-                <h3 class="font-semibold text-gray-800">{{ local.nombre_local }}</h3>
-                <div class="flex items-center text-xs text-gray-500 mt-1">
-                   
+                <h3 class="font-semibold text-black-200">{{ local.nombre_local }}</h3>
+                <div class="flex items-center text-xs text-gray-500 mt-1 mb-2">
                   <span>{{ getCategoryForLocal(local) }}</span>
                 </div>
+                <button @click="viewLocalProducts(local)" class="w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors">
+                  Ver Productos
+                </button>
               </div>
             </div>
           </div>
@@ -319,59 +401,23 @@
     </div> 
     
     <!-- Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-3">
-      <div class="flex justify-around items-center">
-        <div class="flex flex-col items-center">
-          <a href="/Dashboard_Cliente" class="flex flex-col items-center">
-            <HomeIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Inicio</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Favoritos" class="flex flex-col items-center">
-            <HeartIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Favoritos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center relative">
-          <a href="/Carrito" class="flex flex-col items-center"></a>
-          <div class="bg-blue-600 rounded-full p-2">
-            <ShoppingCartIcon class="text-white" :size="20" />
-          </div>
-          <span class="text-xs text-blue-600 mt-1">Carrito</span>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="PedidosCliente" class="flex flex-col items-center">
-            <ShoppingBagIcon class="text-blue-600" :size="20" />
-            <span class="text-xs text-blue-600 mt-1">Pedidos</span>
-          </a>
-        </div>
-        <div class="flex flex-col items-center">
-          <a href="/Perfil" class="flex flex-col items-center">
-            <div class="cursor-pointer">
-              <SettingsIcon class="text-blue-600" :size="20" />
-            </div>
-            <span class="text-xs text-blue-600 mt-1">Configuración</span>
-          </a>
-        </div>
-      </div>
-    </footer>
+    <FooterComponent />
     
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
-import { 
-  Truck as TruckIcon, 
-  Bell as BellIcon, 
+import {
+  Truck as TruckIcon,
+  Bell as BellIcon,
   Settings as SettingsIcon,
-  ShoppingCart as ShoppingCartIcon, 
-  User as UserIcon, 
-  MapPin as MapPinIcon, 
-  Search as SearchIcon, 
-  Heart as HeartIcon, 
+  ShoppingCart as ShoppingCartIcon,
+  User as UserIcon,
+  MapPin as MapPinIcon,
+  Search as SearchIcon,
+  Heart as HeartIcon,
   Home as HomeIcon,
   Menu as MenuIcon,
   ShoppingBag as ShoppingBagIcon,
@@ -382,8 +428,53 @@ import {
   Clock as ClockIcon,
   Star as StarIcon,
   X as XIcon,
-  Store as StoreIcon
+  Store as StoreIcon,
+  Minus as MinusIcon
 } from 'lucide-vue-next';
+const route = useRoute()
+const router = useRouter();
+
+// Modal y selección de producto
+const selectedProduct = ref(null);
+const quantity = ref(1);
+const selectedAttribute = ref(null);
+const totalPrice = computed(() => {
+  if (!selectedProduct.value) return 0;
+
+  // Precio base (usar precio con descuento si existe)
+  let price = selectedProduct.value.discountedPrice
+  ? parseFloat(selectedProduct.value.discountedPrice.toString().replace('$', ''))
+  : parseFloat(selectedProduct.value.price.toString().replace('$', ''));
+
+  // Añadir precio de atributos seleccionados
+  if (selectedProduct.value.attributes && selectedAttribute.value) {
+    const attribute = selectedProduct.value.attributes.find(a => a.id === selectedAttribute.value);
+    if (attribute && attribute.price) {
+      price += attribute.price;
+    }
+  }
+
+  // Añadir precio de extras seleccionados
+  if (selectedProduct.value.extras) {
+    selectedProduct.value.extras.forEach(extra => {
+      if (extra.selected && extra.price) {
+        price += extra.price;
+      }
+    });
+  }
+
+  // Multiplicar por cantidad
+  return price * quantity.value;
+});
+
+const updateBodyClass = () => {
+  if (route.path.includes('dark-page')) {
+    document.body.classList.add('bg-black', 'text-white')
+  } else {
+    document.body.classList.remove('bg-black', 'text-white')
+    document.body.classList.add('bg-white', 'text-black')
+  }
+}
 
 // Estado de carga y fuente de datos
 const loading = ref(true);
@@ -394,51 +485,6 @@ const API_URL = 'http://localhost:4000';
 const isSidebarOpen = ref(false);
 const searchQuery = ref('');
 const currentSlide = ref(0);
-const isModalOpen = ref(false);
-const selectedProfile = ref("Cliente");
-const router = useRouter();
-
-// Funciones para el manejo de notificaciones
-const showNotifications = () => {
-  isModalOpen.value = true;
-};
-
-const closeNotifications = () => {
-  isModalOpen.value = false;
-  notifications.value.forEach((notification) => {
-    notification.read = true;
-  });
-};
-
-const markAsRead = (id) => {
-  const notification = notifications.value.find((n) => n.id === id);
-  if (notification) {
-    notification.read = true;
-  }
-};
-const notifications = ref([
-  { id: 1, message: "Tu pedido ha sido enviado.", read: false },
-  { id: 2, message: "Nuevo descuento disponible.", read: false },
-  { id: 3, message: "Actualización de la app disponible.", read: true },
-]);
-const unreadNotifications = computed(() => {
-  return notifications.value.filter((notification) => !notification.read);
-});
-const redirectToProfile = () => {
-  switch (selectedProfile.value) {
-    case 'Cliente':
-      router.push('/Dashboard_Cliente');  
-      break;
-    case 'Local':
-      router.push('/Dashboard_Local');  
-      break;
-    case 'Delivery':
-      router.push('/Dashboard_Driver');  
-      break;
-    default:
-      break;
-  }
-};
 
 // Datos del usuario
 const userData = ref(null);
@@ -450,9 +496,67 @@ const banners = ref([]);
 const locales = ref([]);
 const products = ref([]);
 
-// Función para alternar la barra lateral
-const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value;
+// Categorías estáticas
+const categories = [
+  { name: 'Comida Rapida', icon: PizzaIcon, color: 'red' },
+  { name: 'Bebidas', icon: CoffeeIcon, color: 'yellow' },
+  { name: 'Tecnología', icon: SmartphoneIcon, color: 'green' },
+  { name: 'Más', icon: PlusIcon, color: 'blue' }
+];
+
+// Funciones para el modal de producto
+const openProductModal = (product) => {
+  selectedProduct.value = {...product};
+  quantity.value = 1;
+  selectedAttribute.value = null;
+
+  // Inicializar extras si existen
+  if (selectedProduct.value.extras) {
+    selectedProduct.value.extras.forEach(extra => {
+      extra.selected = false;
+    });
+  }
+};
+
+const closeModal = () => {
+  selectedProduct.value = null;
+};
+
+const incrementQuantity = () => {
+  quantity.value++;
+};
+
+const decrementQuantity = () => {
+  if (quantity.value > 1) {
+    quantity.value--;
+  }
+};
+
+const addToCart = (product) => {
+  // Lógica para agregar al carrito
+  console.log('Producto agregado al carrito:', product, 'Cantidad:', quantity.value);
+  closeModal();
+  // Aquí puedes mostrar un mensaje de confirmación
+};
+
+const formatPrice = (price) => {
+  if (typeof price === 'string') {
+    price = parseFloat(price.replace(/[^\d.-]/g, ''));
+  }
+  return price.toFixed(2);
+};
+
+// Togglear favoritos
+// Togglear favoritos
+const toggleFavorite = (product) => {
+  product.favorite = !product.favorite;
+};
+
+
+// Ver productos de un local
+const viewLocalProducts = (local) => {
+  console.log('Ver productos del local:', local.nombre_local);
+  // Aquí puedes implementar la navegación a la página de productos del local
 };
 
 // Solicitar transporte
@@ -468,7 +572,7 @@ const solicitarMandadito = () => {
 // Cargar datos desde la API o mock data
 const loadData = async () => {
   loading.value = true;
-  
+
   try {
     if (useRealApi.value) {
       // Cargar datos desde la API
@@ -540,11 +644,28 @@ const loadLocales = async () => {
 // Función para generar productos random (no hay API)
 const generateMockProducts = () => {
   const productNames = [
-    'Café Americano', 'Hamburguesa Clásica', 'Pizza Margherita', 
-    'Sushi Mix', 'Ensalada César', 'Pasta Carbonara', 
+    'Café Americano', 'Hamburguesa Clásica', 'Pizza Margherita',
+    'Sushi Mix', 'Ensalada César', 'Pasta Carbonara',
     'Tacos al Pastor', 'Smoothie de Frutas'
   ];
-  
+
+  const descriptions = [
+    'Un café suave con agua caliente para disfrutar en cualquier momento del día.',
+    'Deliciosa hamburguesa con queso, lechuga, tomate y salsa especial.',
+    'La clásica pizza italiana con salsa de tomate, mozzarella y albahaca fresca.',
+    'Variedad de rolls frescos con salmón, atún y aguacate.',
+    'Ensalada con pollo a la parrilla, croutones, queso parmesano y aderezo césar.',
+    'Pasta con crema, huevo, tocino y queso parmesano.',
+    'Tacos tradicionales mexicanos con carne de cerdo marinada y piña.',
+    'Deliciosa mezcla de frutas frescas con yogurt natural y miel.'
+  ];
+
+  const storeNames = [
+    'Café Central', 'Burger House', 'Pizzería Napoli',
+    'Sushi Express', 'Ensaladas Frescas', 'Pasta Bella',
+    'Taquería Mexicana', 'Frutas & Co.'
+  ];
+
   const images = [
     'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80', // Café
     'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80', // Hamburguesa
@@ -555,12 +676,25 @@ const generateMockProducts = () => {
     'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80', // Tacos
     'https://images.unsplash.com/photo-1505252585461-04db1eb84625?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80', // Smoothie
   ];
-  
+
   products.value = productNames.map((name, index) => ({
     id: index + 1,
     name,
+    description: descriptions[index % descriptions.length],
+    storeName: storeNames[index % storeNames.length],
     price: `$${(5 + Math.random() * 15).toFixed(2)}`,
-    image: images[index]
+    image: images[index % images.length],
+    favorite: false,
+    // Agregar propiedades opcionales para el modal
+    attributes: index % 3 === 0 ? [
+      { id: 1, name: 'Tamaño', value: 'Grande', price: 2.50 },
+      { id: 2, name: 'Tamaño', value: 'Mediano', price: 1.50 },
+      { id: 3, name: 'Tamaño', value: 'Pequeño', price: 0 }
+    ] : [],
+    extras: index % 2 === 0 ? [
+      { id: 1, name: 'Extra queso', price: 1.00, selected: false },
+      { id: 2, name: 'Topping especial', price: 1.50, selected: false }
+    ] : []
   }));
 };
 
@@ -572,7 +706,7 @@ const loadMockData = () => {
     telefono: '+1234567890',
     activo: true
   };
-  
+
   // Direcciones del usuario
   userLocations.value = [
     { id_direccion_cliente: 1, alias_direccion: 'Casa', colonia: 'Colonia Centro', direccion_precisa: 'Calle Principal #123' },
@@ -580,60 +714,135 @@ const loadMockData = () => {
     { id_direccion_cliente: 3, alias_direccion: 'Universidad', colonia: 'Ciudad Universitaria', direccion_precisa: 'Campus Central' }
   ];
   selectedLocation.value = 1;
-  
+
   // Banners publicitarios
   banners.value = [
-    { 
-      id_banner: 1, 
-      titulo: '50% DESCUENTO', 
+    {
+      id_banner: 1,
+      titulo: '50% DESCUENTO',
       descripcion: 'En tu primer pedido',
       imagen_url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
       activo: true
     },
-    { 
-      id_banner: 2, 
-      titulo: 'ENVÍO GRATIS', 
-      descripcion: 'Pedidos +$20', 
+    {
+      id_banner: 2,
+      titulo: 'ENVÍO GRATIS',
+      descripcion: 'Pedidos +$20',
       imagen_url: 'https://images.unsplash.com/photo-1498579397066-22750a3cb424?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
       activo: true
     },
-    { 
-      id_banner: 3, 
-      titulo: '2x1 EN POSTRES', 
-      descripcion: 'Válido hoy', 
+    {
+      id_banner: 3,
+      titulo: '2x1 EN POSTRES',
+      descripcion: 'Válido hoy',
       imagen_url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?ixlib=rb-1.2.1&auto=format&fit=crop&w=1500&q=80',
       activo: true
     }
   ];
-  
+
   // Productos
+  const descriptions = [
+    'Un café suave con agua caliente para disfrutar en cualquier momento del día.',
+    'Deliciosa hamburguesa con queso, lechuga, tomate y salsa especial.',
+    'La clásica pizza italiana con salsa de tomate, mozzarella y albahaca fresca.',
+    'Variedad de rolls frescos con salmón, atún y aguacate.',
+    'Ensalada con pollo a la parrilla, croutones, queso parmesano y aderezo césar.',
+    'Pasta con crema, huevo, tocino y queso parmesano.',
+    'Tacos tradicionales mexicanos con carne de cerdo marinada y piña.',
+    'Deliciosa mezcla de frutas frescas con yogurt natural y miel.'
+  ];
+
+  const storeNames = [
+    'Café Central', 'Burger House', 'Pizzería Napoli',
+    'Sushi Express', 'Ensaladas Frescas', 'Pasta Bella',
+    'Taquería Mexicana', 'Frutas & Co.'
+  ];
+
   products.value = [
     {
       id: 1,
       name: 'Café Americano',
+      description: descriptions[0],
+      storeName: storeNames[0],
       price: '$3.99',
-      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'
+      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false,
+      attributes: [
+        { id: 1, name: 'Tamaño', value: 'Grande', price: 1.00 },
+        { id: 2, name: 'Tamaño', value: 'Mediano', price: 0.50 },
+        { id: 3, name: 'Tamaño', value: 'Pequeño', price: 0 }
+      ],
+      extras: [
+        { id: 1, name: 'Leche de almendra', price: 0.75, selected: false },
+        { id: 2, name: 'Shot extra', price: 1.00, selected: false }
+      ],
+      discountedPrice: '$3'
     },
     {
       id: 2,
       name: 'Hamburguesa Clásica',
+      description: descriptions[1],
+      storeName: storeNames[1],
       price: '$8.99',
-      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'
+      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false,
+      extras: [
+        { id: 1, name: 'Extra queso', price: 1.00, selected: false },
+        { id: 2, name: 'Tocino', price: 1.50, selected: false }
+      ]
     },
     {
       id: 3,
       name: 'Pizza Margherita',
+      description: descriptions[2],
+      storeName: storeNames[2],
       price: '$12.99',
-      image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'
+      image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false,
+      attributes: [
+        { id: 1, name: 'Tamaño', value: 'Familiar', price: 4.00 },
+        { id: 2, name: 'Tamaño', value: 'Mediana', price: 0 },
+        { id: 3, name: 'Tamaño', value: 'Personal', price: -3.00 }
+      ]
     },
     {
       id: 4,
       name: 'Sushi Mix',
+      description: descriptions[3],
+      storeName: storeNames[3],
       price: '$15.99',
-      image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80'
+      image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false
+    },
+    {
+      id: 5,
+      name: 'Ensalada César',
+      description: descriptions[4],
+      storeName: storeNames[4],
+      price: '$9.99',
+      image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false
+    },
+    {
+      id: 6,
+      name: 'Pasta Carbonara',
+      description: descriptions[5],
+      storeName: storeNames[5],
+      price: '$11.99',
+      image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false
+    },
+    {
+      id: 7,
+      name: 'Tacos al Pastor',
+      description: descriptions[6],
+      storeName: storeNames[6],
+      price: '$7.99',
+      image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      favorite: false
     }
   ];
-  
+
   // Locales
   locales.value = [
     {
@@ -655,7 +864,7 @@ const loadMockData = () => {
     {
       id_local: 3,
       nombre_local: 'Sushi Express',
-      imagen_url: 'https://images.unsplash.com/photo-1617196701537-7329482cc9fe?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80',
+      imagen_url: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       apertura: '12:00:00',
       cierre: '23:00:00',
       activo: true
@@ -696,11 +905,11 @@ const getRandomDeliveryTime = () => {
 
 const getCategoryForLocal = (local) => {
   const categories = ['Café', 'Comida Rápida', 'Restaurante', 'Postres', 'Sushi', 'Pizzería'];
-  
+
   // Intentar asignar por nombre
   if (local.nombre_local.toLowerCase().includes('café') || local.nombre_local.toLowerCase().includes('coffee')) {
     return 'Café';
-  } 
+  }
   if (local.nombre_local.toLowerCase().includes('pizza')) {
     return 'Pizzería';
   }
@@ -716,7 +925,7 @@ const getCategoryForLocal = (local) => {
   if (local.nombre_local.toLowerCase().includes('taqu')) {
     return 'Comida Rápida';
   }
-  
+
   // Si no hay coincidencia, asignar aleatoriamente
   return categories[Math.floor(Math.random() * categories.length)];
 };
@@ -737,19 +946,30 @@ watch(useRealApi, () => {
 
 // Cargar datos al montar el componente
 onMounted(() => {
+  watch(() => route.path, updateBodyClass);
   loadData();
   startCarouselInterval();
 });
 </script>
 
-<style scoped>
+
+<style scoped> 
+.fill-red-500 {
+  color: red;
+} 
+.offer .offer-badge {
+  background-color: #e74c3c;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
   .container {
     width: 99%;  
     max-width: 1000px;  
     margin: 0 auto;  
-    padding-top: 70px;  
-    padding-bottom: 95px;  
-  }
+    padding-bottom: 70px;  
+  } 
   /* Estilos para la sección de bienvenida */ 
   .welcome-section {
     position: relative;
@@ -1213,25 +1433,23 @@ onMounted(() => {
       padding: 6px 12px; /* Tamaño reducido del botón en móviles */
     }
   }
-
-  /* Footer */
-  header {
-    position: fixed; /* Fija el header en la parte superior */
-    top: 0; /* Alínea en la parte superior */
-    left: 0; /* Alínea a la izquierda */
-    right: 0; /* Alínea a la derecha */
-    background-color: white; /* Color de fondo */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra inferior */
-    z-index: 1000; /* Asegura que el header esté encima de otros elementos */
+  
+  /* Estilos para el modal */
+  .modal-enter-active,
+  .modal-leave-active {
+    transition: opacity 0.3s ease;
   }
 
-  footer {
-    position: fixed; /* Fija el footer en la parte inferior */
-    bottom: 0; /* Alínea en la parte inferior */
-    left: 0; /* Alínea a la izquierda */
-    right: 0; /* Alínea a la derecha */
-    background-color: white; /* Color de fondo */
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Sombra superior */
-    z-index: 1000; /* Asegura que el footer esté encima de otros elementos */
+  .modal-enter-from,
+  .modal-leave-to {
+    opacity: 0;
+  }
+  
+  /* Limitar la descripción a 2 líneas */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>

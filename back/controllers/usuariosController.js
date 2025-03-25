@@ -31,7 +31,7 @@ const getUserByUsername = async (usuario) => {
 };
 // Crear un nuevo usuario
 const createUsuario = async (req, res) => {
-  const { usuario, clave, id_rol = 1, email, 
+  const { usuario, clave, email, 
     nombre, identidad, fecha_nacimiento, telefono, id_ciudad } = req.body;
 
   // Iniciar una transacción
@@ -47,7 +47,7 @@ const createUsuario = async (req, res) => {
       {
         usuario,
         clave_hash: hashedPassword,
-        id_rol,
+        id_rol: 1, // Por defecto, el rol es cliente (1)
         email,
       },
       { transaction: t } // Asociar la transacción
@@ -57,7 +57,7 @@ const createUsuario = async (req, res) => {
     await UsuarioRol.create(
       {
         id_usuario: nuevoUsuario.id_usuario,
-        id_rol,
+        id_rol: 1, // Por defecto, el rol es cliente (1)
       },
       { transaction: t } // Asociar la transacción
     );
@@ -65,13 +65,13 @@ const createUsuario = async (req, res) => {
     // Crear el cliente asociado al usuario dentro de la transacción
     await Cliente.create(
       {
-        id_usuario: nuevoUsuario.id_usuario, // Relacionamos con el usuario recién creado
+        id_usuario: nuevoUsuario.id_usuario,
         id_ciudad,
         nombre,
         identidad,
         fecha_nacimiento,
         telefono,
-         // Por defecto, el cliente está activo
+        activo: true, // Por defecto, el cliente está activo
       },
       { transaction: t } // Asociar la transacción
     );

@@ -58,6 +58,8 @@ app.use(
 app.use(cookieParser());
 // Rutas
 app.use("/login", authRoutes);
+app.use("/forgot-password", authRoutes);
+app.use("/reset-password", authRoutes);
 app.use("/productos", productRoutes); // Use product routes 
 app.use("/notificaciones", notificationRoutes); // Use notification routes
 app.use("/pedidos", orderRoutes); // Use order routes
