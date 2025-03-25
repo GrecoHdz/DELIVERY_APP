@@ -1,12 +1,45 @@
 export const useApi = () => {
   const config = useRuntimeConfig()
+  const router = useRouter()
+
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (!refreshToken) {
+        throw new Error('No hay refresh token')
+      }
+
+      const response = await fetch(`${config.public.apiBase}/login/session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ refreshToken })
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al refrescar el token')
+      }
+
+      const data = await response.json()
+      localStorage.setItem('accessToken', data.accessToken)
+      localStorage.setItem('refreshToken', data.refreshToken)
+      return data.accessToken
+    } catch (error) {
+      console.error('Error al refrescar el token:', error)
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      router.push('/login')
+      throw error
+    }
+  }
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-    const token = localStorage.getItem('token')
+    let accessToken = localStorage.getItem('accessToken')
     
     const headers = {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
       ...options.headers
     }
 
@@ -15,7 +48,7 @@ export const useApi = () => {
     console.log('Options:', options)
 
     try {
-      const response = await fetch(`${config.public.apiBase}${url}`, {
+      let response = await fetch(`${config.public.apiBase}${url}`, {
         ...options,
         headers,
         credentials: 'include'
@@ -23,6 +56,21 @@ export const useApi = () => {
 
       console.log('Estado de la respuesta:', response.status)
       console.log('Headers de la respuesta:', Object.fromEntries(response.headers.entries()))
+
+      // Si el token expiró, intentar refrescarlo
+      if (response.status === 401) {
+        try {
+          accessToken = await refreshToken()
+          headers['Authorization'] = `Bearer ${accessToken}`
+          response = await fetch(`${config.public.apiBase}${url}`, {
+            ...options,
+            headers,
+            credentials: 'include'
+          })
+        } catch (error) {
+          throw error
+        }
+      }
 
       if (!response.ok) {
         let errorData

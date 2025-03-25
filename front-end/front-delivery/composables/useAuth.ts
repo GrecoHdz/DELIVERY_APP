@@ -1,39 +1,65 @@
-interface User {
-  id: number;
-  usuario: string;
-  role: number;
-}
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  loggedIn: boolean;
-}
+import type { User, AuthState } from '~/types/auth'
 
 export const useAuth = () => {
-  const auth = useState<AuthState>('auth', () => ({
-    user: null,
-    token: null,
-    loggedIn: false
-  }))
+  const auth = useState<AuthState>('auth', () => {
+    // Valor inicial por defecto
+    return {
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      loggedIn: false
+    }
+  })
 
   const api = useApi()
+
+  // Función para restaurar la sesión
+  const restoreSession = () => {
+    if (process.client) {
+      try {
+        const accessToken = localStorage.getItem('accessToken')
+        const refreshToken = localStorage.getItem('refreshToken')
+        const userStr = localStorage.getItem('user')
+        
+        console.log('Intentando restaurar sesión:', { accessToken: !!accessToken, refreshToken: !!refreshToken, userStr: !!userStr })
+        
+        if (accessToken && refreshToken && userStr) {
+          const user = JSON.parse(userStr) as User
+          auth.value = {
+            user,
+            accessToken,
+            refreshToken,
+            loggedIn: true
+          }
+          console.log('Sesión restaurada exitosamente:', auth.value)
+          return true
+        }
+      } catch (error) {
+        console.error('Error al restaurar sesión:', error)
+        logout()
+      }
+    }
+    return false
+  }
 
   const login = async (credentials: { usuario: string; clave: string }) => {
     try {
       const response = await api.post('/login', credentials)
       
-      if (response.accessToken && response.user) {
+      if (response.accessToken && response.refreshToken && response.user) {
         auth.value = {
           user: response.user,
-          token: response.accessToken,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
           loggedIn: true
         }
         
         // Guardar en localStorage
-        localStorage.setItem('token', response.accessToken)
+        localStorage.setItem('accessToken', response.accessToken)
+        localStorage.setItem('refreshToken', response.refreshToken)
         localStorage.setItem('user', JSON.stringify(response.user))
         
+        console.log('Login exitoso:', auth.value)
         return response.user
       }
       
@@ -47,11 +73,16 @@ export const useAuth = () => {
   const logout = () => {
     auth.value = {
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       loggedIn: false
     }
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    if (process.client) {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+    }
+    console.log('Logout completado')
   }
 
   const forgotPassword = async (email: string) => {
@@ -74,22 +105,9 @@ export const useAuth = () => {
     }
   }
 
-  const restoreSession = () => {
-    try {
-      const token = localStorage.getItem('token')
-      const user = JSON.parse(localStorage.getItem('user') || 'null')
-      
-      if (token && user) {
-        auth.value = {
-          user,
-          token,
-          loggedIn: true
-        }
-      }
-    } catch (error) {
-      console.error('Error al restaurar sesión:', error)
-      logout()
-    }
+  // Intentar restaurar la sesión al inicializar el composable
+  if (process.client) {
+    restoreSession()
   }
 
   return {

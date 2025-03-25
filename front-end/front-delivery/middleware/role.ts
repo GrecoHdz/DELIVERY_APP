@@ -1,13 +1,15 @@
+import type { AuthState, RoleRoutes } from '~/types/auth'
+
 export default defineNuxtRouteMiddleware((to) => {
-  const store = useState('auth')
-  const user = store.value?.user
+  const auth = useState<AuthState>('auth')
+  const user = auth.value?.user
 
   if (!user) {
     return navigateTo('/login')
   }
 
   // Mapeo de rutas a roles permitidos
-  const roleRoutes = {
+  const roleRoutes: RoleRoutes = {
     '/Dashboard_Cliente': [1], // Solo clientes
     '/Dashboard_Superadmin': [2, 3] // Admin y SuperAdmin
   }

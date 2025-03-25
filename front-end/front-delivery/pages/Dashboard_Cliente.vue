@@ -1,408 +1,409 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
+  <div class="dashboard-cliente min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 !important">
     <!-- Header -->
     <HeaderComponent />
 
-<!-- Modal de Producto -->
-<transition name="modal">
-  <div v-if="selectedProduct" class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen p-4">
-      <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
-      <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto z-10 overflow-hidden">
-        <!-- Header del modal -->
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex justify-between items-center">
-          <h2 class="text-xl font-bold text-white">Detalles del Producto</h2>
-          <button @click="closeModal" class="text-white hover:text-indigo-100">
-            <XIcon :size="24" />
-          </button>
-        </div>
-        <div class="p-4">
-          <!-- Imagen del producto (reducida en altura) -->
-          <div class="rounded-xl overflow-hidden h-40 mb-4">
-            <img :src="selectedProduct.image || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" :alt="selectedProduct.name" class="w-full h-full object-cover" />
-          </div>
-
-          <!-- Nombre y precio -->
-          <div class="flex justify-between items-start mb-3">
-            <h3 class="font-bold text-gray-800 text-lg">
-              {{ selectedProduct.name }}
-            </h3>
-            <div>
-              <div v-if="selectedProduct.discountedPrice" class="flex flex-col items-end">
-                <span class="line-through text-gray-500 text-sm">${{ formatPrice(selectedProduct.price) }}</span>
-                <span class="font-bold text-red-600 text-lg">${{ formatPrice(selectedProduct.discountedPrice) }}</span>
-              </div>
-              <div v-else class="font-bold text-indigo-600 text-lg">
-                ${{ formatPrice(selectedProduct.price) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Descripción (reducida en tamaño de fuente) -->
-          <p class="text-gray-600 text-sm mb-4">
-            {{ selectedProduct.description || 'Sin descripción disponible' }}
-          </p>
-
-          <!-- Cantidad -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-            <div class="flex items-center max-w-xs mx-auto">
-              <button 
-                @click="decrementQuantity" 
-                class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-l-lg flex items-center justify-center transition-colors"
-              >
-                <MinusIcon :size="16" />
-              </button>
-              <div class="flex-1 bg-indigo-50 h-8 flex items-center justify-center text-lg font-bold text-indigo-700">
-                {{ quantity }}
-              </div>
-              <button 
-                @click="incrementQuantity" 
-                class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-r-lg flex items-center justify-center transition-colors"
-              >
-                <PlusIcon :size="16" />
-              </button>
-            </div>
-          </div>
-
-          <!-- Atributos (Sabor, Tamaño) -->
-          <div v-if="selectedProduct.attributes && selectedProduct.attributes.length > 0" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Atributos</label>
-            <div class="grid grid-cols-3 gap-2">
-              <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
-                  :class="['flex items-center justify-center p-2 rounded-lg cursor-pointer border transition-colors', 
-                            selectedAttribute === attribute.id 
-                              ? 'bg-indigo-600 text-white border-indigo-600' 
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']" 
-                  @click="selectedAttribute = attribute.id">
-                <div class="text-center">
-                  <div class="font-medium text-sm">{{ attribute.name }}: {{ attribute.value }}</div>
-                  <div v-if="attribute.price" class="text-xs mt-1" :class="selectedAttribute === attribute.id ? 'text-indigo-100' : 'text-gray-500'">
-                    +${{ formatPrice(attribute.price) }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Extras -->
-          <div v-if="selectedProduct.extras && selectedProduct.extras.length > 0" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Extras</label>
-            <div class="grid grid-cols-2 gap-2">
-              <div v-for="extra in selectedProduct.extras" :key="extra.id" 
-                  :class="['flex items-center p-2 rounded-lg cursor-pointer border transition-colors', 
-                            extra.selected 
-                              ? 'bg-indigo-50 border-indigo-300' 
-                              : 'bg-white border-gray-200 hover:border-indigo-200']" 
-                  @click="extra.selected = !extra.selected">
-                <input 
-                  type="checkbox" 
-                  :checked="extra.selected" 
-                  class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                  @click.stop
-                >
-                <div class="ml-2">
-                  <div class="font-medium text-sm text-gray-700">{{ extra.name }}</div>
-                  <div class="text-xs text-gray-500">+${{ formatPrice(extra.price) }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Botón de agregar al carrito -->
-          <button 
-            @click="addToCart(selectedProduct)" 
-            class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
-          >
-            <ShoppingCartIcon :size="16" />
-            <span>Agregar al Carrito - ${{ formatPrice(totalPrice) }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</transition>
-
     <!-- Contenido principal -->
-    <div class="container mx-auto p-4" style="max-width: 99vw;">
-      <!-- Indicador de carga -->
-      <div v-if="loading" class="flex justify-center items-center py-20">
-        <div class="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-blue-600"></div>
-      </div>
-      
-      <div v-else>
-        <!-- Sección de Bienvenida -->
-        <div class="welcome-section relative overflow-hidden rounded-lg shadow-md p-6 mb-6 bg-blue-600 text-white"> 
-          <div class="neon-background"></div>
-          <!-- Contenido de la sección -->
-          <div class="welcome-content flex flex-col md:flex-row justify-between items-center"> 
-            <div class="text-center md:text-left mb-4 md:mb-0">
-              <h1 class="font-bold">Bienvenid@</h1>
-              <h1 class="font-bold">{{ userData?.nombre || 'Usuario' }}</h1>
-              <p class="text-gray-200 mt-2">¿De que tienes ganas hoy?</p>
-            </div> 
-            <div class="flex flex-col items-center"> 
-              <div class="bg-blue-100 p-4 rounded-full mb-4 floating-icon">
-                <MapPinIcon class="text-blue-600" :size="24" />
-              </div> 
-              <select v-model="selectedLocation" class="location-selector bg-white text-blue-600 p-2 rounded-lg">
-                <option v-for="location in userLocations" :key="location.id_direccion_cliente" :value="location.id_direccion_cliente">
-                  {{ location.alias_direccion }}
-                </option>
-              </select>
+    <main class="dashboard-cliente-main pt-16">
+      <div class="dashboard-cliente-container container mx-auto px-4 pb-20">
+        <!-- Modal de Producto -->
+        <transition name="modal">
+          <div v-if="selectedProduct" class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen p-4">
+              <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+              <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto z-10 overflow-hidden">
+                <!-- Header del modal -->
+                <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 flex justify-between items-center">
+                  <h2 class="text-xl font-bold text-white">Detalles del Producto</h2>
+                  <button @click="closeModal" class="text-white hover:text-indigo-100">
+                    <XIcon :size="24" />
+                  </button>
+                </div>
+                <div class="p-4">
+                  <!-- Imagen del producto (reducida en altura) -->
+                  <div class="rounded-xl overflow-hidden h-40 mb-4">
+                    <img :src="selectedProduct.image || 'https://via.placeholder.com/300x200?text=Sin+Imagen'" :alt="selectedProduct.name" class="w-full h-full object-cover" />
+                  </div>
+
+                  <!-- Nombre y precio -->
+                  <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-bold text-gray-800 text-lg">
+                      {{ selectedProduct.name }}
+                    </h3>
+                    <div>
+                      <div v-if="selectedProduct.discountedPrice" class="flex flex-col items-end">
+                        <span class="line-through text-gray-500 text-sm">${{ formatPrice(selectedProduct.price) }}</span>
+                        <span class="font-bold text-red-600 text-lg">${{ formatPrice(selectedProduct.discountedPrice) }}</span>
+                      </div>
+                      <div v-else class="font-bold text-indigo-600 text-lg">
+                        ${{ formatPrice(selectedProduct.price) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Descripción (reducida en tamaño de fuente) -->
+                  <p class="text-gray-600 text-sm mb-4">
+                    {{ selectedProduct.description || 'Sin descripción disponible' }}
+                  </p>
+
+                  <!-- Cantidad -->
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <div class="flex items-center max-w-xs mx-auto">
+                      <button 
+                        @click="decrementQuantity" 
+                        class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-l-lg flex items-center justify-center transition-colors"
+                      >
+                        <MinusIcon :size="16" />
+                      </button>
+                      <div class="flex-1 bg-indigo-50 h-8 flex items-center justify-center text-lg font-bold text-indigo-700">
+                        {{ quantity }}
+                      </div>
+                      <button 
+                        @click="incrementQuantity" 
+                        class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-8 h-8 rounded-r-lg flex items-center justify-center transition-colors"
+                      >
+                        <PlusIcon :size="16" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Atributos (Sabor, Tamaño) -->
+                  <div v-if="selectedProduct.attributes && selectedProduct.attributes.length > 0" class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Atributos</label>
+                    <div class="grid grid-cols-3 gap-2">
+                      <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
+                          :class="['flex items-center justify-center p-2 rounded-lg cursor-pointer border transition-colors', 
+                                    selectedAttribute === attribute.id 
+                                      ? 'bg-indigo-600 text-white border-indigo-600' 
+                                      : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']" 
+                          @click="selectedAttribute = attribute.id">
+                        <div class="text-center">
+                          <div class="font-medium text-sm">{{ attribute.name }}: {{ attribute.value }}</div>
+                          <div v-if="attribute.price" class="text-xs mt-1" :class="selectedAttribute === attribute.id ? 'text-indigo-100' : 'text-gray-500'">
+                            +${{ formatPrice(attribute.price) }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Extras -->
+                  <div v-if="selectedProduct.extras && selectedProduct.extras.length > 0" class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Extras</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div v-for="extra in selectedProduct.extras" :key="extra.id" 
+                          :class="['flex items-center p-2 rounded-lg cursor-pointer border transition-colors', 
+                                    extra.selected 
+                                      ? 'bg-indigo-50 border-indigo-300' 
+                                      : 'bg-white border-gray-200 hover:border-indigo-200']" 
+                          @click="extra.selected = !extra.selected">
+                        <input 
+                          type="checkbox" 
+                          :checked="extra.selected" 
+                          class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                          @click.stop
+                        >
+                        <div class="ml-2">
+                          <div class="font-medium text-sm text-gray-700">{{ extra.name }}</div>
+                          <div class="text-xs text-gray-500">+${{ formatPrice(extra.price) }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botón de agregar al carrito -->
+                  <button 
+                    @click="addToCart(selectedProduct)" 
+                    class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm text-sm"
+                  >
+                    <ShoppingCartIcon :size="16" />
+                    <span>Agregar al Carrito - ${{ formatPrice(totalPrice) }}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-     
-        <!-- Barra de búsqueda -->
-        <div class="relative mb-6">
-          <SearchIcon class="absolute left-3 top-3 text-gray-400" :size="20" />
-          <input 
-            type="text" 
-            v-model="searchQuery"
-            placeholder="Buscar restaurantes o platillos..."
-            class="w-full p-3 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-          />
+        </transition>
+
+        <!-- Indicador de carga -->
+        <div v-if="loading" class="flex justify-center items-center py-20">
+          <div class="animate-spin rounded-full h-14 w-14 border-t-4 border-b-4 border-blue-600"></div>
         </div>
         
-        <!-- Sección de Categorías -->
-        <div class="categories-section mb-6">
-          <h2 class="text-xl font-semibold text-gray-800">Categorias</h2>
-          <div class="categories-grid grid grid-cols-4 gap-2">
-            <!-- Categoría 1: Comida Rápida -->
-            <div 
-              class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
-            >
-              <div class="bg-red-100 p-2 rounded-full mb-1">
-                <PizzaIcon class="text-red-500" :size="20" />
+        <div v-else>
+          <!-- Sección de Bienvenida -->
+          <div class="welcome-section relative overflow-hidden rounded-lg shadow-md p-6 mb-6 bg-blue-600 text-white"> 
+            <div class="neon-background"></div>
+            <!-- Contenido de la sección -->
+            <div class="welcome-content flex flex-col md:flex-row justify-between items-center"> 
+              <div class="text-center md:text-left mb-4 md:mb-0">
+                <h1 class="font-bold">Bienvenid@</h1>
+                <h1 class="font-bold">{{ userData?.nombre || 'Usuario' }}</h1>
+                <p class="text-gray-200 mt-2">¿De que tienes ganas hoy?</p>
+              </div> 
+              <div class="flex flex-col items-center"> 
+                <div class="bg-blue-100 p-4 rounded-full mb-4 floating-icon">
+                  <MapPinIcon class="text-blue-600" :size="24" />
+                </div> 
+                <select v-model="selectedLocation" class="location-selector bg-white text-blue-600 p-2 rounded-lg">
+                  <option v-for="location in userLocations" :key="location.id_direccion_cliente" :value="location.id_direccion_cliente">
+                    {{ location.alias_direccion }}
+                  </option>
+                </select>
               </div>
-              <span class="text-xs text-gray-700 text-center">Comida Rapida</span>
-            </div>
-
-            <!-- Categoría 2: Bebidas -->
-            <div 
-              class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
-            >
-              <div class="bg-yellow-100 p-2 rounded-full mb-1">
-                <CoffeeIcon class="text-yellow-500" :size="20" />
-              </div>
-              <span class="text-xs text-gray-700 text-center">Bebidas</span>
-            </div>
-
-            <!-- Categoría 3: Tecnología -->
-            <div 
-              class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
-            >
-              <div class="bg-green-100 p-2 rounded-full mb-1">
-                <SmartphoneIcon class="text-green-500" :size="20" />
-              </div>
-              <span class="text-xs text-gray-700 text-center">Tecnología</span>
-            </div>
-
-            <!-- Categoría 4: Más -->
-            <div 
-              class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
-            >
-              <div class="bg-blue-100 p-2 rounded-full mb-1">
-                <PlusIcon class="text-blue-500" :size="20" />
-              </div>
-              <span class="text-xs text-gray-700 text-center">Más</span>
             </div>
           </div>
-        </div>
-
-        <!-- Carrusel de promociones -->
-        <div class="mb-6"> 
-          <div class="relative overflow-hidden rounded-lg">
-            <div v-if="banners.length === 0" class="h-60 bg-gray-200 flex items-center justify-center">
-              <p class="text-gray-500">No hay promociones disponibles</p>
-            </div>
-            <div 
-              v-else
-              class="flex transition-transform duration-500 ease-in-out" 
-              :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
-            >
-              <div
-                v-for="(banner, index) in banners"
-                :key="index"
-                class="min-w-full h-60 bg-cover bg-center flex-shrink-0"
-                :style="{ backgroundImage: `url(${banner.imagen_url})` }"
+       
+          <!-- Barra de búsqueda -->
+          <div class="relative mb-6">
+            <SearchIcon class="absolute left-3 top-3 text-gray-400" :size="20" />
+            <input 
+              type="text" 
+              v-model="searchQuery"
+              placeholder="Buscar restaurantes o platillos..."
+              class="w-full p-3 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+          
+          <!-- Sección de Categorías -->
+          <div class="categories-section mb-6">
+            <h2 class="text-xl font-semibold text-gray-800">Categorias</h2>
+            <div class="categories-grid grid grid-cols-4 gap-2">
+              <!-- Categoría 1: Comida Rápida -->
+              <div 
+                class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
               >
-                <div class="bg-black bg-opacity-50 h-full flex flex-col justify-end p-4">
-                  <h3 class="text-white text-xl font-bold">{{ banner.titulo }}</h3>
-                  <p class="text-white">{{ banner.descripcion }}</p>
+                <div class="bg-red-100 p-2 rounded-full mb-1">
+                  <PizzaIcon class="text-red-500" :size="20" />
+                </div>
+                <span class="text-xs text-gray-700 text-center">Comida Rapida</span>
+              </div>
+
+              <!-- Categoría 2: Bebidas -->
+              <div 
+                class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
+              >
+                <div class="bg-yellow-100 p-2 rounded-full mb-1">
+                  <CoffeeIcon class="text-yellow-500" :size="20" />
+                </div>
+                <span class="text-xs text-gray-700 text-center">Bebidas</span>
+              </div>
+
+              <!-- Categoría 3: Tecnología -->
+              <div 
+                class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
+              >
+                <div class="bg-green-100 p-2 rounded-full mb-1">
+                  <SmartphoneIcon class="text-green-500" :size="20" />
+                </div>
+                <span class="text-xs text-gray-700 text-center">Tecnología</span>
+              </div>
+
+              <!-- Categoría 4: Más -->
+              <div 
+                class="category-item bg-white rounded-lg shadow-sm p-2 flex flex-col items-center cursor-pointer transition-transform duration-200 hover:transform hover:-translate-y-1 active:translate-y-0.5 active:shadow-md"
+              >
+                <div class="bg-blue-100 p-2 rounded-full mb-1">
+                  <PlusIcon class="text-blue-500" :size="20" />
+                </div>
+                <span class="text-xs text-gray-700 text-center">Más</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carrusel de promociones -->
+          <div class="mb-6"> 
+            <div class="relative overflow-hidden rounded-lg">
+              <div v-if="banners.length === 0" class="h-60 bg-gray-200 flex items-center justify-center">
+                <p class="text-gray-500">No hay promociones disponibles</p>
+              </div>
+              <div 
+                v-else
+                class="flex transition-transform duration-500 ease-in-out" 
+                :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
+              >
+                <div
+                  v-for="(banner, index) in banners"
+                  :key="index"
+                  class="min-w-full h-60 bg-cover bg-center flex-shrink-0"
+                  :style="{ backgroundImage: `url(${banner.imagen_url})` }"
+                >
+                  <div class="bg-black bg-opacity-50 h-full flex flex-col justify-end p-4">
+                    <h3 class="text-white text-xl font-bold">{{ banner.titulo }}</h3>
+                    <p class="text-white">{{ banner.descripcion }}</p>
+                  </div>
                 </div>
               </div>
+              
+              <!-- Indicadores de carrusel -->
+              <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+                <button 
+                  v-for="(_, index) in banners" 
+                  :key="index"
+                  @click="currentSlide = index"
+                  :class="currentSlide === index ? 'bg-white' : 'bg-white bg-opacity-50'"
+                  class="w-2 h-2 rounded-full transition-all"
+                ></button>
+              </div>
+            </div>
+          </div>
+   
+          <!-- Sección de Productos Recomendados -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Recomendados</h2>
+              <NuxtLink to="/productocliente" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</NuxtLink>
+            </div>
+
+            <div v-if="products.length === 0" class="bg-white rounded-lg p-8 text-center">
+              <ShoppingBagIcon :size="48" class="mx-auto text-gray-300 mb-2" />
+              <p class="text-gray-500">No hay productos recomendados</p>
+            </div>
+
+            <div v-else class="overflow-x-auto whitespace-nowrap pb-4">
+              <div class="inline-flex space-x-4">
+                <div class="flex space-x-4">
+                  <!-- Tarjetas de Productos Recomendados -->
+                  <div v-for="(product, index) in products.slice(0, 7)" :key="index" class="w-60 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0" :class="{'offer': product.discountedPrice}">
+                    <div class="h-32 bg-gray-300 relative">
+                      <img class="w-full h-full object-cover" :src="product.image" :alt="product.name" />
+                      <div class="absolute top-2 right-2 bg-white p-1 rounded-full cursor-pointer" @click="toggleFavorite(product)">
+                        <HeartIcon :class="product.favorite ? 'fill-red-500' : 'fill-gray-50'" :size="16" />
+                      </div>
+                      <div v-if="product.discountedPrice" class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                        Oferta
+                      </div>
+                    </div>
+                    <div class="p-3">
+                      <h3 class="font-semibold text-black-200">{{ product.name }}</h3>
+                      <p class="text-xs text-gray-500 mt-1 mb-1 line-clamp-2">{{ product.description || 'Sin descripción disponible' }}</p>
+                      <p class="text-xs text-gray-600 mb-2">{{ product.storeName || 'Tienda Local' }}</p>
+                      <div class="flex items-center justify-between mt-2">
+                        <div>
+                          <div v-if="product.discountedPrice" class="flex items-center gap-2">
+                            <span class="line-through text-gray-500 text-sm">${{ formatPrice(product.price) }}</span>
+                            <span class="font-bold text-red-600 text-xl">${{ formatPrice(product.discountedPrice) }}</span>
+                          </div>
+                          <div v-else class="font-bold text-indigo-600 text-xl">
+                            ${{ formatPrice(product.price) }}
+                          </div>
+                        </div>
+                        <button @click="openProductModal(product)" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700 transition-colors">Agregar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección de Locales con Diseño de Mosaico -->
+          <div class="mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">Locales</h2>
+              <a href="/locales" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
             </div>
             
-            <!-- Indicadores de carrusel -->
-            <div class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-              <button 
-                v-for="(_, index) in banners" 
-                :key="index"
-                @click="currentSlide = index"
-                :class="currentSlide === index ? 'bg-white' : 'bg-white bg-opacity-50'"
-                class="w-2 h-2 rounded-full transition-all"
-              ></button>
+            <div v-if="locales.length === 0" class="bg-white rounded-lg p-8 text-center">
+              <StoreIcon :size="48" class="mx-auto text-gray-300 mb-2" />
+              <p class="text-gray-500">No hay locales disponibles</p>
             </div>
-          </div>
-        </div>
- 
-        <!-- Sección de Productos Recomendados -->
-            <div class="mb-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-semibold text-gray-800">Recomendados</h2>
-      <a href="/productocliente" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
-    </div>
-
-    <div v-if="products.length === 0" class="bg-white rounded-lg p-8 text-center">
-      <ShoppingBagIcon :size="48" class="mx-auto text-gray-300 mb-2" />
-      <p class="text-gray-500">No hay productos recomendados</p>
-    </div>
-
-    <div v-else class="overflow-x-auto whitespace-nowrap pb-4">
-      <div class="inline-flex space-x-4">
-        <div class="flex space-x-4">
-          <!-- Tarjetas de Productos Recomendados -->
-          <div v-for="(product, index) in products.slice(0, 7)" :key="index" class="w-60 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0" :class="{'offer': product.discountedPrice}">
-            <div class="h-32 bg-gray-300 relative">
-              <img class="w-full h-full object-cover" :src="product.image" :alt="product.name" />
-              <div class="absolute top-2 right-2 bg-white p-1 rounded-full cursor-pointer" @click="toggleFavorite(product)">
-                <HeartIcon :class="product.favorite ? 'fill-red-500' : 'fill-gray-50'" :size="16" />
-              </div>
-              <div v-if="product.discountedPrice" class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
-                Oferta
-              </div>
-            </div>
-            <div class="p-3">
-              <h3 class="font-semibold text-black-200">{{ product.name }}</h3>
-              <p class="text-xs text-gray-500 mt-1 mb-1 line-clamp-2">{{ product.description || 'Sin descripción disponible' }}</p>
-              <p class="text-xs text-gray-600 mb-2">{{ product.storeName || 'Tienda Local' }}</p>
-              <div class="flex items-center justify-between mt-2">
-                <div>
-                  <div v-if="product.discountedPrice" class="flex items-center gap-2">
-                    <span class="line-through text-gray-500 text-sm">${{ formatPrice(product.price) }}</span>
-                    <span class="font-bold text-red-600 text-xl">${{ formatPrice(product.discountedPrice) }}</span>
-                  </div>
-                  <div v-else class="font-bold text-indigo-600 text-xl">
-                    ${{ formatPrice(product.price) }}
-                  </div>
+            
+            <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div 
+                v-for="(local, index) in locales.slice(0, 6)" 
+                :key="index" 
+                class="bg-white rounded-lg shadow-md overflow-hidden"
+              >
+                <div class="h-40 bg-gray-300 relative">
+                  <img class="w-full h-full object-cover" :src="local.imagen_url" :alt="local.nombre_local" />
                 </div>
-                <button @click="openProductModal(product)" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700 transition-colors">Agregar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-        <!-- Sección de Locales con Diseño de Mosaico -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-800">Locales</h2>
-            <a href="/locales" class="text-blue-600 text-sm font-medium cursor-pointer">Ver todos</a>
-          </div>
-          
-          <div v-if="locales.length === 0" class="bg-white rounded-lg p-8 text-center">
-            <StoreIcon :size="48" class="mx-auto text-gray-300 mb-2" />
-            <p class="text-gray-500">No hay locales disponibles</p>
-          </div>
-          
-          <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            <div 
-              v-for="(local, index) in locales.slice(0, 6)" 
-              :key="index" 
-              class="bg-white rounded-lg shadow-md overflow-hidden"
-            >
-              <div class="h-40 bg-gray-300 relative">
-                <img class="w-full h-full object-cover" :src="local.imagen_url" :alt="local.nombre_local" />
-              </div>
-              <div class="p-3">
-                <h3 class="font-semibold text-black-200">{{ local.nombre_local }}</h3>
-                <div class="flex items-center text-xs text-gray-500 mt-1 mb-2">
-                  <span>{{ getCategoryForLocal(local) }}</span>
+                <div class="p-3">
+                  <h3 class="font-semibold text-black-200">{{ local.nombre_local }}</h3>
+                  <div class="flex items-center text-xs text-gray-500 mt-1 mb-2">
+                    <span>{{ getCategoryForLocal(local) }}</span>
+                  </div>
+                  <button @click="viewLocalProducts(local)" class="w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors">
+                    Ver Productos
+                  </button>
                 </div>
-                <button @click="viewLocalProducts(local)" class="w-full bg-blue-600 text-white text-xs py-1.5 px-3 rounded hover:bg-blue-700 transition-colors">
-                  Ver Productos
-                </button>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Afiliar -->  
-        <div class="af mb-6" style="text-align: center"> 
-          <div class="p-4 text-white">
-            <h3 class="font-bold text-lg">¡Afiliate con Nosotros!🚀</h3>
-            <p class="text-sm" style="margin: 10px">Afiliate como local y <span class="font-bold">aumenta tus ventas</span> o unete como delivery y <span class="font-bold">gana dinero con cada entrega</span></p>
-              <div class="affiliate-buttons">
-                <button class="affiliate-btn local-btn">📍 Afiliarse como Local</button>
-                <button class="affiliate-btn delivery-btn">🚴 Afiliarse como Delivery</button>
+          <!-- Afiliar -->  
+          <div class="af mb-6" style="text-align: center"> 
+            <div class="p-4 text-white">
+              <h3 class="font-bold text-lg">¡Afiliate con Nosotros!🚀</h3>
+              <p class="text-sm" style="margin: 10px">Afiliate como local y <span class="font-bold">aumenta tus ventas</span> o unete como delivery y <span class="font-bold">gana dinero con cada entrega</span></p>
+                <div class="affiliate-buttons">
+                  <button class="affiliate-btn local-btn">📍 Afiliarse como Local</button>
+                  <button class="affiliate-btn delivery-btn">🚴 Afiliarse como Delivery</button>
+                </div>
+              </div>
+            </div> 
+            
+          <!-- Sección de Transporte -->  
+          <div class="content mb-6">  
+            <h2 class="text-xl font-semibold text-gray-800" style="text-align: left">Transporte</h2>  
+            <p class="section-description" style="text-align: left">Elige la mejor opción para moverte.</p>
+
+            <div class="transport-grid">
+              <!-- Tarjeta para Uber -->
+              <div class="transport-card uber">
+                <div class="card-content">
+                  <i class="fas fa-taxi"></i>
+                  <h3>Uber</h3>
+                  <p>Viaja rápido y seguro con un servicio confiable.</p>
+                  <button class="card-button" @click="selectTransport('uber')">
+                    Solicitar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tarjeta para Rentar Auto -->
+              <div class="transport-card rentar">
+                <div class="card-content">
+                  <i class="fas fa-car"></i>
+                  <h3>Rentar Auto</h3>
+                  <p>Explora a tu ritmo con un auto rentado.</p>
+                  <button class="card-button" @click="selectTransport('rentar')">
+                    Solicitar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tarjeta para Flete -->
+              <div class="transport-card flete">
+                <div class="card-content">
+                  <i class="fas fa-truck"></i>
+                  <h3>Flete</h3>
+                  <p>Transporta tus pertenencias de manera segura.</p>
+                  <button class="card-button" @click="selectTransport('flete')">
+                    Solicitar
+                  </button>
+                </div>
               </div>
             </div>
           </div> 
-          
-        <!-- Sección de Transporte -->  
-        <div class="content mb-6">  
-          <h2 class="text-xl font-semibold text-gray-800" style="text-align: left">Transporte</h2>  
-          <p class="section-description" style="text-align: left">Elige la mejor opción para moverte.</p>
 
-          <div class="transport-grid">
-            <!-- Tarjeta para Uber -->
-            <div class="transport-card uber">
-              <div class="card-content">
-                <i class="fas fa-taxi"></i>
-                <h3>Uber</h3>
-                <p>Viaja rápido y seguro con un servicio confiable.</p>
-                <button class="card-button" @click="selectTransport('uber')">
-                  Solicitar
-                </button>
+          <!-- Mandaditos -->
+          <div class="mb-6" style="text-align: center"> 
+            <div class="bg-blue-600 rounded-lg p-4 text-white">
+              <h3 class="font-bold text-lg">📦 ¿Necesitas Mandaditos?</h3>
+              <p class="text-sm" style="margin: 10px">Nos encargamos de tus recados de manera rápida, segura y confiable.
+                  ¡Déjanos ayudarte!</p>
+                <div class="floating-icon"><i class="fas fa-box"></i></div>
+                <button class="cta-button" style="margin: 10px" @click="solicitarMandadito">Solicitar Mandadito</button>
               </div>
-            </div>
-
-            <!-- Tarjeta para Rentar Auto -->
-            <div class="transport-card rentar">
-              <div class="card-content">
-                <i class="fas fa-car"></i>
-                <h3>Rentar Auto</h3>
-                <p>Explora a tu ritmo con un auto rentado.</p>
-                <button class="card-button" @click="selectTransport('rentar')">
-                  Solicitar
-                </button>
-              </div>
-            </div>
-
-            <!-- Tarjeta para Flete -->
-            <div class="transport-card flete">
-              <div class="card-content">
-                <i class="fas fa-truck"></i>
-                <h3>Flete</h3>
-                <p>Transporta tus pertenencias de manera segura.</p>
-                <button class="card-button" @click="selectTransport('flete')">
-                  Solicitar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div> 
-
-        <!-- Mandaditos -->
-        <div class="mb-6" style="text-align: center"> 
-          <div class="bg-blue-600 rounded-lg p-4 text-white">
-            <h3 class="font-bold text-lg">📦 ¿Necesitas Mandaditos?</h3>
-            <p class="text-sm" style="margin: 10px">Nos encargamos de tus recados de manera rápida, segura y confiable.
-                ¡Déjanos ayudarte!</p>
-              <div class="floating-icon"><i class="fas fa-box"></i></div>
-              <button class="cta-button" style="margin: 10px" @click="solicitarMandadito">Solicitar Mandadito</button>
-            </div>
-          </div> 
-      </div>
-    </div> 
+            </div> 
+        </div>
+      </div> 
+    </main>
     
     <!-- Footer -->
     <FooterComponent />
-    
   </div>
 </template>
 
@@ -953,7 +954,38 @@ onMounted(() => {
 </script>
 
 
-<style scoped> 
+<style scoped>
+/* Estilos específicos para Dashboard_Cliente */
+.dashboard-cliente {
+  background: linear-gradient(to bottom, #EBF4FF, #E1EFFE) !important;
+  min-height: 100vh !important;
+}
+
+.dashboard-cliente-main {
+  background-color: transparent !important;
+}
+
+.dashboard-cliente-container {
+  background-color: transparent !important;
+}
+
+/* Resto de los estilos existentes pero con !important */
+:deep(.header) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+  background-color: white !important;
+}
+
+.container {
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding-bottom: 70px !important;
+}
+
 .fill-red-500 {
   color: red;
 } 
@@ -964,13 +996,6 @@ onMounted(() => {
   border-radius: 4px;
   font-size: 12px;
 }
-  .container {
-    width: 99%;  
-    max-width: 1000px;  
-    margin: 0 auto;  
-    padding-bottom: 70px;  
-  } 
-  /* Estilos para la sección de bienvenida */ 
   .welcome-section {
     position: relative;
     overflow: hidden;

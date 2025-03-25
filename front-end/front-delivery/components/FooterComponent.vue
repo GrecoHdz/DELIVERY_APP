@@ -29,10 +29,11 @@
 
 <script setup>
 import { Home as HomeIcon, Heart as HeartIcon, ShoppingCart as ShoppingCartIcon, ShoppingBag as ShoppingBagIcon, Settings as SettingsIcon } from 'lucide-vue-next';
+const router = useRouter();
 
-// Función mejorada para redirigir con recarga completa
+// Función para redirigir usando el router de Nuxt
 const redirectTo = (url) => {
-  window.location.replace(url); // Reemplaza la URL y fuerza una recarga
+  router.push(url);
 };
 </script>
 

@@ -118,7 +118,7 @@
           <div 
             v-for="order in activeOrders" 
             :key="order.id_pedido" 
-            class="bg-white rounded-lg shadow-md overflow-hidden"
+            class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-white"
           >
             <!-- Barra de estado -->
             <div class="w-full bg-gray-200 h-2">
@@ -129,7 +129,7 @@
             </div>
 
             <!-- Estados del pedido - Con etiqueta "Pendiente" más visible -->
-            <div class="flex justify-between px-4 py-2 text-xs text-gray-600 border-b">
+            <div class="flex justify-between px-4 py-2 text-xs text-gray-300 border-b border-gray-700">
               <div class="flex flex-col items-center">
                 <div :class="['rounded-full w-4 h-4 mb-1', getStateClass('pendiente_local', order.estado)]"></div>
                 <span class="font-medium">Pendiente</span>
@@ -154,7 +154,7 @@
 
             <!-- Header del pedido -->
             <div class="flex justify-between items-center p-4 border-b">
-              <h3 class="text-lg font-bold text-blue-600">Pedido #{{ order.id_pedido }}</h3>
+              <h3 class="text-lg font-bold text-white">Pedido #{{ order.id_pedido }}</h3>
               <div class="flex items-center">
                 <div 
                   :class="[
@@ -176,8 +176,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="text-gray-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                   </div>
                   <div class="ml-3">
-                    <h4 class="font-medium">{{ order.local?.nombre || 'Restaurante' }}</h4>
-                    <div class="flex items-center text-sm text-gray-600 mt-1">
+                    <h4 class="font-medium text-white">{{ order.local?.nombre || 'Restaurante' }}</h4>
+                    <div class="flex items-center text-sm text-gray-300 mt-1">
                       <div class="flex items-center cursor-pointer" @click="showLocationModal(order, 'local')">
                         <svg xmlns="http://www.w3.org/2000/svg" class="text-red-500 mr-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                         <span class="truncate max-w-[200px]">{{ order.direccion_local?.direccion || 'Dirección del local' }}</span>
@@ -277,13 +277,13 @@
             </div>
             <!-- Método de pago y tipo de entrega -->
             <div class="p-4 flex flex-wrap gap-3">
-              <div class="flex-1 min-w-[140px] bg-gray-100 p-2 rounded text-sm">
-                <span class="block text-gray-500 text-xs">Método de pago</span>
-                <span class="font-medium">{{ getPrettyPaymentMethod(order.metodo_pago) }}</span>
+              <div class="flex-1 min-w-[140px] bg-gray-700 p-2 rounded text-sm">
+                <span class="block text-gray-300 text-xs">Método de pago</span>
+                <span class="font-medium text-white">{{ getPrettyPaymentMethod(order.metodo_pago) }}</span>
               </div>
-              <div class="flex-1 min-w-[140px] bg-gray-100 p-2 rounded text-sm">
-                <span class="block text-gray-500 text-xs">Tipo de entrega</span>
-                <span class="font-medium">{{ getPrettyDeliveryType(order.tipo_pedido) }}</span>
+              <div class="flex-1 min-w-[140px] bg-gray-700 p-2 rounded text-sm">
+                <span class="block text-gray-300 text-xs">Tipo de entrega</span>
+                <span class="font-medium text-white">{{ getPrettyDeliveryType(order.tipo_pedido) }}</span>
               </div>
             </div>
 
@@ -371,11 +371,11 @@
           <div 
             v-for="order in filteredPastOrders" 
             :key="order.id_pedido" 
-            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+            class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-white"
           >
             <!-- Header del pedido -->
             <div class="flex justify-between items-center p-4 border-b">
-              <h3 class="text-lg font-bold text-blue-600">Pedido #{{ order.id_pedido }}</h3>
+              <h3 class="text-lg font-bold text-white">Pedido #{{ order.id_pedido }}</h3>
               <div class="flex items-center">
                 <div 
                   :class="[
@@ -398,7 +398,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" class="text-gray-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 </div>
                 <div class="ml-3">
-                  <h4 class="font-medium">{{ order.local?.nombre || 'Restaurante' }}</h4>
+                  <h4 class="font-medium text-white">{{ order.local?.nombre || 'Restaurante' }}</h4>
                 </div>
               </div>
             </div>
@@ -444,13 +444,13 @@
 
             <!-- Método de pago y fecha de entrega -->
             <div class="p-4 flex flex-wrap gap-3">
-              <div class="flex-1 min-w-[140px] bg-gray-100 p-2 rounded text-sm">
-                <span class="block text-gray-500 text-xs">Método de pago</span>
-                <span class="font-medium">{{ getPrettyPaymentMethod(order.metodo_pago) }}</span>
+              <div class="flex-1 min-w-[140px] bg-gray-700 p-2 rounded text-sm">
+                <span class="block text-gray-300 text-xs">Método de pago</span>
+                <span class="font-medium text-white">{{ getPrettyPaymentMethod(order.metodo_pago) }}</span>
               </div>
-              <div class="flex-1 min-w-[140px] bg-gray-100 p-2 rounded text-sm">
-                <span class="block text-gray-500 text-xs">Entregado el</span>
-                <span class="font-medium">{{ order.fecha_entrega ? formatDate(order.fecha_entrega) : 'N/A' }}</span>
+              <div class="flex-1 min-w-[140px] bg-gray-700 p-2 rounded text-sm">
+                <span class="block text-gray-300 text-xs">Entregado el</span>
+                <span class="font-medium text-white">{{ order.fecha_entrega ? formatDate(order.fecha_entrega) : 'N/A' }}</span>
               </div>
             </div>
 
@@ -1635,19 +1635,6 @@ const reorderItems = (order) => {
 onMounted(() => {
   // Inicializar datos
   fetchOrders();
-  
-  // Detectar preferencia de color
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    document.documentElement.classList.add('dark');
-  }
-  
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
-    if (event.matches) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  });
 });
 </script>
 
@@ -1674,36 +1661,5 @@ onMounted(() => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
-}
-
-/* Soporte para modo oscuro - manteniendo header y footer blancos */
-@media (prefers-color-scheme: dark) {
-  .dark body {
-    @apply bg-gray-900 text-white;
-  }
-  
-  .dark .bg-white:not(header):not(footer) {
-    @apply bg-gray-800;
-  }
-  
-  .dark .text-gray-700 {
-    @apply text-gray-300;
-  }
-  
-  .dark .text-gray-600 {
-    @apply text-gray-400;
-  }
-  
-  .dark .border {
-    @apply border-gray-700;
-  }
-  
-  .dark .bg-gray-100 {
-    @apply bg-gray-700;
-  }
-  
-  .dark .modal-content {
-    @apply bg-gray-800;
-  }
 }
 </style>

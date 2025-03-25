@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow-md px-3 py-3 flex justify-between items-center text-lg"> 
+  <header class="fixed top-0 left-0 right-0 bg-white shadow-md px-3 py-3 flex justify-between items-center text-lg z-50"> 
     <div class="flex items-center space-x-2">
       <TruckIcon class="text-blue-600" :size="24" />
       <span class="font-bold text-xl text-blue-600">DeliveryPro</span>
@@ -89,13 +89,13 @@ const markAsRead = (id) => {
 const redirectToProfile = () => {
   switch (selectedProfile.value) {
     case 'Cliente':
-      window.location.href = '/Dashboard_Cliente';
+      router.push('/Dashboard_Cliente');
       break;
     case 'Local':
-      window.location.href = '/Dashboard_Local';
+      router.push('/Dashboard_Local');
       break;
     case 'Delivery':
-      window.location.href = '/Dashboard_Driver';
+      router.push('/Dashboard_Driver');
       break;
     default:
       break;
@@ -103,3 +103,9 @@ const redirectToProfile = () => {
 };
 
 </script>
+
+<style scoped>
+header {
+  height: 64px; /* Altura fija para el header */
+}
+</style>

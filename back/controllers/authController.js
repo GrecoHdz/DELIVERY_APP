@@ -33,6 +33,40 @@ const generateTokens = (user) => {
   return { accessToken, refreshToken };
 };
 
+const refreshToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  try {
+    if (!refreshToken) {
+      return res.status(400).json({ message: "Refresh token no proporcionado" });
+    }
+
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const user = await Usuario.findOne({
+      where: { id_usuario: decoded.id },
+      attributes: ["id_usuario", "usuario", "id_rol"]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const tokens = generateTokens({
+      id: user.id_usuario,
+      usuario: user.usuario,
+      role: user.id_rol
+    });
+
+    res.json(tokens);
+  } catch (error) {
+    console.error("Error al refrescar el token:", error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: "Refresh token expirado" });
+    }
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
 const login = async (req, res) => {
   const { usuario, clave } = req.body;
 
@@ -178,4 +212,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { login, generateTokens, forgotPassword, resetPassword };
+module.exports = { login, generateTokens, refreshToken, forgotPassword, resetPassword };

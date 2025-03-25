@@ -10,6 +10,7 @@ const {
 const {
   createUsuarioRol, 
 } = require("../controllers/usuarioRolesController");
+const verifyToken = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 // Middleware para validar errores
@@ -22,11 +23,12 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los usuarios
-router.get("/", getUsuarios);
+router.get("/", verifyToken, getUsuarios);
 
 // Obtener un usuario por su ID
 router.get(
   "/:id",
+  verifyToken,
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   getUsuarioById
@@ -71,6 +73,7 @@ router.post(
 // Actualizar un usuario
 router.put(
   "/:id",
+  verifyToken,
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("usuario")
@@ -97,6 +100,7 @@ router.put(
 // Eliminar un usuario
 router.delete(
   "/:id",
+  verifyToken,
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   deleteUsuario
