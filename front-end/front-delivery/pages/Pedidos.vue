@@ -2,35 +2,6 @@
   <div class="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 pb-20">
     <!-- Header -->
     <HeaderComponent />
-
-    <!-- Modal de Notificaciones -->
-    <transition name="fade">
-      <div v-if="isModalOpen" class="absolute top-16 right-4 bg-white shadow-lg rounded-lg p-4 w-64 z-50">
-        <h3 class="font-bold text-lg mb-2 text-blue-600">Notificaciones</h3>
-        <div v-if="notifications.length > 0">
-          <div
-            v-for="(notification, index) in notifications"
-            :key="index"
-            class="p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-            @click="markAsRead(notification.id)"
-            :class="{ 'bg-gray-100': notification.read }"
-          >
-            <p class="text-sm text-gray-700">{{ notification.message }}</p>
-            <span v-if="!notification.read" class="text-xs text-blue-500">Nueva</span>
-          </div>
-        </div>
-        <div v-else class="text-sm text-gray-500">
-          No tienes notificaciones nuevas.
-        </div>
-        <button
-          @click="closeNotifications"
-          class="mt-2 w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-500 transition duration-200"
-        >
-          Cerrar
-        </button>
-      </div>
-    </transition>
-
     
     <!-- Contenido Principal -->
     <div class="customer-orders-page p-4">
@@ -240,8 +211,12 @@
             {{ key }}: {{ value }}
           </div>
         </div>
-        <div v-if="item.extras && item.extras.length > 0" class="text-xs text-gray-500 ml-6">
-          <div>Extras: {{ item.extras.join(', ') }}</div>
+        <div v-if="item.extras && Object.keys(item.extras).length > 0" class="text-xs text-gray-500 ml-6">
+          <div>Extras: 
+            <span v-for="(extra, key) in item.extras" :key="key">
+              {{ extra.name }} (+${{ formatPrice(extra.price) }})
+            </span>
+          </div>
         </div>
       </div>
       <div class="font-medium">${{ formatPrice(item.subtotal) }}</div>
@@ -255,7 +230,7 @@
   <!-- Pago al delivery (resaltado) -->
   <div class="mt-3 pt-3 border-t flex justify-between font-bold text-green-500">
     <div>Pago al Driver (Al recibir)</div>
-    <div>${{ order.pago_delivery }}</div>
+    <div>${{ order.pago_delivery ? formatPrice(order.pago_delivery) : '0.00' }}</div>
   </div>
 </div>
 
@@ -432,6 +407,20 @@
                 >
                   <div>
                     <span class="font-medium">{{ item.cantidad }}x</span> {{ item.nombre_producto }}
+                    <!-- Mostrar atributos -->
+                    <div v-if="item.atributos && Object.keys(item.atributos).length > 0" class="text-xs text-gray-500 ml-6">
+                      <div v-for="(value, key) in item.atributos" :key="key">
+                        {{ key }}: {{ value }}
+                      </div>
+                    </div>
+                    <!-- Mostrar extras -->
+                    <div v-if="item.extras && Object.keys(item.extras).length > 0" class="text-xs text-gray-500 ml-6">
+                      <div>Extras: 
+                        <span v-for="(extra, key) in item.extras" :key="key">
+                          {{ extra.name }} (+${{ formatPrice(extra.price) }})
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div class="font-medium">${{ formatPrice(item.subtotal) }}</div>
                 </div>
@@ -734,7 +723,9 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
+  import { io } from 'socket.io-client';
+  import axios from 'axios';
   import {
     Truck as TruckIcon, 
     Bell as BellIcon,
@@ -834,18 +825,32 @@ const toggleOrderDetails = (orderId) => {
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   const date = new Date(dateString);
-  return date.toLocaleDateString();
+  return date.toLocaleDateString('es-HN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 };
 
 const formatDateTime = (dateString) => {
   if (!dateString) return 'N/A';
+  console.log('Formatting date:', dateString);
   const date = new Date(dateString);
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+  console.log('Parsed date:', date);
+  return date.toLocaleString('es-HN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 const formatPrice = (price) => {
-  if (!price) return '0.00';
-  return parseFloat(price).toFixed(2);
+  if (!price && price !== 0) return '0.00';
+  console.log('Formatting price:', price, typeof price);
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+  return numericPrice.toFixed(2);
 };
 
 const calculateOrderTotal = (order) => {
@@ -981,19 +986,25 @@ const fetchOrders = async () => {
   try {
     if (dataSource.value === 'api') {
       // Lógica para obtener datos de la API
-      // const response = await axios.get('http://localhost:4000/pedidos');
-      // orders.value = response.data;
-      
-      // Simulamos error de API para propósitos de demo
-      error.value = "No se pudo conectar a la API. Usando datos de ejemplo.";
-      dataSource.value = 'mock';
-      await fetchMockData();
+      const response = await axios.get('http://localhost:4000/pedidos');
+      console.log('Datos recibidos del backend:', response.data); // Agregar este log
+      // Asegurarnos de que las fechas se procesen correctamente
+      orders.value = response.data.map(order => {
+        console.log('Procesando pedido:', order.id_pedido, 'pago_delivery:', order.pago_delivery);
+        return {
+          ...order,
+          fecha_pedido: order.fecha_pedido ? new Date(order.fecha_pedido).toISOString() : null,
+          fecha_entrega: order.fecha_entrega ? new Date(order.fecha_entrega).toISOString() : null
+        };
+      });
     } else {
       await fetchMockData();
     }
   } catch (err) {
     console.error("Error fetching orders:", err);
     error.value = "Error al cargar los pedidos. Por favor intenta nuevamente.";
+    dataSource.value = 'mock';
+    await fetchMockData();
   } finally {
     loading.value = false;
   }
@@ -1605,8 +1616,10 @@ const closeCancelConfirmModal = () => {
 
 const cancelOrder = async () => {
   try {
-    // Simular cancelación
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Hacer la petición al backend
+    await axios.put(`http://localhost:4000/pedidos/${currentOrder.value.id_pedido}`, {
+      estado_pedido: 'cancelado'  // Cambiado de estado a estado_pedido para coincidir con el backend
+    });
     
     // Actualizar estado localmente
     const orderIndex = orders.value.findIndex(order => order.id_pedido === currentOrder.value.id_pedido);
@@ -1631,10 +1644,238 @@ const reorderItems = (order) => {
   alert('Función de reordenar en desarrollo. Esta acción enviaría los productos al carrito.');
 };
 
-// Inicialización y renderizado a página
+// Socket configuration
+const SOCKET_URL = 'http://localhost:4000'; // Ajusta esto según tu backend
+
+// Socket event handlers
+const initializeSocket = () => {
+  socket.value = io(SOCKET_URL);
+
+  socket.value.on('connect', () => {
+    console.log('Conectado al servidor de sockets');
+    // Suscribirse a actualizaciones de pedidos del cliente actual
+    socket.value.emit('subscribe_to_orders', { client_id: 1 }); // Ajusta el client_id según tu lógica de autenticación
+  });
+
+  socket.value.on('order_status_updated', (data) => {
+    const { order_id, new_status, estimated_time, driver_location } = data;
+    
+    // Encontrar y actualizar el pedido en la lista
+    const orderIndex = orders.value.findIndex(order => order.id_pedido === order_id);
+    if (orderIndex >= 0) {
+      const order = orders.value[orderIndex];
+      order.estado = new_status;
+      
+      if (estimated_time) {
+        if (new_status === 'preparando_pedido') {
+          order.tiempo_preparacion_estimado = estimated_time;
+        } else if (new_status === 'en_camino') {
+          order.tiempo_llegada_estimado = estimated_time;
+        }
+      }
+
+      // Si hay ubicación del conductor, actualizar el mapa
+      if (driver_location && map.value) {
+        updateDriverLocation(driver_location);
+      }
+
+      // Mostrar notificación del cambio de estado
+      showStatusNotification(order, new_status);
+    }
+  });
+
+  socket.value.on('driver_location_updated', (data) => {
+    const { order_id, location } = data;
+    if (currentOrder.value?.id_pedido === order_id && map.value) {
+      updateDriverLocation(location);
+    }
+  });
+
+  socket.value.on('disconnect', () => {
+    console.log('Desconectado del servidor de sockets');
+  });
+};
+
+const showStatusNotification = (order, status) => {
+  const statusText = getStatusText(status);
+  const message = `Tu pedido #${order.id_pedido} ahora está: ${statusText}`;
+  
+  notifications.value.unshift({
+    id: Date.now(),
+    message,
+    read: false,
+    timestamp: new Date()
+  });
+};
+
+const updateDriverLocation = (location) => {
+  if (!map.value || !currentOrder.value) return;
+
+  const { lat, lng } = location;
+  const clientLat = currentOrder.value.direccion_cliente?.latitud;
+  const clientLng = currentOrder.value.direccion_cliente?.longitud;
+  const localLat = currentOrder.value.direccion_local?.latitud;
+  const localLng = currentOrder.value.direccion_local?.longitud;
+
+  // Actualizar marcador del conductor
+  if (!window.driverMarker) {
+    const driverIcon = L.divIcon({
+      html: `<div class="bg-green-600 p-1 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg" class="text-white" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+             </div>`,
+      className: '',
+      iconSize: [24, 24]
+    });
+    window.driverMarker = L.marker([lat, lng], { icon: driverIcon }).addTo(map.value);
+  } else {
+    window.driverMarker.setLatLng([lat, lng]);
+  }
+
+  // Actualizar la línea de ruta
+  if (window.routeLine) {
+    map.value.removeLayer(window.routeLine);
+  }
+  window.routeLine = L.polyline([
+    [localLat, localLng],
+    [lat, lng],
+    [clientLat, clientLng]
+  ], {color: 'blue', dashArray: '5, 10'}).addTo(map.value);
+
+  // Ajustar la vista del mapa
+  map.value.fitBounds(window.routeLine.getBounds(), {padding: [50, 50]});
+};
+
+// Cleanup socket connection on component unmount
+onUnmounted(() => {
+  if (socket.value) {
+    socket.value.disconnect();
+    socket.value = null;
+  }
+});
+
+// Initialize socket in onMounted
 onMounted(() => {
-  // Inicializar datos
   fetchOrders();
+  initializeSocket();
+});
+ 
+// Modificar la función inicializarSocket para incluir toda la funcionalidad
+const inicializarSocket = () => {
+  if (socket.value) return; // Evitar múltiples inicializaciones
+
+  socket.value = io('http://localhost:4000', {
+    autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  });
+
+  socket.value.on('connect', () => {
+    console.log('Cliente conectado al servidor de websockets');
+  });
+
+  // Escuchar actualizaciones de pedidos
+  socket.value.on('pedido_aceptado', (data) => {
+    const { pedidoId, tiempoEstimado, detallesPedido } = data;
+    
+    // Actualizar el estado del pedido en la UI
+    const pedido = pedidosActivos.value.find(p => p.id === pedidoId);
+    if (pedido) {
+      pedido.estado = 'preparacion';
+      pedido.tiempoEstimado = tiempoEstimado;
+      
+      // Mostrar notificación
+      notifications.value.unshift({
+        id: Date.now(),
+        message: `Tu pedido #${pedidoId} ha sido aceptado y estará listo en ${tiempoEstimado} minutos.`,
+        read: false,
+        time: new Date()
+      });
+    }
+  });
+
+  socket.value.on('pedido_rechazado', (data) => {
+    const { pedidoId, razonRechazo } = data;
+    
+    // Mover el pedido a la lista de pedidos pasados
+    const pedidoIndex = pedidosActivos.value.findIndex(p => p.id === pedidoId);
+    if (pedidoIndex !== -1) {
+      const pedido = pedidosActivos.value[pedidoIndex];
+      pedido.estado = 'rechazado';
+      pedido.razonRechazo = razonRechazo;
+      pedidosPasados.value.unshift(pedido);
+      pedidosActivos.value.splice(pedidoIndex, 1);
+      
+      // Mostrar notificación
+      notifications.value.unshift({
+        id: Date.now(),
+        message: `Tu pedido #${pedidoId} ha sido rechazado. Razón: ${razonRechazo}`,
+        read: false,
+        time: new Date()
+      });
+    }
+  });
+
+  socket.value.on('pedidos_aceptados_masivo', (data) => {
+    const { pedidosIds, tiempoEstimado } = data;
+    
+    // Actualizar múltiples pedidos
+    pedidosIds.forEach(pedidoId => {
+      const pedido = pedidosActivos.value.find(p => p.id === pedidoId);
+      if (pedido) {
+        pedido.estado = 'preparacion';
+        pedido.tiempoEstimado = tiempoEstimado;
+      }
+    });
+    
+    // Mostrar notificación
+    notifications.value.unshift({
+      id: Date.now(),
+      message: `${pedidosIds.length} pedidos han sido aceptados.`,
+      read: false,
+      time: new Date()
+    });
+  });
+
+  socket.value.on('pedidos_rechazados_masivo', (data) => {
+    const { pedidosIds, razonRechazo } = data;
+    
+    // Procesar múltiples rechazos
+    pedidosIds.forEach(pedidoId => {
+      const pedidoIndex = pedidosActivos.value.findIndex(p => p.id === pedidoId);
+      if (pedidoIndex !== -1) {
+        const pedido = pedidosActivos.value[pedidoIndex];
+        pedido.estado = 'rechazado';
+        pedido.razonRechazo = razonRechazo;
+        pedidosPasados.value.unshift(pedido);
+        pedidosActivos.value.splice(pedidoIndex, 1);
+      }
+    });
+    
+    // Mostrar notificación
+    notifications.value.unshift({
+      id: Date.now(),
+      message: `${pedidosIds.length} pedidos han sido rechazados. Razón: ${razonRechazo}`,
+      read: false,
+      time: new Date()
+    });
+  });
+
+  socket.value.on('disconnect', () => {
+    console.log('Cliente desconectado del servidor de websockets');
+  });
+};
+
+// Modificar onMounted para inicializar el socket
+onMounted(() => {
+  inicializarSocket();
+});
+
+// Agregar onBeforeUnmount para limpiar la conexión
+onBeforeUnmount(() => {
+  if (socket.value) {
+    socket.value.disconnect();
+  }
 });
 </script>
 

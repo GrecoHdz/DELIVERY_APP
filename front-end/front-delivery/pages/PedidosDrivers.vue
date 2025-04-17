@@ -571,7 +571,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, onUnmounted } from "vue";
 import {
   Truck as TruckIcon,
   Bell as BellIcon,
@@ -601,6 +601,8 @@ import {
   ChevronDown as ChevronDownIcon,
   RefreshCw as RefreshCwIcon
 } from "lucide-vue-next";
+import { io } from 'socket.io-client';
+
 const redirectToProfile = () => {
   switch (selectedProfile.value) {
     case 'Cliente':
@@ -1521,6 +1523,108 @@ const showToast = (title, message, type = "info") => {
 const dismissToast = (id) => {
   toasts.value = toasts.value.filter(toast => toast.id !== id);
 };
+
+// Configuración del socket
+const socket = io('http://localhost:4000');
+
+// Escuchar eventos del socket
+onMounted(() => {
+  // Escuchar nuevos pedidos
+  socket.on('nuevo_pedido', (pedido) => {
+    console.log('Nuevo pedido recibido:', pedido);
+    
+    // Crear objeto de pedido en el formato esperado
+    const nuevoPedido = {
+      id: pedido.id_pedido,
+      time: pedido.fecha_pedido,
+      productCount: pedido.items.length,
+      storeLocation: `Local #${pedido.id_local} - Mall Megaplaza`,
+      destination: "Ceutec, La Ceiba",
+      fullDestination: "Ceutec, La Ceiba",
+      products: pedido.items.map(item => ({
+        id: Math.floor(Math.random() * 1000), // ID temporal
+        name: item.nombre_producto,
+        quantity: item.cantidad
+      })),
+      fareSent: false,
+      fareAmount: null,
+      direccion_cliente: fixedLocations.cliente,
+      direccion_local: fixedLocations.local
+    };
+
+    // Agregar el nuevo pedido a la lista de pendientes
+    pendingOrders.value.unshift(nuevoPedido);
+
+    // Mostrar notificación
+    showToast("Nuevo pedido", "Tienes un nuevo pedido disponible", "info");
+
+    // Si estamos en modo API, actualizar los datos
+    if (dataSource.value === 'api') {
+      fetchOrders();
+    }
+  });
+
+  // Escuchar cambios en el estado de los pedidos
+  socket.on('estado_pedido_actualizado', (data) => {
+    console.log('Estado de pedido actualizado:', data);
+    
+    // Actualizar el estado del pedido en la lista correspondiente
+    if (data.estado === 'preparando_pedido' || data.estado === 'en_camino') {
+      // Buscar el pedido en la lista de pendientes
+      const index = pendingOrders.value.findIndex(p => p.id === data.id_pedido);
+      if (index !== -1) {
+        // Remover de pendientes
+        pendingOrders.value.splice(index, 1);
+      }
+      
+      // Buscar el pedido en la lista de aceptados
+      const acceptedIndex = acceptedOrders.value.findIndex(p => p.id === data.id_pedido);
+      if (acceptedIndex === -1) {
+        // Si no existe en aceptados, agregarlo
+        const pedido = pendingOrders.value.find(p => p.id === data.id_pedido);
+        if (pedido) {
+          acceptedOrders.value.unshift({
+            ...pedido,
+            clientName: "Cliente " + pedido.id,
+            clientPhone: "9" + Math.floor(Math.random() * 900 + 100) + "-" + Math.floor(Math.random() * 9000 + 1000),
+            prepTime: Math.floor(Math.random() * 10) + 10,
+            fare: data.tarifa || 85,
+            acceptedAt: new Date().toISOString(),
+            isPickedUp: data.estado === 'en_camino',
+            isDelivered: data.estado === 'entregado',
+            progress: data.estado === 'preparando_pedido' ? 33 : 
+                    data.estado === 'en_camino' ? 66 : 
+                    data.estado === 'entregado' ? 100 : 33
+          });
+        }
+      }
+    }
+  });
+
+  // Comprobar tema al montar el componente
+  if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    isDarkMode.value = true;
+  }
+
+  // Escuchar cambios en el tema
+  if (typeof window !== 'undefined') {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      if (event.matches) {
+        isDarkMode.value = true;
+      } else {
+        isDarkMode.value = false;
+      }
+    });
+  }
+  
+  // Cargar pedidos iniciales
+  fetchOrders();
+});
+
+// Limpiar socket al desmontar el componente
+onUnmounted(() => {
+  socket.disconnect();
+});
 
 // Inicializar la aplicación
 onMounted(() => {

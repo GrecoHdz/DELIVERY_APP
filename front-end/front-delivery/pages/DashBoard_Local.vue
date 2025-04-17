@@ -130,15 +130,30 @@
 
       <!-- Cobro semanal con lista de productos vendidos -->
       <div class="bg-white rounded-xl shadow mb-8 border border-gray-100">
-        <div class="flex items-center border-b border-gray-100 p-6">
-          <div class="p-3 bg-amber-100 rounded-full mr-4">
-            <ReceiptIcon class="text-amber-600" :size="20" />
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-gray-800">Cobro Semanal</h2>
-            <p class="text-gray-600">El cobro se realiza automáticamente cada domingo a las 11:59 PM</p>
-          </div>
-        </div>
+<div class="border-b border-gray-100 p-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between">
+    <!-- Ícono y texto -->
+    <div class="flex items-center">
+      <div class="p-3 bg-amber-100 rounded-full mr-4">
+        <ReceiptIcon class="text-amber-600" :size="20" />
+      </div>
+      <div>
+        <h2 class="text-lg sm:text-xl font-bold text-gray-800">Cobro Semanal</h2>
+        <p class="text-gray-600 text-sm sm:text-base">El cobro se realiza automáticamente cada domingo a las 11:59 PM</p> 
+      </div>
+    </div>
+
+    <!-- Botones de exportación -->
+    <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
+      <button @click="exportToExcel" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+        Exportar Excel
+      </button>
+      <button @click="exportToPDF" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+</div>
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
           <!-- Productos vendidos esta semana -->
@@ -651,189 +666,185 @@
           </div>
         </div>
 
-        <!-- Pestaña: Estadísticas -->
-        <div v-if="currentTab === 'estadisticas'" class="space-y-6">
-          <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-            <BarChartIcon :size="20" class="mr-2 text-blue-500" />
-            Estadísticas
-          </h2>
-          
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Estadística de Producto Más Vendido (disponible para Básica y Premium) -->
-            <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
-              <div class="p-4 border-b border-gray-100">
-                <div class="flex justify-between items-center">
-                  <h3 class="font-bold text-gray-800 flex items-center">
-                    <span class="bg-blue-100 p-2 rounded-lg mr-2 text-blue-600">
-                      <BoxIcon :size="16" />
-                    </span>
-                    Productos Más Vendidos
-                  </h3>
-                  <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">
-                    Básica
-                  </span>
-                </div>
+<!-- Pestaña: Estadísticas -->
+<div v-if="currentTab === 'estadisticas'" class="space-y-6">
+  <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+    <BarChartIcon :size="20" class="mr-2 text-blue-500" />
+    Estadísticas
+  </h2>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Estadística de Producto Más Vendido (disponible para Básica y Premium) -->
+    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+      <div class="p-4 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-gray-800 flex items-center">
+            <span class="bg-blue-100 p-2 rounded-lg mr-2 text-blue-600">
+              <BoxIcon :size="16" />
+            </span>
+            Productos Más Vendidos
+          </h3>
+          <span class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-lg">
+            Básica
+          </span>
+        </div>
+      </div>
+      
+      <!-- Contenido para usuarios Básica/Premium -->
+      <div v-if="membresia.id_membresia >= 2" class="p-4 h-64">
+        <canvas id="productosChart" ref="productosChart"></canvas>
+      </div>
+      
+      <!-- Overlay para membresía insuficiente -->
+      <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+        <LockIcon :size="32" class="text-gray-400 mb-2" />
+        <p class="text-sm font-medium text-gray-600">Requiere membresía Básica</p>
+        <button @click="openUpgradeModal" class="mt-3 text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+          Mejorar Plan
+        </button>
+      </div>
+    </div>
+    
+    <!-- Estadística de Ingresos por Día (solo Premium) -->
+    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+      <div class="p-4 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-gray-800 flex items-center">
+            <span class="bg-green-100 p-2 rounded-lg mr-2 text-green-600">
+              <LineChartIcon :size="16" />
+            </span>
+            Ingresos por Día
+          </h3>
+          <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
+            Premium
+          </span>
+        </div>
+      </div>
+      
+      <!-- Contenido para usuarios Premium -->
+      <div v-if="membresia.id_membresia >= 3" class="p-4 h-64">
+        <canvas id="ventasChart" ref="ventasChart"></canvas>
+      </div>
+      
+      <!-- Overlay para membresía insuficiente -->
+      <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+        <LockIcon :size="32" class="text-gray-400 mb-2" />
+        <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
+        <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+          Mejorar Plan
+        </button>
+      </div>
+    </div>
+    
+    <!-- Cliente más frecuente (solo Premium) - modificado a top 3 sin fotos -->
+    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+      <div class="p-4 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-gray-800 flex items-center">
+            <span class="bg-orange-100 p-2 rounded-lg mr-2 text-orange-600">
+              <UserIcon :size="16" />
+            </span>
+            Top 3 Clientes Más Frecuentes
+          </h3>
+          <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
+            Premium
+          </span>
+        </div>
+      </div>
+      
+      <!-- Contenido para usuarios Premium -->
+      <div v-if="membresia.id_membresia >= 3 && clientesFrecuentes && clientesFrecuentes.length > 0" class="p-4">
+        <p class="text-sm text-gray-600 mb-3">Periodo: Últimos 7 días</p>
+        
+        <div class="space-y-3">
+          <div v-for="(cliente, index) in clientesFrecuentes" :key="cliente.id_cliente" 
+              class="bg-gray-50 p-3 rounded-lg flex items-center justify-between">
+            <div class="flex items-center">
+              <div class="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-3">
+                <span class="font-bold">#{{ index + 1 }}</span>
               </div>
-              
-              <!-- Contenido para usuarios Básica/Premium -->
-              <div v-if="membresia.id_membresia >= 2" class="p-4 h-64">
-                <canvas ref="productosChart"></canvas>
-              </div>
-              
-              <!-- Overlay para membresía insuficiente -->
-              <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                <LockIcon :size="32" class="text-gray-400 mb-2" />
-                <p class="text-sm font-medium text-gray-600">Requiere membresía Básica</p>
-                <button @click="openUpgradeModal" class="mt-3 text-sm bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
-                  Mejorar Plan
-                </button>
-              </div>
-            </div>
-            
-            <!-- Estadística de Ingresos por Día (solo Premium) -->
-            <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
-              <div class="p-4 border-b border-gray-100">
-                <div class="flex justify-between items-center">
-                  <h3 class="font-bold text-gray-800 flex items-center">
-                    <span class="bg-green-100 p-2 rounded-lg mr-2 text-green-600">
-                      <LineChartIcon :size="16" />
-                    </span>
-                    Ingresos por Día
-                  </h3>
-                  <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
-                    Premium
-                  </span>
-                </div>
-              </div>
-              
-              <!-- Contenido para usuarios Premium -->
-              <div v-if="membresia.id_membresia >= 3" class="p-4 h-64">
-                <canvas ref="ventasChart"></canvas>
-              </div>
-              
-              <!-- Overlay para membresía insuficiente -->
-              <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                <LockIcon :size="32" class="text-gray-400 mb-2" />
-                <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
-                <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
-                  Mejorar Plan
-                </button>
-              </div>
-            </div>
-            
-            <!-- Cliente más frecuente (solo Premium) -->
-            <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
-              <div class="p-4 border-b border-gray-100">
-                <div class="flex justify-between items-center">
-                  <h3 class="font-bold text-gray-800 flex items-center">
-                    <span class="bg-orange-100 p-2 rounded-lg mr-2 text-orange-600">
-                      <UserIcon :size="16" />
-                    </span>
-                    Cliente Más Frecuente
-                  </h3>
-                  <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
-                    Premium
-                  </span>
-                </div>
-              </div>
-              
-              <!-- Contenido para usuarios Premium -->
-              <div v-if="membresia.id_membresia >= 3 && clienteFrecuente" class="p-4 flex flex-col items-center">
-                <div class="w-20 h-20 rounded-full bg-gray-200 mb-3 overflow-hidden">
-                  <img v-if="clienteFrecuente.foto_url" :src="clienteFrecuente.foto_url" alt="Cliente" class="w-full h-full object-cover">
-                  <div v-else class="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600">
-                    <UserIcon :size="24" />
-                  </div>
-                </div>
-                <h4 class="font-bold text-gray-800 text-lg">{{ clienteFrecuente.nombre }}</h4>
-                <p class="text-gray-600 mb-3">{{ clienteFrecuente.email }}</p>
-                <div class="w-full grid grid-cols-3 gap-2 text-center">
-                  <div class="bg-gray-50 p-2 rounded-lg">
-                    <p class="text-sm text-gray-600">Pedidos</p>
-                    <p class="font-bold text-gray-800">{{ clienteFrecuente.num_pedidos }}</p>
-                  </div>
-                  <div class="bg-gray-50 p-2 rounded-lg">
-                    <p class="text-sm text-gray-600">Total</p>
-                    <p class="font-bold text-gray-800">L. {{ clienteFrecuente.total_gastado }}</p>
-                  </div>
-                  <div class="bg-gray-50 p-2 rounded-lg">
-                    <p class="text-sm text-gray-600">Desde</p>
-                    <p class="font-bold text-gray-800">{{ clienteFrecuente.cliente_desde }}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Overlay para membresía insuficiente -->
-              <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                <LockIcon :size="32" class="text-gray-400 mb-2" />
-                <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
-                <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
-                  Mejorar Plan
-                </button>
+              <div>
+                <h4 class="font-bold text-gray-800">{{ cliente.nombre }}</h4> 
               </div>
             </div>
-            
-            <!-- Ranking en ventas por categoría (solo Premium) -->
-            <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
-              <div class="p-4 border-b border-gray-100">
-                <div class="flex justify-between items-center">
-                  <h3 class="font-bold text-gray-800 flex items-center">
-                    <span class="bg-purple-100 p-2 rounded-lg mr-2 text-purple-600">
-                      <TrophyIcon :size="16" />
-                    </span>
-                    Ranking en Categoría
-                  </h3>
-                  <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
-                    Premium
-                  </span>
-                </div>
-              </div>
-              
-              <!-- Contenido para usuarios Premium -->
-              <div v-if="membresia.id_membresia >= 3" class="p-4">
-                <div class="bg-gray-50 p-3 rounded-lg mb-4 flex items-center">
-                  <div class="bg-purple-500 text-white font-bold text-2xl w-14 h-14 flex items-center justify-center rounded-full">
-                    #{{ rankingCategoria.posicion }}
-                  </div>
-                  <div class="ml-4">
-                    <p class="text-gray-600 text-sm">Tu ranking en la categoría</p>
-                    <h4 class="font-bold text-gray-800 text-lg">{{ rankingCategoria.categoria }}</h4>
-                  </div>
-                </div>
-                
-                <div class="space-y-3">
-                  <p class="text-sm text-gray-600">Top 5 establecimientos en tu categoría:</p>
-                  <div v-for="(competidor, index) in rankingCategoria.top5" :key="index" 
-                      class="flex items-center justify-between p-2 rounded-lg"
-                      :class="competidor.nombre === local.nombre_local ? 'bg-purple-50' : 'bg-gray-50'"
-                  >
-                    <div class="flex items-center">
-                      <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3 overflow-hidden">
-                        <span v-if="index < 3" class="font-bold" :class="index === 0 ? 'text-amber-500' : index === 1 ? 'text-gray-500' : 'text-amber-700'">
-                          #{{ index + 1 }}
-                        </span>
-                        <span v-else class="text-gray-700 font-bold">#{{ index + 1 }}</span>
-                      </div>
-                      <span class="font-medium text-gray-800" :class="competidor.nombre === local.nombre_local ? 'font-bold' : ''">
-                        {{ competidor.nombre }}
-                      </span>
-                    </div>
-                    <span class="text-gray-700">L. {{ competidor.ventas_total }}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Overlay para membresía insuficiente -->
-              <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
-                <LockIcon :size="32" class="text-gray-400 mb-2" />
-                <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
-                <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
-                  Mejorar Plan
-                </button>
-              </div>
+            <div class="text-right">
+              <p class="text-sm text-gray-600">Pedidos: <span class="font-bold text-gray-800">{{ cliente.num_pedidos }}</span></p>
+              <p class="text-sm text-gray-600">Total: <span class="font-bold text-gray-800">L. {{ cliente.total_gastado }}</span></p>
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Overlay para membresía insuficiente -->
+      <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+        <LockIcon :size="32" class="text-gray-400 mb-2" />
+        <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
+        <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+          Mejorar Plan
+        </button>
+      </div>
+    </div>
+    
+    <!-- Ranking en ventas por categoría (solo Premium) - modificado para ocultar información sensible -->
+    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+      <div class="p-4 border-b border-gray-100">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-gray-800 flex items-center">
+            <span class="bg-purple-100 p-2 rounded-lg mr-2 text-purple-600">
+              <TrophyIcon :size="16" />
+            </span>
+            Ranking en Categoría
+          </h3>
+          <span class="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-lg">
+            Premium
+          </span>
+        </div>
+      </div>
+      
+      <!-- Contenido para usuarios Premium -->
+      <div v-if="membresia.id_membresia >= 3" class="p-4">
+        <div class="bg-gray-50 p-3 rounded-lg mb-4 flex items-center">
+          <div class="bg-purple-500 text-white font-bold text-2xl w-14 h-14 flex items-center justify-center rounded-full">
+            #{{ rankingCategoria.posicion }}
+          </div>
+          <div class="ml-4">
+            <p class="text-gray-600 text-sm">Tu ranking en la categoría</p>
+            <h4 class="font-bold text-gray-800 text-lg">{{ rankingCategoria.categoria }}</h4>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600">Top 5 establecimientos en tu categoría:</p>
+          <div v-for="(competidor, index) in rankingCategoria.top5" :key="index"
+               class="flex items-center justify-between p-2 rounded-lg"
+               :class="competidor.nombre === local.nombre_local ? 'bg-purple-50' : 'bg-gray-50 blur-sm'">
+            <div class="flex items-center">
+              <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3 overflow-hidden">
+                <span v-if="index < 3" class="font-bold" :class="index === 0 ? 'text-amber-500' : index === 1 ? 'text-gray-500' : 'text-amber-700'">
+                  #{{ index + 1 }}
+                </span>
+                <span v-else class="text-gray-700 font-bold">#{{ index + 1 }}</span>
+              </div>
+              <span class="font-medium text-gray-800" :class="competidor.nombre === local.nombre_local ? 'font-bold' : ''">
+                {{ competidor.nombre }}
+              </span>
+            </div>
+            <span class="text-gray-700" v-if="competidor.nombre === local.nombre_local">L. {{ competidor.ventas_total }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Overlay para membresía insuficiente -->
+      <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+        <LockIcon :size="32" class="text-gray-400 mb-2" />
+        <p class="text-sm font-medium text-gray-600">Requiere membresía Premium</p>
+        <button @click="openUpgradeModal" class="mt-3 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity">
+          Mejorar Plan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- Pestaña: Notificaciones -->
         <div v-if="currentTab === 'notificaciones'" class="space-y-6">
@@ -952,13 +963,12 @@
                   <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de reporte</label>
                   <select 
                     v-model="reporteActual.tipo" 
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                     <option value="ventas">Reporte de ventas</option>
                     <option value="productos">Productos más vendidos</option>
-                    <option value="clientes">Clientes frecuentes</option>
-                    <option value="pedidos">Estado de pedidos</option>
                     <option value="financiero">Reporte financiero</option>
+                    <option value="pedidos">Reporte de pedidos</option>
                   </select>
                 </div>
                 
@@ -967,7 +977,7 @@
                   <input 
                     type="date" 
                     v-model="reporteActual.fechaInicio"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    class="w-full px-3 py-2 border border-white-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                 </div>
                 
@@ -976,7 +986,7 @@
                   <input 
                     type="date" 
                     v-model="reporteActual.fechaFin"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                    class="w-full px-3 py-2 border border-white-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                 </div>
               </div>
@@ -1073,6 +1083,226 @@
                   </table>
                 </div>
                 
+                <!-- Reporte financiero -->
+                <div v-else-if="reporteActual.tipo === 'financiero'" class="overflow-x-auto">
+                  <table class="w-full border-collapse">
+                    <thead>
+                      <tr class="bg-gray-50 text-left border-b border-gray-200">
+                        <th class="py-2 px-4 text-gray-600 font-medium">Concepto</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Ingresos</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Gastos</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-gray-100">
+                        <td class="py-2 px-4 text-gray-800 font-medium">Ventas directas</td>
+                        <td class="py-2 px-4 text-gray-800">L. 4,250.00</td>
+                        <td class="py-2 px-4 text-gray-800">-</td>
+                        <td class="py-2 px-4 text-green-600 font-medium">L. 4,250.00</td>
+                      </tr>
+                      <tr class="border-b border-gray-100 bg-gray-50">
+                        <td class="py-2 px-4 text-gray-800 font-medium">Comisiones de app</td>
+                        <td class="py-2 px-4 text-gray-800">-</td>
+                        <td class="py-2 px-4 text-gray-800">L. 637.50</td>
+                        <td class="py-2 px-4 text-red-600 font-medium">L. -637.50</td>
+                      </tr>
+                      <tr class="border-b border-gray-100">
+                        <td class="py-2 px-4 text-gray-800 font-medium">Pedidos extra</td>
+                        <td class="py-2 px-4 text-gray-800">-</td>
+                        <td class="py-2 px-4 text-gray-800">L. 75.00</td>
+                        <td class="py-2 px-4 text-red-600 font-medium">L. -75.00</td>
+                      </tr>
+                      <tr class="border-b border-gray-100 bg-gray-50">
+                        <td class="py-2 px-4 text-gray-800 font-medium">Costo de membresía</td>
+                        <td class="py-2 px-4 text-gray-800">-</td>
+                        <td class="py-2 px-4 text-gray-800">L. 150.00</td>
+                        <td class="py-2 px-4 text-red-600 font-medium">L. -150.00</td>
+                      </tr>
+                      <tr class="border-b border-gray-100">
+                        <td class="py-2 px-4 text-gray-800 font-medium">Descuentos por cupones</td>
+                        <td class="py-2 px-4 text-gray-800">-</td>
+                        <td class="py-2 px-4 text-gray-800">L. 320.00</td>
+                        <td class="py-2 px-4 text-red-600 font-medium">L. -320.00</td>
+                      </tr>
+                    </tbody>
+                    <tfoot>
+                      <tr class="bg-gray-100 font-medium">
+                        <td class="py-2 px-4 text-gray-800">Balance total</td>
+                        <td class="py-2 px-4 text-gray-800">L. 4,250.00</td>
+                        <td class="py-2 px-4 text-gray-800">L. 1,182.50</td>
+                        <td class="py-2 px-4 text-blue-600 font-bold">L. 3,067.50</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                
+                <!-- Reporte de pedidos -->
+                <div v-else-if="reporteActual.tipo === 'pedidos'" class="overflow-x-auto">
+                  <table class="w-full border-collapse">
+                    <thead>
+                      <tr class="bg-gray-50 text-left border-b border-gray-200">
+                        <th class="py-2 px-4 text-gray-600 font-medium">#Pedido</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Cliente</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Fecha</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Total</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Estado</th>
+                        <th class="py-2 px-4 text-gray-600 font-medium">Detalle</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-gray-100">
+                        <td class="py-2 px-4 text-gray-800 font-medium">#123456</td>
+                        <td class="py-2 px-4 text-gray-800">Laura Martínez</td>
+                        <td class="py-2 px-4 text-gray-800">18/07/2023 - 13:25</td>
+                        <td class="py-2 px-4 text-gray-800">L. 175.00</td>
+                        <td class="py-2 px-4">
+                          <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Entregado</span>
+                        </td>
+                        <td class="py-2 px-4">
+                          <button class="text-blue-600 text-sm hover:underline" @click="mostrarDetallePedido">Ver detalle</button>
+                        </td>
+                      </tr>
+                      <tr class="border-b border-gray-100 bg-gray-50">
+                        <td class="py-2 px-4 text-gray-800 font-medium">#123457</td>
+                        <td class="py-2 px-4 text-gray-800">Carlos Rodríguez</td>
+                        <td class="py-2 px-4 text-gray-800">18/07/2023 - 14:10</td>
+                        <td class="py-2 px-4 text-gray-800">L. 230.00</td>
+                        <td class="py-2 px-4">
+                          <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Entregado</span>
+                        </td>
+                        <td class="py-2 px-4">
+                          <button class="text-blue-600 text-sm hover:underline" @click="mostrarDetallePedido">Ver detalle</button>
+                        </td>
+                      </tr>
+                      <tr class="border-b border-gray-100">
+                        <td class="py-2 px-4 text-gray-800 font-medium">#123458</td>
+                        <td class="py-2 px-4 text-gray-800">Ana López</td>
+                        <td class="py-2 px-4 text-gray-800">18/07/2023 - 15:45</td>
+                        <td class="py-2 px-4 text-gray-800">L. 150.00</td>
+                        <td class="py-2 px-4">
+                          <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">En camino</span>
+                        </td>
+                        <td class="py-2 px-4">
+                          <button class="text-blue-600 text-sm hover:underline" @click="mostrarDetallePedido">Ver detalle</button>
+                        </td>
+                      </tr>
+                      <tr class="border-b border-gray-100 bg-gray-50">
+                        <td class="py-2 px-4 text-gray-800 font-medium">#123459</td>
+                        <td class="py-2 px-4 text-gray-800">Miguel Torres</td>
+                        <td class="py-2 px-4 text-gray-800">18/07/2023 - 16:30</td>
+                        <td class="py-2 px-4 text-gray-800">L. 320.00</td>
+                        <td class="py-2 px-4">
+                          <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Preparando</span>
+                        </td>
+                        <td class="py-2 px-4">
+                          <button class="text-blue-600 text-sm hover:underline" @click="mostrarDetallePedido">Ver detalle</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  
+                  <!-- Modal para detalles de pedido (se mostraría al hacer clic en "Ver detalle") -->
+                  <div v-if="modalPedidoVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl">
+                      <div class="flex justify-between items-center p-4 border-b">
+                        <h3 class="text-lg font-bold text-gray-800">
+                          <ShoppingBagIcon :size="20" class="text-blue-500 inline mr-2" />
+                          Detalle del Pedido #123456
+                        </h3>
+                        <button @click="modalPedidoVisible = false" class="text-gray-500 hover:text-gray-700">
+                          <XIcon :size="20" />
+                        </button>
+                      </div>
+                      
+                      <div class="p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <h4 class="font-medium text-gray-700">Información del cliente</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg mt-2">
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Cliente:</span> Laura Martínez
+                              </p>
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Teléfono:</span> +504 9845-6789
+                              </p>
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Dirección:</span> Col. Kennedy, Calle Principal
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 class="font-medium text-gray-700">Información del pedido</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg mt-2">
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Fecha:</span> 18/07/2023 - 13:25
+                              </p>
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Estado:</span> 
+                                <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">Entregado</span>
+                              </p>
+                              <p class="text-sm text-gray-800">
+                                <span class="font-medium">Método de pago:</span> Efectivo
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <h4 class="font-medium text-gray-700 mt-4 mb-2">Artículos del pedido</h4>
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                          <table class="w-full">
+                            <thead>
+                              <tr class="bg-gray-50 text-left border-b border-gray-200">
+                                <th class="py-2 px-4 text-gray-600 font-medium">Producto</th>
+                                <th class="py-2 px-4 text-gray-600 font-medium">Cantidad</th>
+                                <th class="py-2 px-4 text-gray-600 font-medium">Precio</th>
+                                <th class="py-2 px-4 text-gray-600 font-medium">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr class="border-b border-gray-100">
+                                <td class="py-2 px-4 text-gray-800">Café Americano</td>
+                                <td class="py-2 px-4 text-gray-800">2</td>
+                                <td class="py-2 px-4 text-gray-800">L. 45.00</td>
+                                <td class="py-2 px-4 text-gray-800">L. 90.00</td>
+                              </tr>
+                              <tr class="border-b border-gray-100 bg-gray-50">
+                                <td class="py-2 px-4 text-gray-800">Croissant</td>
+                                <td class="py-2 px-4 text-gray-800">1</td>
+                                <td class="py-2 px-4 text-gray-800">L. 30.00</td>
+                                <td class="py-2 px-4 text-gray-800">L. 30.00</td>
+                              </tr>
+                              <tr class="border-b border-gray-100">
+                                <td class="py-2 px-4 text-gray-800">Jugo Natural</td>
+                                <td class="py-2 px-4 text-gray-800">1</td>
+                                <td class="py-2 px-4 text-gray-800">L. 40.00</td>
+                                <td class="py-2 px-4 text-gray-800">L. 40.00</td>
+                              </tr>
+                            </tbody>
+                            <tfoot>
+                              <tr>
+                                <td colspan="2" class="py-2 px-4"></td>
+                                <td class="py-2 px-4 text-gray-800 font-bold">Total:</td>
+                                <td class="py-2 px-4 text-gray-800 font-bold">L. 175.00</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                      
+                      <div class="p-4 border-t bg-gray-50 flex justify-end">
+                        <button 
+                          @click="modalPedidoVisible = false" 
+                          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 <!-- Otros tipos de reportes -->
                 <div v-else class="text-center py-4 text-gray-500">
                   <p>Datos del reporte {{ reporteActual.tipo }} generados correctamente.</p>
@@ -1114,7 +1344,7 @@
               <div class="relative">
                 <select 
                   v-model="filtroHistorialCobros.mes" 
-                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los meses</option>
                   <option value="1">Enero</option>
@@ -1138,7 +1368,7 @@
               <div class="relative">
                 <select 
                   v-model="filtroHistorialCobros.anio" 
-                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los años</option>
                   <option value="2023">2023</option>
@@ -1153,7 +1383,7 @@
               <div class="relative">
                 <select 
                   v-model="filtroHistorialCobros.estado" 
-                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los estados</option>
                   <option value="pagado">Pagado</option>
@@ -1183,8 +1413,8 @@
                   <th class="py-3 px-4">Fecha</th>
                   <th class="py-3 px-4">Período</th>
                   <th class="py-3 px-4">Pedidos</th>
-                  <th class="py-3 px-4">Comisión</th>
-                  <th class="py-3 px-4">Total</th>
+                  <th class="py-3 px-8">Comisión</th>
+                  <th class="py-3 px-8">Total</th>
                   <th class="py-3 px-4">Estado</th>
                   <th class="py-3 px-4 text-center">Acciones</th>
                 </tr>
@@ -1192,12 +1422,12 @@
               <tbody>
                 <tr v-for="(cobro, index) in historialCobrosFiltrado" :key="index" 
                     class="border-b border-gray-100 hover:bg-gray-50">
-                  <td class="py-3 px-4 font-medium">{{ cobro.num_factura }}</td>
-                  <td class="py-3 px-4">{{ formatearFecha(cobro.fecha_cobro) }}</td>
-                  <td class="py-3 px-4">{{ cobro.periodo_inicio }} - {{ cobro.periodo_fin }}</td>
-                  <td class="py-3 px-4">{{ cobro.num_pedidos }} <span class="text-sm text-gray-500">({{ cobro.pedidos_extra }} extras)</span></td>
+                  <td class="py-3 px-4 text-gray-700">{{ cobro.num_factura }}</td>
+                  <td class="py-3 px-4 text-gray-700">{{ formatearFecha(cobro.fecha_cobro) }}</td>
+                  <td class="py-3 px-4 text-gray-700">{{ cobro.periodo_inicio }} - {{ cobro.periodo_fin }}</td>
+                  <td class="py-3 px-4 text-gray-700">{{ cobro.num_pedidos }} <span class="text-sm text-gray-400">({{ cobro.pedidos_extra }} extras)</span></td>
                   <td class="py-3 px-4 text-gray-700">L. {{ cobro.comision.toFixed(2) }}</td>
-                  <td class="py-3 px-4 font-medium">L. {{ cobro.total.toFixed(2) }}</td>
+                  <td class="py-3 px-4 text-gray-700">L. {{ cobro.total.toFixed(2) }}</td>
                   <td class="py-3 px-4">
                     <span 
                       :class="{
@@ -1246,92 +1476,83 @@
     
     <!-- Modal para subir comprobante de membresía -->
     <transition name="fade">
-      <div v-if="modales.membresiaComprobante" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-          <div class="flex justify-between items-center p-4 border-b">
-            <h3 class="text-lg font-bold text-gray-800">Comprobante de Pago - Membresía {{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</h3>
-            <button @click="closeModal('membresiaComprobante')" class="text-gray-500 hover:text-gray-700">
-              <XIcon :size="20" />
-            </button>
+  <div v-if="modales.membresiaComprobante" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+      <div class="flex justify-between items-center p-3 border-b">
+        <h3 class="text-base font-bold text-gray-800">Comprobante de Pago - {{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</h3>
+        <button @click="closeModal('membresiaComprobante')" class="text-gray-500 hover:text-gray-700">
+          <XIcon :size="20" />
+        </button>
+      </div>
+      <div class="p-4">
+        <div class="mb-4 bg-blue-50 p-3 rounded-lg">
+          <h4 class="font-medium text-blue-800 mb-2">Detalles del Plan</h4>
+          <p class="text-gray-700 text-sm flex justify-between border-b pb-1">
+            <span>Plan:</span> <span class="font-medium">{{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</span>
+          </p>
+          <p class="text-gray-700 text-sm flex justify-between border-b pb-1">
+            <span>Precio:</span> <span class="font-medium">L. {{ getPrecioMembresia(modalData.idMembresiaSeleccionada) }}</span>
+          </p>
+          <p class="text-gray-700 text-sm flex justify-between">
+            <span>Duración:</span> <span class="font-medium">1 semana</span>
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <h4 class="font-medium text-gray-800 mb-2">Información de Pago</h4>
+          <p class="text-xs text-gray-600 mb-3">
+            Realiza tu pago a cualquiera de nuestras cuentas y sube el comprobante:
+          </p>
+          <div class="bg-gray-50 p-2 rounded-lg text-sm">
+            <p class="font-medium text-gray-800">Banco Atlántida</p>
+            <p class="text-gray-700">Cuenta: 1234-5678-9012-3456</p>
           </div>
-          <div class="p-6">
-            <div class="mb-6 bg-blue-50 p-4 rounded-lg">
-              <h4 class="font-medium text-blue-800 mb-2">Detalles del Plan</h4>
-              <p class="text-gray-700 flex justify-between border-b pb-2 mb-2">
-                <span>Plan:</span> 
-                <span class="font-medium">{{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</span>
-              </p>
-              <p class="text-gray-700 flex justify-between border-b pb-2 mb-2">
-                <span>Precio:</span> 
-                <span class="font-medium">L. {{ getPrecioMembresia(modalData.idMembresiaSeleccionada) }}</span>
-              </p>
-              <p class="text-gray-700 flex justify-between">
-                <span>Duración:</span> 
-                <span class="font-medium">1 semana (Vence domingo 11:59 PM)</span>
-              </p>
-            </div>
-            
-            <div class="mb-6">
-              <h4 class="font-medium text-gray-800 mb-2">Información de Pago</h4>
-              <p class="text-sm text-gray-600 mb-4">
-                Realiza tu pago a cualquiera de nuestras cuentas y sube el comprobante:
-              </p>
-              <div class="bg-gray-50 p-3 rounded-lg mb-3">
-                <p class="font-medium text-gray-800">Banco Atlántida</p>
-                <p class="text-gray-700">Cuenta: 1234-5678-9012-3456</p>
-              </div>
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <p class="font-medium text-gray-800">BAC Credomatic</p>
-                <p class="text-gray-700">Cuenta: 9876-5432-1098-7654</p>
-              </div>
-            </div>
-            
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Subir comprobante de pago</label>
-              <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer">
-                <input type="file" id="comprobante" class="hidden" accept="image/*" @change="previewComprobante">
-                <label for="comprobante" class="cursor-pointer">
-                  <div v-if="!modalData.comprobantePreview" class="space-y-2">
-                    <UploadIcon :size="32" class="mx-auto text-gray-400" />
-                    <p class="text-gray-500">Haz clic para subir comprobante</p>
-                    <p class="text-xs text-gray-400">(Formatos: JPG, PNG, PDF)</p>
-                  </div>
-                  <div v-else>
-                    <img :src="modalData.comprobantePreview" class="max-h-48 mx-auto mb-2 rounded-lg">
-                    <p class="text-sm text-blue-600">Haz clic para cambiar archivo</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-            
-            <div class="flex space-x-3 items-center mb-6">
-              <input 
-                type="checkbox" 
-                id="terminos" 
-                v-model="modalData.aceptaTerminos"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              >
-              <label for="terminos" class="text-sm text-gray-700">
-                Acepto los términos y condiciones del servicio
-              </label>
-            </div>
-          </div>
-          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
-            <button @click="closeModal('membresiaComprobante')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
-              Cancelar
-            </button>
-            <button 
-              @click="enviarComprobante" 
-              :disabled="!canSubmitComprobante" 
-              :class="canSubmitComprobante ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
-              class="px-4 py-2 rounded-lg text-sm"
-            >
-              Enviar comprobante
-            </button>
+          <div class="bg-gray-50 p-2 rounded-lg text-sm mt-2">
+            <p class="font-medium text-gray-800">BAC Credomatic</p>
+            <p class="text-gray-700">Cuenta: 9876-5432-1098-7654</p>
           </div>
         </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-700 mb-1">Subir comprobante de pago</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer">
+            <input type="file" id="comprobante" class="hidden" accept="image/*" @change="previewComprobante">
+            <label for="comprobante" class="cursor-pointer">
+              <div v-if="!modalData.comprobantePreview" class="space-y-1">
+                <UploadIcon :size="28" class="mx-auto text-gray-400" />
+                <p class="text-gray-500 text-sm">Haz clic para subir comprobante</p>
+              </div>
+              <div v-else>
+                <img :src="modalData.comprobantePreview" class="max-h-36 mx-auto mb-1 rounded-lg">
+                <p class="text-xs text-blue-600">Haz clic para cambiar archivo</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center mb-4">
+          <input type="checkbox" id="terminos" v-model="modalData.aceptaTerminos" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+          <label for="terminos" class="text-xs text-gray-700 ml-2">Acepto los términos y condiciones</label>
+        </div>
       </div>
-    </transition>
+
+      <div class="p-3 border-t bg-gray-50 flex justify-end space-x-2">
+        <button @click="closeModal('membresiaComprobante')" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs">
+          Cancelar
+        </button>
+        <button 
+          @click="enviarComprobante" 
+          :disabled="!canSubmitComprobante" 
+          :class="canSubmitComprobante ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
+          class="px-3 py-1 rounded-lg text-xs"
+        >
+          Enviar comprobante
+        </button>
+      </div>
+    </div>
+  </div>
+</transition>
+
     
     <!-- Modal de notificaciones personalizadas (solo Premium) -->
     <transition name="fade">
@@ -1925,7 +2146,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import Chart from 'chart.js/auto';
+import Chart from 'chart.js/auto';  
 import { 
   Truck as TruckIcon, 
   Bell as BellIcon,
@@ -1963,9 +2184,8 @@ import {
   Calendar as CalendarIcon,
   Tag as TagIcon,
   Search as SearchIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon 
 } from 'lucide-vue-next';
-
 // Estado de la aplicación
 const currentTab = ref('planes');
 const fuenteDatos = ref('mock'); // 'mock' o 'api'
@@ -1976,6 +2196,7 @@ const fechaProximoCobro = ref(new Date(new Date().getTime() + 7 * 24 * 60 * 60 *
 let mapaSucursal = null;
 let marcadorSucursal = null;
 let socketConexion = null;
+const modalPedidoVisible = ref(false);
 
 // Lista de pestañas con la nueva pestaña de reportería
 const tabs = [
@@ -2055,15 +2276,15 @@ const ciudades = ref([
   'Juticalpa'
 ]);
 
-// Datos de ventas de productos esta semana
+// Datos de ventas de productos esta semana (MODIFICACIÓN: máximo 10 ventas por producto)
 const productosVendidosSemana = ref([
-  { nombre: 'Café Americano', cantidad: 48, precio: 45.00 },
-  { nombre: 'Cappuccino', cantidad: 32, precio: 60.00 },
-  { nombre: 'Latte', cantidad: 27, precio: 55.00 },
-  { nombre: 'Croissant', cantidad: 35, precio: 30.00 },
-  { nombre: 'Sándwich de pollo', cantidad: 22, precio: 85.00 },
-  { nombre: 'Jugo natural', cantidad: 18, precio: 40.00 },
-  { nombre: 'Pastel de chocolate', cantidad: 15, precio: 50.00 }
+  { nombre: 'Café Americano', cantidad: 8, precio: 45.00 },
+  { nombre: 'Cappuccino', cantidad: 6, precio: 60.00 },
+  { nombre: 'Latte', cantidad: 5, precio: 55.00 },
+  { nombre: 'Croissant', cantidad: 10, precio: 30.00 },
+  { nombre: 'Sándwich de pollo', cantidad: 4, precio: 85.00 },
+  { nombre: 'Jugo natural', cantidad: 7, precio: 40.00 },
+  { nombre: 'Pastel de chocolate', cantidad: 3, precio: 50.00 }
 ]);
 
 // Calcular total de ventas de la semana
@@ -2202,18 +2423,18 @@ const notifications = ref([
 const estadisticas = ref({
   pedidosHoy: 23,
   pedidosTendencia: 14,
-  ingresosHoy: 4560.75,
+  ingresosHoy: 1560.75,
   ingresosTendencia: 8,
   ventasSemanalesTendencia: 12,
   quejasTendencia: -5,
-  datosVentas: [
-    { fecha: '2023-06-10', ventas: 3200 },
-    { fecha: '2023-06-11', ventas: 4100 },
-    { fecha: '2023-06-12', ventas: 3800 },
-    { fecha: '2023-06-13', ventas: 4500 },
-    { fecha: '2023-06-14', ventas: 5200 },
-    { fecha: '2023-06-15', ventas: 4700 },
-    { fecha: '2023-06-16', ventas: 5100 }
+  datosVentas: [  
+     { fecha: '2023-06-13', ventas: 3200 }, // Lunes
+    { fecha: '2023-06-14', ventas: 4100 }, // Martes
+  { fecha: '2023-06-15', ventas: 3800 }, // Miércoles
+  { fecha: '2023-06-16', ventas: 4500 }, // Jueves
+  { fecha: '2023-06-17', ventas: 5200 }, // Viernes
+  { fecha: '2023-06-18', ventas: 4800 }, // Sábado
+      { fecha: '2023-06-19', ventas: 3900 },  // Domingo
   ],
   productosMasVendidos: [
     { nombre: 'Café Americano', ventas: 120 },
@@ -2224,7 +2445,35 @@ const estadisticas = ref({
   ]
 });
 
-// Cliente más frecuente
+// Top 3 clientes más frecuentes (periodo semanal)
+const clientesFrecuentes = ref([
+  {
+    id_cliente: 12,
+    nombre: "Laura Martínez",
+    email: "laura.martinez@gmail.com",
+    num_pedidos: 6,
+    total_gastado: 450.75,
+    cliente_desde: "Ene 2023"
+  },
+  {
+    id_cliente: 8,
+    nombre: "Carlos Rodríguez",
+    email: "carlos.rodriguez@gmail.com",
+    num_pedidos: 5,
+    total_gastado: 400.50,
+    cliente_desde: "Feb 2023"
+  },
+  {
+    id_cliente: 15,
+    nombre: "Ana López",
+    email: "ana.lopez@gmail.com",
+    num_pedidos: 3,
+    total_gastado: 350.25,
+    cliente_desde: "Mar 2023"
+  }
+]);
+
+// Cliente individual (referencia antigua, mantener por compatibilidad)
 const clienteFrecuente = ref({
   id_cliente: 12,
   nombre: "Laura Martínez",
@@ -2241,11 +2490,11 @@ const rankingCategoria = ref({
   posicion: 3,
   total_locales: 15,
   top5: [
-    { nombre: "Café Estrella", ventas_total: 685000 },
-    { nombre: "Coffee House", ventas_total: 542000 },
-    { nombre: "Café del Valle", ventas_total: 456000 },
-    { nombre: "El Barista", ventas_total: 398000 },
-    { nombre: "Morning Coffee", ventas_total: 352000 }
+    { nombre: "Café Estrella", ventas_total: 6850 },
+    { nombre: "Coffee House", ventas_total: 5420 },
+    { nombre: "Café del Valle", ventas_total: 4560 },
+    { nombre: "El Barista", ventas_total: 3980 },
+    { nombre: "Morning Coffee", ventas_total: 3520 }
   ]
 });
 
@@ -2260,16 +2509,16 @@ const historialCobros = ref([
     fecha_cobro: '2023-06-18',
     periodo_inicio: '12/06/2023',
     periodo_fin: '18/06/2023',
-    num_pedidos: 38,
-    pedidos_extra: 8,
-    costo_pedidos_extra: 120.00,
-    comision: 684.15,
-    total: 804.15,
+    num_pedidos: 8,
+    pedidos_extra: 3,
+    costo_pedidos_extra: 75.00,
+    comision: 920.00,
+    total: 995.00,
     estado: 'pendiente',
     pedidos: [
-      { num_pedido: 'PD-4298', cliente: 'Juan Pérez', fecha: '2023-06-12', total: 180.50, comision: 27.08 },
-      { num_pedido: 'PD-4302', cliente: 'María González', fecha: '2023-06-13', total: 245.75, comision: 36.86 },
-      { num_pedido: 'PD-4315', cliente: 'Carlos Rodríguez', fecha: '2023-06-15', total: 120.00, comision: 18.00 }
+      { num_pedido: 'PD-4298', cliente: 'Juan Pérez', fecha: '2023-06-13', total: 200.00, comision: 30.00 },
+      { num_pedido: 'PD-4302', cliente: 'María González', fecha: '2023-06-13', total: 245.75, comision: 36.75 },
+      { num_pedido: 'PD-4315', cliente: 'Carlos Rodríguez', fecha: '2023-06-13', total: 13.00, comision: 20.25 }
     ]
   },
   {
@@ -2886,6 +3135,11 @@ const enviarComprobante = () => {
   initCharts();
 };
 
+// Mostrar detalle del pedido (nueva función para el reporte de pedidos)
+const mostrarDetallePedido = () => {
+  modalPedidoVisible.value = true;
+};
+
 // Reportería
 const generarReporte = () => {
   if (membresia.value.id_membresia < 3) {
@@ -2928,9 +3182,8 @@ const getTituloReporte = () => {
   switch (reporteActual.value.tipo) {
     case 'ventas': return 'Reporte de Ventas';
     case 'productos': return 'Productos Más Vendidos';
-    case 'clientes': return 'Clientes Frecuentes';
-    case 'pedidos': return 'Estado de Pedidos';
     case 'financiero': return 'Reporte Financiero';
+    case 'pedidos': return 'Reporte de Pedidos';
     default: return 'Reporte';
   }
 };
@@ -3072,40 +3325,101 @@ class SocketConexion {
 }
 
 // Inicializar gráficos
-const initCharts = () => {
-  // Gráfico de ingresos por día (solo para Premium)
-  if (ventasChart.value && isPremiumFeatureAvailable(3)) {
-    const ctx = ventasChart.value.getContext('2d');
+const initCharts = async () => {
+  // Esperar a que el DOM esté completamente renderizado
+  await nextTick();
+  
+  console.log("Intentando inicializar gráficos..."); // Debug
+  
+  // Gráfico de productos más vendidos
+  if (membresia.value.id_membresia >= 2 && productosChart.value) {
+    console.log("Inicializando gráfico de productos..."); // Debug
     
-    // Destruir el gráfico anterior si existe
-    if (ventasChart.value.chart) {
-      ventasChart.value.chart.destroy();
+    // Destruir gráfico anterior si existe
+    if (productosChart.value._chart) {
+      productosChart.value._chart.destroy();
     }
     
-    // Preparar datos
+    const ctx = productosChart.value.getContext('2d');
+    
+    // Usar los datos reales de estadísticas
+    const data = {
+      labels: estadisticas.value.productosMasVendidos.map(p => p.nombre),
+      datasets: [{
+        label: 'Ventas',
+        data: estadisticas.value.productosMasVendidos.map(p => p.ventas),
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.7)',
+          'rgba(234, 88, 12, 0.7)',
+          'rgba(16, 185, 129, 0.7)',
+          'rgba(217, 119, 6, 0.7)',
+          'rgba(124, 58, 237, 0.7)'
+        ],
+        borderColor: [
+          'rgba(59, 130, 246, 1)',
+          'rgba(234, 88, 12, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(217, 119, 6, 1)',
+          'rgba(124, 58, 237, 1)'
+        ],
+        borderWidth: 1
+      }]
+    };
+    
+    productosChart.value._chart = new Chart(ctx, {
+      type: 'bar',
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+  
+  // Gráfico de ventas por día
+  if (membresia.value.id_membresia >= 3 && ventasChart.value) {
+    console.log("Inicializando gráfico de ventas..."); // Debug
+    
+    // Destruir gráfico anterior si existe
+    if (ventasChart.value._chart) {
+      ventasChart.value._chart.destroy();
+    }
+    
+    const ctx = ventasChart.value.getContext('2d');
+    
+    // Usar los datos reales de estadísticas
     const labels = estadisticas.value.datosVentas.map(d => {
       const fecha = new Date(d.fecha);
       return fecha.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
     });
     
-    const data = estadisticas.value.datosVentas.map(d => d.ventas);
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Ingresos Diarios (L.)',
+        data: estadisticas.value.datosVentas.map(d => d.ventas),
+        fill: true,
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        borderColor: 'rgba(34, 197, 94, 1)',
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+        pointRadius: 4
+      }]
+    };
     
-    // Crear nuevo gráfico
-    ventasChart.value.chart = new Chart(ctx, {
+    ventasChart.value._chart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Ingresos Diarios (L.)',
-          data: data,
-          fill: true,
-          backgroundColor: 'rgba(34, 197, 94, 0.2)',
-          borderColor: 'rgba(34, 197, 94, 1)',
-          tension: 0.4,
-          pointBackgroundColor: 'rgba(34, 197, 94, 1)',
-          pointRadius: 4
-        }]
-      },
+      data: data,
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -3125,59 +3439,6 @@ const initCharts = () => {
             ticks: {
               callback: (value) => `L. ${value}`
             }
-          }
-        }
-      }
-    });
-  }
-  
-  // Gráfico de productos más vendidos
-  if (productosChart.value && isPremiumFeatureAvailable(2)) {
-    const ctx = productosChart.value.getContext('2d');
-    
-    // Destruir el gráfico anterior si existe
-    if (productosChart.value.chart) {
-      productosChart.value.chart.destroy();
-    }
-    
-    // Preparar datos
-    const productos = estadisticas.value.productosMasVendidos;
-    const labels = productos.map(p => p.nombre);
-    const data = productos.map(p => p.ventas);
-    
-    // Colores
-    const backgroundColors = [
-      'rgba(59, 130, 246, 0.7)',   // Azul
-      'rgba(234, 88, 12, 0.7)',    // Naranja
-      'rgba(16, 185, 129, 0.7)',   // Verde
-      'rgba(217, 119, 6, 0.7)',    // Naranja oscuro
-      'rgba(124, 58, 237, 0.7)'    // Púrpura
-    ];
-    
-    // Crear nuevo gráfico
-    productosChart.value.chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Unidades vendidas',
-          data: data,
-          backgroundColor: backgroundColors,
-          borderWidth: 0,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true
           }
         }
       }
@@ -3226,6 +3487,11 @@ const cargarDatos = async () => {
 onMounted(() => {
   cargarDatos();
   
+  // Inicializar gráficos cuando el componente se monta
+  if (currentTab.value === 'estadisticas') {
+    initCharts();
+  }
+
   // Simular una notificación nueva
   setTimeout(() => {
     notifications.value.unshift({
@@ -3234,6 +3500,23 @@ onMounted(() => {
       read: false
     });
   }, 10000);
+});
+
+// Observar cambios en la pestaña actual
+watch(currentTab, (newTab) => {
+  if (newTab === 'estadisticas') {
+    // Esperar a que el DOM se actualice y luego inicializar gráficos
+    nextTick(() => {
+      initCharts();
+    });
+  }
+});
+
+// Observar cambios en la membresía
+watch(() => membresia.value.id_membresia, () => {
+  if (currentTab.value === 'estadisticas') {
+    initCharts();
+  }
 });
 </script>
 

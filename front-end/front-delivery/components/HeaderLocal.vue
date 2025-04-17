@@ -89,14 +89,14 @@ const markAsRead = (id) => {
 const redirectToProfile = () => {
   switch (selectedProfile.value) {
     case 'Cliente':
-      window.location.href = '/Dashboard_Cliente';
-      break;
-    case 'Local':
-      window.location.href = '/Dashboard_Local';
-      break;
-    case 'Delivery':
-      window.location.href = '/Dashboard_Driver';
-      break;
+    router.push('/Dashboard_Cliente');
+    break;
+  case 'Local':
+    router.push('/Dashboard_Local');
+    break;
+  case 'Delivery':
+    router.push('/Dashboard_Driver');
+    break;
     default:
       break;
   }

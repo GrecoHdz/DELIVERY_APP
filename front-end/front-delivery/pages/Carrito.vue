@@ -402,10 +402,16 @@
           <!-- Botón de Ordenar  @click="realizarPedido" -->
           <div class="pb-4 pt-4">
             <button 
-              @click="$router.push('/PedidoEncargado')" 
+              @click="realizarPedido" 
               class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50"
+              :disabled="loading"
             >
-              Ordenar
+              <template v-if="loading">
+                <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+              </template>
+              <template v-else>
+                Ordenar
+              </template>
             </button>
           </div>
         </div>
@@ -553,6 +559,8 @@ import {
   Info as InfoIcon
 } from 'lucide-vue-next';
 import { io } from 'socket.io-client';
+import axios from 'axios';
+
 const mostrarInfo = () => {
   alert("Precio de carrera es lo que te cobraría un taxi ida y vuelta");
 };
@@ -1227,41 +1235,98 @@ const realizarPedido = async () => {
   try {
     loading.value = true;
     
-    if (dataSource.value === 'api') {
-      // Preparar los datos del pedido
-      const pedidoData = {
-        metodoPago: metodoPago.value,
-        tipoPedido: tipoPedido.value,
-        montoEfectivo: metodoPago.value === 'efectivo' ? montoEfectivo.value : null,
-        notasGenerales: notasGenerales.value,
-        descuento: descuento.value,
-        id_cupon: cuponValido.value && cuponActual.value ? cuponActual.value.id_cupon : null,
-        conductorId: tipoPedido.value === 'delivery' ? conductorSeleccionado.value : null,
-        total: total.value,
-        productos: productosCarrito.value.map(p => ({
-          id: p.id,
-          cantidad: p.cantidad
-        }))
-      };
-      
-      // Esta es una simulación - en un caso real, se haría una llamada a la API
-      console.log('Enviando pedido a la API:', pedidoData);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simular tiempo de respuesta
-      
-      // Limpiar carrito después de un pedido exitoso
-      productosCarrito.value = [];
-      notasGenerales.value = "";
-      codigoDescuento.value = "";
-      cuponValido.value = false;
-      cuponActual.value = null;
-      mensajeDescuento.value = "";
+    // Preparar los datos del pedido
+    const pedidoData = {
+      metodoPago: metodoPago.value,
+      tipoPedido: tipoPedido.value,
+      montoEfectivo: metodoPago.value === 'efectivo' ? montoEfectivo.value : null,
+      notasGenerales: notasGenerales.value,
+      descuento: descuento.value,
+      id_cupon: cuponValido.value && cuponActual.value ? cuponActual.value.id_cupon : null,
+      conductorId: tipoPedido.value === 'delivery' ? conductorSeleccionado.value : null,
+      total: total.value,
+      productos: productosCarrito.value.map(p => ({
+        id: p.id,
+        cantidad: p.cantidad,
+        nombre: p.nombre,
+        precio_unitario: p.precio_unitario,
+        atributos: p.atributos,
+        extras: p.extras
+      }))
+    };
+
+    // Emitir el evento de realizar pedido
+    if (socket.value && socket.value.connected) {
+      socket.value.emit('realizar_pedido', pedidoData);
+    } else {
+      throw new Error('No hay conexión con el servidor');
     }
-    
-    alert("Pedido realizado con éxito");
-    pestañaActiva.value = "productos";
+
+    // Escuchar la respuesta del servidor
+    socket.value.once('pedido_confirmado', async (response) => {
+      try {
+        // Si es un pedido de delivery, crear la oferta del driver
+        if (tipoPedido.value === 'delivery' && conductorSeleccionado.value) {
+          // Obtener el precio de la oferta del driver usando el ID del pedido
+          const ofertaResponse = await axios.get(`http://localhost:4000/ofertadriver/pedido/${response.orderId}`);
+          const precioOferta = ofertaResponse.data.precio_oferta;
+
+          const ofertaData = {
+            id_viaje: response.orderId,
+            id_pedido: response.orderId,
+            id_vehiculo: conductorSeleccionado.value.vehiculo_id,
+            precio_oferta: precioOferta
+          };
+
+          // Crear la oferta del driver
+          await axios.post(`http://localhost:4000/ofertadriver/${conductorSeleccionado.value.id}`, ofertaData);
+          
+          // Agregar notificación de oferta creada
+          notifications.value.unshift({
+            id: Date.now(),
+            message: `Oferta de delivery creada para tu pedido #${response.orderId} con precio de $${precioOferta}`,
+            read: false,
+            time: new Date()
+          });
+        }
+
+        // Limpiar carrito después de un pedido exitoso
+        productosCarrito.value = [];
+        notasGenerales.value = "";
+        codigoDescuento.value = "";
+        cuponValido.value = false;
+        cuponActual.value = null;
+        mensajeDescuento.value = "";
+        
+        // Agregar notificación de pedido
+        notifications.value.unshift({
+          id: Date.now(),
+          message: `Tu pedido #${response.orderId} ha sido enviado exitosamente`,
+          read: false,
+          time: new Date()
+        });
+
+        // Redirigir a la página de seguimiento
+        router.push('/PedidoEncargado');
+      } catch (error) {
+        console.error('Error al crear la oferta del driver:', error);
+        // No interrumpimos el flujo si falla la creación de la oferta
+        // pero mostramos una notificación
+        notifications.value.unshift({
+          id: Date.now(),
+          message: `Tu pedido fue creado pero hubo un problema al asignar el conductor. Por favor contacta a soporte.`,
+          read: false,
+          time: new Date()
+        });
+      }
+    });
+
+    socket.value.once('pedido_error', (error) => {
+      throw new Error(error.message);
+    });
+
   } catch (error) {
-    console.error('Error creating order:', error);
+    console.error('Error al realizar el pedido:', error);
     alert(`Error al realizar el pedido: ${error.message}`);
   } finally {
     loading.value = false;

@@ -3,6 +3,8 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const { Server } = require("socket.io");
+const { createServer } = require("http");
 const { connectDB, sequelize } = require("./config/database"); 
 const authRoutes = require("./routes/auth"); 
 const productRoutes = require("./routes/producto"); // Import product routes
@@ -19,7 +21,7 @@ const categoriasRoute = require("./routes/categorias");
 const subcategoriasRoute = require("./routes/subcategorias");
 const localesRoute = require("./routes/locales");
 const configRoutes = require('./routes/configRoutes')
-  
+const ofertadriverRoutes = require("./routes/ofertaDriver");
  const ciudadRoutes = require("./routes/ciudad");
  const bancoRoutes = require("./routes/banco");
  const metodoPagoRoutes = require("./routes/metodoPago");  
@@ -44,7 +46,13 @@ const configRoutes = require('./routes/configRoutes')
 const pedidodetalleRoutes= require("./routes/pedidoDetalle");
 const estadisticasRoutes = require("./routes/estadisticas");
 const quejaLocalRoutes = require("./routes/quejaLocalRoutes");
-const app = express();  
+const { initSocket } = require('./socket');
+
+const app = express();
+const server = createServer(app);
+
+// Inicializar Socket.io
+const io = initSocket(server);
 
 // Middlewares
 app.use(morgan("dev"));
@@ -98,10 +106,102 @@ app.use("/rentarauto", rentarAutoRoutes);
 app.use("/autoenrenta", autoEnRentaRoutes);
 app.use("/estadisticas", estadisticasRoutes);
 app.use("/quejalocal",quejaLocalRoutes)
+app.use("/ofertadriver", ofertadriverRoutes);
+// Middleware de sockets
+io.on("connection", (socket) => {
+  console.log("Cliente conectado:", socket.id);
+
+  // Manejar realización de pedidos
+  socket.on("realizar_pedido", async (data) => {
+    try {
+      // Aquí implementarías la lógica para guardar el pedido en la base de datos
+      const pedido = {
+        ...data,
+        estado: 'pendiente_local',
+        fecha_pedido: new Date(),
+        id_pedido: Date.now() // Esto es temporal, normalmente vendría de la base de datos
+      };
+
+      // Emitir el evento a los locales
+      io.emit("nuevo_pedido", pedido);
+      
+      // Confirmar al cliente
+      socket.emit("pedido_confirmado", {
+        orderId: pedido.id_pedido,
+        message: "Pedido recibido exitosamente"
+      });
+      
+      console.log("Nuevo pedido recibido:", pedido);
+    } catch (error) {
+      console.error("Error al procesar el pedido:", error);
+      socket.emit("pedido_error", {
+        message: "Error al procesar el pedido"
+      });
+    }
+  });
+
+  // Manejar pedidos aceptados
+  socket.on("pedido_aceptado", (data) => {
+    const { pedidoId, tiempoEstimado, detallesPedido } = data;
+    // Emitir al cliente específico
+    io.emit("order_status_updated", {
+      order_id: pedidoId,
+      new_status: "preparacion",
+      estimated_time: tiempoEstimado
+    });
+  });
+
+  // Manejar pedidos rechazados
+  socket.on("pedido_rechazado", (data) => {
+    const { pedidoId, razonRechazo } = data;
+    io.emit("order_status_updated", {
+      order_id: pedidoId,
+      new_status: "rechazado",
+      rejection_reason: razonRechazo
+    });
+  });
+
+  // Manejar pedidos aceptados en masa
+  socket.on("pedidos_aceptados_masivo", (data) => {
+    const { pedidosIds, tiempoEstimado } = data;
+    pedidosIds.forEach(pedidoId => {
+      io.emit("order_status_updated", {
+        order_id: pedidoId,
+        new_status: "preparacion",
+        estimated_time: tiempoEstimado
+      });
+    });
+  });
+
+  // Manejar pedidos rechazados en masa
+  socket.on("pedidos_rechazados_masivo", (data) => {
+    const { pedidosIds, razonRechazo } = data;
+    pedidosIds.forEach(pedidoId => {
+      io.emit("order_status_updated", {
+        order_id: pedidoId,
+        new_status: "rechazado",
+        rejection_reason: razonRechazo
+      });
+    });
+  });
+
+  // Manejar actualización de ubicación del conductor
+  socket.on("driver_location_update", (data) => {
+    const { orderId, location } = data;
+    io.emit("driver_location_updated", {
+      order_id: orderId,
+      location
+    });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Cliente desconectado:", socket.id);
+  });
+});
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   await connectDB();
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });

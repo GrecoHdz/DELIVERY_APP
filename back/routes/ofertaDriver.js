@@ -6,6 +6,7 @@ const {
   createOferta,
   updateOferta,
   deleteOferta,
+  getOfertaByPedidoId,
 } = require("../controllers/ofertaDriverController");
 
 const router = express.Router();
@@ -24,14 +25,17 @@ router.get("/", getAllOfertas);
 // Obtener una oferta por su ID
 router.get("/:id", [param("id").isInt().withMessage("ID inválido")], validarErrores, getOfertaById);
 
+// Obtener una oferta por ID de pedido
+router.get("/pedido/:id_pedido", [param("id_pedido").isInt().withMessage("ID de pedido inválido")], validarErrores, getOfertaByPedidoId);
+
 // Crear una nueva oferta
 router.post(
-  "/:id_viaje",
+  "/:id_driver",
   [
-    param("id_viaje").isInt().withMessage("ID de viaje inválido"),
-    body("id_pedido").isInt().withMessage("ID de pedido inválido"),
-    body("id_driver").isInt().withMessage("ID de driver inválido"),
-    body("id_vehiculo").isInt().withMessage("ID de vehículo inválido"),
+    param("id_driver").isInt().withMessage("ID de driver inválido"),
+    body("id_viaje").optional().isInt().withMessage("ID de viaje inválido"),
+    body("id_pedido").optional().isInt().withMessage("ID de pedido inválido"),
+    body("id_vehiculo").optional().isInt().withMessage("ID de vehículo inválido"),
     body("precio_oferta")
       .isDecimal()
       .withMessage("El precio de la oferta debe ser un número decimal válido"),

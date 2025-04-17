@@ -1,10 +1,11 @@
+
 <template>
   <div class="dashboard-cliente min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 !important">
     <!-- Header -->
     <HeaderComponent />
 
     <!-- Contenido principal -->
-    <main class="dashboard-cliente-main pt-16">
+    <main class="dashboard-cliente-main">
       <div class="dashboard-cliente-container container mx-auto px-4 pb-20">
         <!-- Modal de Producto -->
         <transition name="modal">
@@ -268,15 +269,15 @@
                   <div v-for="(product, index) in products.slice(0, 7)" :key="index" class="w-60 bg-white rounded-lg shadow-md overflow-hidden flex-shrink-0" :class="{'offer': product.discountedPrice}">
                     <div class="h-32 bg-gray-300 relative">
                       <img class="w-full h-full object-cover" :src="product.image" :alt="product.name" />
-                      <div class="absolute top-2 right-2 bg-white p-1 rounded-full cursor-pointer" @click="toggleFavorite(product)">
-                        <HeartIcon :class="product.favorite ? 'fill-red-500' : 'fill-gray-50'" :size="16" />
+                      <div class="absolute top-2 right-2 bg-white p-1 rounded-full cursor-pointer border border-gray-300 shadow-sm" @click="toggleFavorite(product)">
+                        <HeartIcon :class="product.favorite ? 'text-red-500 fill-red-500' : 'text-gray-400 fill-none'" :size="17" stroke-width="3"/>
                       </div>
                       <div v-if="product.discountedPrice" class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
                         Oferta
                       </div>
                     </div>
                     <div class="p-3">
-                      <h3 class="font-semibold text-black-200">{{ product.name }}</h3>
+                      <h3 class="font-semibold text-black">{{ product.name }}</h3>
                       <p class="text-xs text-gray-500 mt-1 mb-1 line-clamp-2">{{ product.description || 'Sin descripción disponible' }}</p>
                       <p class="text-xs text-gray-600 mb-2">{{ product.storeName || 'Tienda Local' }}</p>
                       <div class="flex items-center justify-between mt-2">
@@ -320,7 +321,7 @@
                   <img class="w-full h-full object-cover" :src="local.imagen_url" :alt="local.nombre_local" />
                 </div>
                 <div class="p-3">
-                  <h3 class="font-semibold text-black-200">{{ local.nombre_local }}</h3>
+                  <h3 class="font-semibold text-black">{{ local.nombre_local }}</h3>
                   <div class="flex items-center text-xs text-gray-500 mt-1 mb-2">
                     <span>{{ getCategoryForLocal(local) }}</span>
                   </div>
@@ -562,7 +563,15 @@ const viewLocalProducts = (local) => {
 
 // Solicitar transporte
 const selectTransport = (type) => {
-  console.log(`Servicio de transporte seleccionado: ${type}`);
+  if (type === 'rentar') {
+    router.push('/rentarauto'); // Redirige a Rentar Auto
+  }
+  if (type === 'uber') {
+    router.push('/rentaruber'); // Redirige a Rentar Uber
+  }
+  if (type === 'flete') {
+    router.push('/rentarflete'); // Redirige a Rentar Flete
+  }
 };
 
 // Solicitar mandadito
@@ -958,7 +967,7 @@ onMounted(() => {
 /* Estilos específicos para Dashboard_Cliente */
 .dashboard-cliente {
   background: linear-gradient(to bottom, #EBF4FF, #E1EFFE) !important;
-  min-height: 100vh !important;
+  
 }
 
 .dashboard-cliente-main {
@@ -982,8 +991,7 @@ onMounted(() => {
 .container {
   width: 100% !important;
   max-width: 1200px !important;
-  margin: 0 auto !important;
-  padding-bottom: 70px !important;
+  margin: 0 auto !important; 
 }
 
 .fill-red-500 {

@@ -56,30 +56,4 @@ const Pedido = sequelize.define(
   }
 );
 
-// Asociaciones
-Pedido.associate = (models) => {
-  Pedido.belongsTo(models.Cliente, {
-    foreignKey: "id_cliente",
-    onDelete: "CASCADE", // Si se elimina el cliente, también se eliminan sus pedidos
-  });
-  Pedido.belongsTo(models.Local, {
-    foreignKey: "id_local",
-    onDelete: "CASCADE", // Si se elimina el local, también se eliminan sus pedidos
-  });
-  Pedido.belongsTo(models.Driver, {
-    foreignKey: "id_driver",
-    onDelete: "SET NULL", // Si se elimina el driver, el campo se establece como NULL
-  });
-  Pedido.belongsTo(models.Direccion, {
-    foreignKey: "id_direccion_cliente",
-    as: "DireccionCliente",
-    onDelete: "CASCADE", // Si se elimina la dirección del cliente, también se eliminan sus pedidos
-  });
-  Pedido.belongsTo(models.Direccion, {
-    foreignKey: "id_direccion_local",
-    as: "DireccionLocal",
-    onDelete: "CASCADE", // Si se elimina la dirección del local, también se eliminan sus pedidos
-  });
-};
-
 module.exports = Pedido;

@@ -1,14 +1,62 @@
 const Pedido = require("../models/Pedido");
+const PedidoDetalle = require("../models/PedidoDetalle");
+const DireccionLocal = require("../models/DireccionLocal");
+const OfertaDriver = require("../models/OfertaDriver");
+const { getIO } = require('../socket');
 
 // Obtener todos los pedidos
 const getAllPedidos = async (req, res) => {
   try {
-    const pedidos = await Pedido.findAll();
+    const pedidos = await Pedido.findAll({
+      attributes: [
+        'id_pedido',
+        'id_cliente',
+        'id_local',
+        'id_driver',
+        'fecha_pedido',
+        'fecha_entrega',
+        'estado',
+        'tiempo_preparacion_estimado',
+        'tiempo_llegada_estimado'
+      ],
+      include: [
+        {
+          model: PedidoDetalle,
+          as: 'items',
+          attributes: ['id_pedido_detalle', 'nombre_producto', 'cantidad', 'precio_unitario', 'subtotal', 'atributos', 'extras', 'notas']
+        },
+        {
+          model: DireccionLocal,
+          as: 'DireccionLocal',
+          attributes: ['colonia', 'direccion_precisa', 'latitud', 'longitud']
+        }
+      ]
+    });
+    
+    // Obtener las ofertas de drivers para cada pedido
+    const pedidosProcesados = await Promise.all(pedidos.map(async pedido => {
+      const pedidoJSON = pedido.toJSON();
+      const oferta = await OfertaDriver.findOne({
+        where: { id_pedido: pedidoJSON.id_pedido }
+      });
+      
+      return {
+        ...pedidoJSON,
+        pago_delivery: oferta ? oferta.precio_oferta : 0,
+        items: pedidoJSON.items.map(item => ({
+          ...item,
+          atributos: typeof item.atributos === 'string' ? JSON.parse(item.atributos) : item.atributos || {},
+          extras: typeof item.extras === 'string' ? JSON.parse(item.extras) : item.extras || []
+        }))
+      };
+    }));
+
     if (!pedidos || pedidos.length === 0) {
       return res.status(404).json({ message: "No se encontraron pedidos" });
     }
-    res.json(pedidos);
+    res.json(pedidosProcesados);
   } catch (error) {
+    console.error("Error al obtener los pedidos:", error);
     res.status(500).json({ message: "Error al obtener los pedidos", error });
   }
 };
@@ -18,12 +66,47 @@ const getPedidoById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const pedido = await Pedido.findByPk(id);
+    const pedido = await Pedido.findByPk(id, {
+      attributes: [
+        'id_pedido',
+        'id_cliente',
+        'id_local',
+        'id_driver',
+        'fecha_pedido',
+        'fecha_entrega',
+        'estado',
+        'tiempo_preparacion_estimado',
+        'tiempo_llegada_estimado'
+      ],
+      include: [
+        {
+          model: PedidoDetalle,
+          as: 'items',
+          attributes: ['id_pedido_detalle', 'nombre_producto', 'cantidad', 'precio_unitario', 'subtotal', 'atributos', 'extras', 'notas']
+        },
+        {
+          model: DireccionLocal,
+          as: 'DireccionLocal',
+          attributes: ['colonia', 'direccion_precisa', 'latitud', 'longitud']
+        }
+      ]
+    });
+    
     if (!pedido) {
       return res.status(404).json({ message: "Pedido no encontrado" });
     }
-    res.json(pedido);
+
+    // Obtener la oferta del driver para este pedido
+    const oferta = await OfertaDriver.findOne({
+      where: { id_pedido: id }
+    });
+
+    const pedidoJSON = pedido.toJSON();
+    pedidoJSON.pago_delivery = oferta ? oferta.precio_oferta : 0;
+    
+    res.json(pedidoJSON);
   } catch (error) {
+    console.error("Error al obtener el pedido:", error);
     res.status(500).json({ message: "Error al obtener el pedido", error });
   }
 };
@@ -53,38 +136,34 @@ const getCarritoCount = async (req, res) => {
 
 // Crear un nuevo pedido
 const createPedido = async (req, res) => {
-    const { id_cliente } = req.params;
-    const {    
-    id_local,
-    id_direccion_cliente,
-    id_direccion_local,   
-  } = req.body;
-
   try {
+    const { id_cliente, id_local, id_direccion_cliente, id_direccion_local } = req.body;
+
     const pedido = await Pedido.create({
       id_cliente,
       id_local,
       id_direccion_cliente,
-      id_direccion_local, 
+      id_direccion_local,
+      fecha_pedido: new Date(),
+      estado: 'pendiente'
     });
 
-    res.status(201).json({ message: "Pedido creado exitosamente", id_pedido: pedido.id_pedido });
+    // Emitir evento de nuevo pedido
+    const io = getIO();
+    io.emit('nuevo_pedido', {
+      id_pedido: pedido.id_pedido,
+      id_cliente,
+      id_local,
+      id_direccion_cliente,
+      id_direccion_local,
+      fecha_pedido: pedido.fecha_pedido,
+      estado: pedido.estado
+    });
+
+    res.status(201).json(pedido);
   } catch (error) {
-    if (error.name === "SequelizeForeignKeyConstraintError") {
-      if (error.fields.includes("id_cliente")) {
-        return res.status(400).json({ message: "El cliente no existe" });
-      }
-      if (error.fields.includes("id_local")) {
-        return res.status(400).json({ message: "El local no existe" });
-      }
-      if (error.fields.includes("id_direccion_cliente")) {
-        return res.status(400).json({ message: "La dirección del cliente no existe" });
-      }
-      if (error.fields.includes("id_direccion_local")) {
-        return res.status(400).json({ message: "La dirección del local no existe" });
-      }
-    }
-    res.status(500).json({ message: "Error al crear el pedido", error });
+    console.error('Error al crear pedido:', error);
+    res.status(500).json({ message: 'Error al crear el pedido' });
   }
 };
 
@@ -106,17 +185,40 @@ const updatePedido = async (req, res) => {
       return res.status(404).json({ message: "Pedido no encontrado" });
     }
 
+    // Actualizar el pedido
     await pedido.update({
       id_driver,
       tiempo_preparacion_estimado,
       tiempo_llegada_estimado,
       fecha_entrega,
-      estado_pedido, 
+      estado: estado_pedido, 
       fecha_pedido, 
+    });
+
+    // Si el estado del pedido es cancelado, actualizar el estado de la oferta
+    if (estado_pedido === 'cancelado') {
+      const oferta = await OfertaDriver.findOne({
+        where: { id_pedido: id }
+      });
+
+      if (oferta) {
+        await oferta.update({
+          estado_oferta: 'cancelado'
+        });
+      }
+    }
+
+    // Emitir evento de actualización de estado
+    const io = getIO();
+    io.emit('estado_pedido_actualizado', {
+      id_pedido: pedido.id_pedido,
+      estado: pedido.estado,
+      tarifa: pedido.tarifa
     });
 
     res.status(200).json({ message: "Pedido actualizado correctamente" });
   } catch (error) {
+    console.error("Error al actualizar el pedido:", error);
     res.status(500).json({ message: "Error al actualizar el pedido", error });
   }
 };

@@ -11,11 +11,11 @@ const OfertaDriver = sequelize.define(
     },
     id_viaje: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     id_pedido: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     id_driver: {
       type: DataTypes.INTEGER,
@@ -23,7 +23,7 @@ const OfertaDriver = sequelize.define(
     },
     id_vehiculo: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     precio_oferta: {
       type: DataTypes.DECIMAL(10, 2),

@@ -30,10 +30,10 @@ const getOfertaById = async (req, res) => {
 
 // Crear una nueva oferta
 const createOferta = async (req, res) => {
-    const {id_viaje } = req.params;
+    const { id_driver } = req.params;
     const {
-    id_pedido,
-    id_driver,
+    id_viaje,
+    id_pedido, 
     id_vehiculo,
     precio_oferta, 
   } = req.body;
@@ -106,10 +106,29 @@ const deleteOferta = async (req, res) => {
   }
 };
 
+// Obtener oferta por ID de pedido
+const getOfertaByPedidoId = async (req, res) => {
+  const { id_pedido } = req.params;
+
+  try {
+    const oferta = await OfertaDriver.findOne({
+      where: { id_pedido }
+    });
+    
+    if (!oferta) {
+      return res.status(404).json({ message: "No se encontró oferta para este pedido" });
+    }
+    res.json(oferta);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener la oferta", error });
+  }
+};
+
 module.exports = {
   getAllOfertas,
   getOfertaById,
   createOferta,
   updateOferta,
   deleteOferta,
+  getOfertaByPedidoId
 };

@@ -60,16 +60,4 @@ const PedidoDetalle = sequelize.define(
   }
 );
 
-// Asociaciones
-PedidoDetalle.associate = (models) => {
-  PedidoDetalle.belongsTo(models.Pedido, {
-    foreignKey: "id_pedido",
-    onDelete: "CASCADE", // Si se elimina el pedido, también se eliminan sus detalles
-  });
-  PedidoDetalle.belongsTo(models.Producto, {
-    foreignKey: "id_producto",
-    onDelete: "CASCADE", // Si se elimina el producto, también se eliminan sus detalles asociados
-  });
-};
-
 module.exports = PedidoDetalle;

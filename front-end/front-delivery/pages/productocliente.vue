@@ -335,6 +335,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { 
   Truck as TruckIcon, 
   Bell as BellIcon,
@@ -527,6 +528,9 @@ const showToast = (message, type = 'success') => {
     toast.value.show = false;
   }, 3000);
 };
+
+// Configuración del socket
+const socket = io('http://localhost:4000');
 
 // Función para cargar sucursales desde la API
 const fetchBranches = async () => {
@@ -747,9 +751,21 @@ const totalPrice = computed(() => {
 // Agregar al carrito  
 const addToCart = async (product) => {
   try {
-    // Calcular precio final
+    // Validar que se haya seleccionado una sucursal
+    if (!selectedBranch.value) {
+      showToast('Por favor selecciona una sucursal', 'error');
+      return;
+    }
+
+    // Validar que se haya seleccionado una dirección de cliente
+    if (!id_direccion_cliente) {
+      showToast('Por favor selecciona una dirección de entrega', 'error');
+      return;
+    }
+
+    // Calcular el precio final
     const finalPrice = totalPrice.value;
-    
+
     // Obtener el atributo seleccionado si existe
     const selectedAttributeDetails = product.attributes?.find(attr => attr.id === selectedAttribute.value);
     
@@ -758,16 +774,21 @@ const addToCart = async (product) => {
 
     // Crear un objeto para almacenar los atributos seleccionados
     const attributesData = selectedAttributeDetails ? {
-      id: selectedAttributeDetails.id,
-      name: selectedAttributeDetails.name,
-      value: selectedAttributeDetails.value,
-      price: selectedAttributeDetails.price
+      [selectedAttributeDetails.name]: {
+        id: selectedAttributeDetails.id,
+        value: selectedAttributeDetails.value,
+        price: selectedAttributeDetails.price
+      }
     } : {};
 
     // Crear un objeto para almacenar los extras seleccionados
-    const extrasData = selectedExtras.length > 0 
-      ? Object.fromEntries(selectedExtras.map(extra => [extra.id, { name: extra.name, price: extra.price }])) 
-      : {};
+    const extrasData = selectedExtras.reduce((acc, extra) => {
+      acc[extra.id] = {
+        name: extra.name,
+        price: extra.price
+      };
+      return acc;
+    }, {});
 
     if (useApiData.value) {
       // MODO API: Realizar llamadas reales a la API
@@ -784,34 +805,50 @@ const addToCart = async (product) => {
       console.log("ID del pedido:", idPedido.value);
 
       // 3. Crear el detalle del pedido (carrito)
-      console.log('Enviando datos al carrito:', {
-        id_pedido: idPedido.value,
-        id_producto: product.id,
-        nombre_producto: product.name,
-        precio_unitario: product.discountedPrice || product.price,
-        cantidad: quantity.value,
-        subtotal: finalPrice,
-        atributos: JSON.parse(JSON.stringify(attributesData)), // Asegurar estructura válida
-        extras: JSON.parse(JSON.stringify(extrasData)) // Asegurar estructura válida
-      });
+      const detalleData = {
+        id_pedido: parseInt(idPedido.value),
+        id_producto: parseInt(product.id),
+        nombre_producto: product.name.substring(0, 255),
+        precio_unitario: parseFloat(product.discountedPrice || product.price),
+        cantidad: parseInt(quantity.value),
+        subtotal: parseFloat(finalPrice),
+        atributos: attributesData,
+        extras: extrasData
+      };
 
-      await axios.post(`${API_URL}/carrito/${idPedido.value}`, {
-        id_producto: product.id,
-        nombre_producto: product.name,
-        precio_unitario: product.discountedPrice || product.price,
-        cantidad: quantity.value,
-        subtotal: finalPrice,
-        atributos: JSON.parse(JSON.stringify(attributesData)), // Enviar objeto válido
-        extras: JSON.parse(JSON.stringify(extrasData)) // Enviar objeto válido
-      });
+      console.log('Enviando datos al carrito:', detalleData);
 
-      // Actualizar el contador del carrito 
-      await checkCartStatus();   
-     
+      try {
+        await axios.post(`${API_URL}/carrito/${idPedido.value}`, detalleData);
+        
+        // Emitir evento de nuevo pedido a través del socket
+        socket.emit('nuevo_pedido', {
+          id_pedido: idPedido.value,
+          id_cliente: id_cliente,
+          id_local: localId.value,
+          id_direccion_cliente: id_direccion_cliente,
+          id_direccion_local: selectedBranch.value,
+          fecha_pedido: new Date().toISOString(),
+          estado: 'pendiente',
+          items: [{
+            nombre_producto: product.name,
+            cantidad: quantity.value,
+            precio_unitario: product.discountedPrice || product.price,
+            subtotal: finalPrice,
+            atributos: attributesData,
+            extras: extrasData
+          }]
+        });
+        
+        // Actualizar el contador del carrito 
+        await checkCartStatus();   
 
-      // Mostrar notificación de éxito
-      showToast(`${quantity.value} ${product.name} agregado al carrito`, 'success');
-
+        // Mostrar notificación de éxito
+        showToast(`${quantity.value} ${product.name} agregado al carrito`, 'success');
+      } catch (error) {
+        console.error('Error al crear el detalle del pedido:', error.response?.data);
+        throw new Error(error.response?.data?.message || 'Error al crear el detalle del pedido');
+      }
     } else {
       // MODO SIMULACIÓN
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -826,7 +863,7 @@ const addToCart = async (product) => {
         precio_total: finalPrice
       });
 
-      // Activa el marcdor en modo mock
+      // Activa el marcador en modo mock
       cartHasItems.value = true;
 
       // Mostrar notificación de éxito
@@ -838,7 +875,19 @@ const addToCart = async (product) => {
 
   } catch (error) {
     console.error('Error al agregar al carrito:', error);
-    showToast('Error al agregar al carrito: ' + (error.response?.data?.message || error.message), 'error');
+    
+    // Manejar diferentes tipos de errores
+    if (error.response) {
+      // Error de respuesta del servidor
+      const errorMessage = error.response.data.message || 'Error al agregar al carrito';
+      showToast(errorMessage, 'error');
+    } else if (error.request) {
+      // Error de red
+      showToast('Error de conexión. Por favor verifica tu conexión a internet.', 'error');
+    } else {
+      // Otros errores
+      showToast('Error al agregar al carrito: ' + error.message, 'error');
+    }
   }
 };
 

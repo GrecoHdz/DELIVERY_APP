@@ -810,39 +810,19 @@ const openTermsModal = () => {
 const openPrivacyModal = () => {
   alert('Abrir modal de política de privacidad');
 };
-
+const router = useRouter();
+const cookie = useCookie('token');
 const logout = () => {
-  alert('Sesión cerrada');
+  router.push('/login');
 };
 </script>
 
 <style scoped>
 /* ESTILOS BASE Y RESPONSIVE */
-/* Para mantener header y footer fijos */
-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: white;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.min-h-screen {
+/* Para mantener header y footer fijos */ 
+ .min-h-screen {
   width: 100%;
-  margin: 0 auto;
-  padding-top: 60px;
+  margin: 0 auto; 
   padding-bottom: 95px;
 }
 

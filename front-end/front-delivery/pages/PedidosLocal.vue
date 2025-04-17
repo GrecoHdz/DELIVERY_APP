@@ -378,7 +378,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import {
   Truck as TruckIcon,
   Bell as BellIcon,
@@ -391,6 +391,7 @@ import {
   X as XIcon,
   RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
+import { io } from 'socket.io-client';
 
 const isModalOpen = ref(false); 
 const router = useRouter();
@@ -552,6 +553,26 @@ const isAccepting = ref(false);
 const estimatedTime = ref(null);
 const rejectionReason = ref("");
 const selectedOrderId = ref(null);
+
+// Socket configuration
+const socket = ref(null);
+
+const inicializarSocket = () => {
+  socket.value = io('http://localhost:4000', {
+    autoConnect: true,
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  });
+
+  socket.value.on('connect', () => {
+    console.log('Local conectado al servidor de websockets');
+  });
+
+  socket.value.on('disconnect', () => {
+    console.log('Local desconectado del servidor de websockets');
+  });
+};
 
 // Función para obtener pedidos
 const fetchOrders = async () => {
@@ -751,152 +772,131 @@ const closeIndividualActionModal = () => {
   rejectionReason.value = "";
 };
 
-// Confirmar aceptación de varios pedidos
-const confirmBulkAccept = async () => {
-  if (!estimatedTime.value) {
-    alert("Por favor, ingresa un tiempo estimado de preparación.");
-    return;
-  }
-
-  if (dataSource.value === 'api') {
-    try {
-      // En una implementación real, aquí habría llamadas a la API para cada pedido
-      // Ejemplo:
-      // for (const id of selectedOrders.value) {
-      //   await fetch(`http://localhost:4000/pedidos/${id}/aceptar`, {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({ tiempo_preparacion_estimado: estimatedTime.value })
-      //   });
-      // }
-      
-      // Simulamos tiempo de espera
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } catch (error) {
-      console.error('Error accepting orders:', error);
-      alert(`Error al aceptar los pedidos: ${error.message}`);
-      return;
-    }
-  }
-
-  // Actualizar la UI
-  selectedOrders.value.forEach((id) => {
-    const order = orders.value.find((order) => order.id === id);
-    if (order) {
-      order.status = "preparation";
-      order.estimatedTime = estimatedTime.value;
-    }
-  });
-  
-  alert("Pedidos seleccionados aceptados.");
-  selectedOrders.value = [];
-  closeBulkActionModal();
-};
-
-// Confirmar rechazo de varios pedidos
-const confirmBulkReject = async () => {
-  if (!rejectionReason.value) {
-    alert("Por favor, ingresa una razón de rechazo.");
-    return;
-  }
-  
-  if (dataSource.value === 'api') {
-    try {
-      // En una implementación real, aquí habría llamadas a la API para cada pedido
-      // Ejemplo:
-      // for (const id of selectedOrders.value) {
-      //   await fetch(`http://localhost:4000/pedidos/${id}/rechazar`, {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({ razon: rejectionReason.value })
-      //   });
-      // }
-      
-      // Simulamos tiempo de espera
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } catch (error) {
-      console.error('Error rejecting orders:', error);
-      alert(`Error al rechazar los pedidos: ${error.message}`);
-      return;
-    }
-  }
-
-  // Actualizar la UI
-  orders.value = orders.value.filter((order) => !selectedOrders.value.includes(order.id));
-  
-  alert("Pedidos seleccionados rechazados.");
-  selectedOrders.value = [];
-  closeBulkActionModal();
-};
-
-// Confirmar aceptación de un pedido individual
+// Modificar la función de confirmación individual
 const confirmIndividualAccept = async () => {
   if (!estimatedTime.value) {
     alert("Por favor, ingresa un tiempo estimado de preparación.");
     return;
   }
   
-  if (dataSource.value === 'api') {
-    try {
-      // En una implementación real, aquí habría una llamada a la API
-      // Ejemplo:
-      // await fetch(`http://localhost:4000/pedidos/${selectedOrderId.value}/aceptar`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ tiempo_preparacion_estimado: estimatedTime.value })
-      // });
-      
-      // Simulamos tiempo de espera
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } catch (error) {
-      console.error('Error accepting order:', error);
-      alert(`Error al aceptar el pedido: ${error.message}`);
-      return;
+  try {
+    const order = orders.value.find((order) => order.id === selectedOrderId.value);
+    
+    if (socket.value && socket.value.connected) {
+      socket.value.emit('pedido_aceptado', {
+        pedidoId: selectedOrderId.value,
+        tiempoEstimado: estimatedTime.value,
+        detallesPedido: order
+      });
     }
-  }
 
-  // Actualizar la UI
-  const order = orders.value.find((order) => order.id === selectedOrderId.value);
-  if (order) {
-    order.status = "preparation";
-    order.estimatedTime = estimatedTime.value;
+    // Actualizar la UI
+    if (order) {
+      order.status = "preparation";
+      order.estimatedTime = estimatedTime.value;
+    }
+    
+    alert("Pedido aceptado exitosamente.");
+    closeIndividualActionModal();
+  } catch (error) {
+    console.error('Error al aceptar el pedido:', error);
+    alert(`Error al aceptar el pedido: ${error.message}`);
   }
-  
-  alert("Pedido aceptado.");
-  closeIndividualActionModal();
 };
 
-// Confirmar rechazo de un pedido individual
+// Modificar la función de rechazo individual
 const confirmIndividualReject = async () => {
   if (!rejectionReason.value) {
     alert("Por favor, ingresa una razón de rechazo.");
     return;
   }
   
-  if (dataSource.value === 'api') {
-    try {
-      // En una implementación real, aquí habría una llamada a la API
-      // Ejemplo:
-      // await fetch(`http://localhost:4000/pedidos/${selectedOrderId.value}/rechazar`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ razon: rejectionReason.value })
-      // });
-      
-      // Simulamos tiempo de espera
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } catch (error) {
-      console.error('Error rejecting order:', error);
-      alert(`Error al rechazar el pedido: ${error.message}`);
-      return;
+  try {
+    const order = orders.value.find((order) => order.id === selectedOrderId.value);
+
+    if (socket.value && socket.value.connected) {
+      socket.value.emit('pedido_rechazado', {
+        pedidoId: selectedOrderId.value,
+        razonRechazo: rejectionReason.value,
+        detallesPedido: order
+      });
     }
+
+    // Actualizar la UI
+    orders.value = orders.value.filter((order) => order.id !== selectedOrderId.value);
+    
+    alert("Pedido rechazado exitosamente.");
+    closeIndividualActionModal();
+  } catch (error) {
+    console.error('Error al rechazar el pedido:', error);
+    alert(`Error al rechazar el pedido: ${error.message}`);
+  }
+};
+
+// Modificar la función de aceptación masiva
+const confirmBulkAccept = async () => {
+  if (!estimatedTime.value) {
+    alert("Por favor, ingresa un tiempo estimado de preparación.");
+    return;
   }
 
-  // Actualizar la UI
-  orders.value = orders.value.filter((order) => order.id !== selectedOrderId.value);
+  try {
+    const selectedOrdersDetails = orders.value.filter(order => selectedOrders.value.includes(order.id));
+
+    if (socket.value && socket.value.connected) {
+      socket.value.emit('pedidos_aceptados_masivo', {
+        pedidosIds: selectedOrders.value,
+        tiempoEstimado: estimatedTime.value,
+        detallesPedidos: selectedOrdersDetails
+      });
+    }
+
+    // Actualizar la UI
+    selectedOrders.value.forEach((id) => {
+      const order = orders.value.find((order) => order.id === id);
+      if (order) {
+        order.status = "preparation";
+        order.estimatedTime = estimatedTime.value;
+      }
+    });
+    
+    alert("Pedidos seleccionados aceptados exitosamente.");
+    selectedOrders.value = [];
+    closeBulkActionModal();
+  } catch (error) {
+    console.error('Error al aceptar los pedidos:', error);
+    alert(`Error al aceptar los pedidos: ${error.message}`);
+  }
+};
+
+// Modificar la función de rechazo masivo
+const confirmBulkReject = async () => {
+  if (!rejectionReason.value) {
+    alert("Por favor, ingresa una razón de rechazo.");
+    return;
+  }
   
-  alert("Pedido rechazado.");
-  closeIndividualActionModal();
+  try {
+    const selectedOrdersDetails = orders.value.filter(order => selectedOrders.value.includes(order.id));
+
+    if (socket.value && socket.value.connected) {
+      socket.value.emit('pedidos_rechazados_masivo', {
+        pedidosIds: selectedOrders.value,
+        razonRechazo: rejectionReason.value,
+        detallesPedidos: selectedOrdersDetails
+      });
+    }
+
+    // Actualizar la UI
+    orders.value = orders.value.filter((order) => !selectedOrders.value.includes(order.id));
+    
+    alert("Pedidos seleccionados rechazados exitosamente.");
+    selectedOrders.value = [];
+    closeBulkActionModal();
+  } catch (error) {
+    console.error('Error al rechazar los pedidos:', error);
+    alert(`Error al rechazar los pedidos: ${error.message}`);
+  }
 };
 
 // Marcar pedido como completado
@@ -930,6 +930,14 @@ const markOrderAsCompleted = async (orderId) => {
 // Cargar datos iniciales
 onMounted(() => {
   fetchOrders();
+  inicializarSocket();
+});
+
+// Agregar onBeforeUnmount para limpiar la conexión
+onBeforeUnmount(() => {
+  if (socket.value) {
+    socket.value.disconnect();
+  }
 });
 </script>
 
