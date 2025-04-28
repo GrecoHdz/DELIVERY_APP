@@ -37,9 +37,25 @@
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">Administración de Productos</h1>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-          <p class="text-indigo-600 text-lg">
-            Gestiona tu catálogo <span class="text-indigo-800 font-semibold">de forma eficiente</span>
-          </p>
+          <div>
+            <p class="text-indigo-600 text-lg">
+              Gestiona tu catálogo <span class="text-indigo-800 font-semibold">de forma eficiente</span>
+            </p>
+
+            <!-- Información de membresía -->
+            <div class="mt-2 bg-indigo-50 p-2 rounded-lg text-sm">
+              <p class="text-indigo-700">
+                <span class="font-semibold">Membresía:</span>
+                {{ localMembresiaInfo ? localMembresiaInfo.nombre_membresia : 'Cargando...' }}
+                (ID: {{ localInfo ? localInfo.id_membresia : 'N/A' }})
+              </p>
+              <p class="text-indigo-700">
+                <span class="font-semibold">Límite de recomendaciones:</span>
+                {{ localMembresiaInfo ? localMembresiaInfo.limite_recomendaciones : recommendationLimits[localPlan] }}
+              </p>
+            </div>
+          </div>
+
           <div class="mt-4 md:mt-0 flex items-center space-x-2 bg-white p-1 rounded-full shadow-sm">
             <span class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm py-1 px-3 rounded-full shadow-sm">
               {{ appMode === 'production' ? 'Modo Producción' : 'Modo Demo' }}
@@ -160,13 +176,24 @@
             </div>
           </div>
 
-          <button
-            @click="openModal('add')"
-            class="mt-4 sm:mt-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all shadow-sm"
-          >
-            <PlusIcon :size="20" />
-            <span>Agregar Producto</span>
-          </button>
+          <div class="flex gap-2">
+            <!-- Botón para recargar información del local (solo para desarrollo) -->
+            <button
+              @click="loadLocalInfo"
+              class="mt-4 sm:mt-0 bg-blue-500 text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all shadow-sm hover:bg-blue-600"
+            >
+              <RefreshCwIcon :size="20" />
+              <span>Recargar info del local</span>
+            </button>
+
+            <button
+              @click="openModal('add')"
+              class="mt-4 sm:mt-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all shadow-sm"
+            >
+              <PlusIcon :size="20" />
+              <span>Agregar Producto</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -346,7 +373,7 @@
                     />
                     <!-- Indicador de recomendado (naranja) -->
                     <StarIcon
-                      v-if="isRecommended(product)"
+                      v-if="isBranchRecommended(product, sucursalId)"
                       :size="14"
                       class="text-orange-500"
                       title="Recomendado"
@@ -396,7 +423,7 @@
                   class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <StarIcon :size="16" class="mb-1" />
-                  {{ isRecommended(product) ? 'Quitar rec.' : 'Recomendar' }}
+                  Recomendar
                 </button>
 
                 <button
@@ -781,7 +808,7 @@
             <!-- Modal Header con gradiente -->
             <div class="bg-gradient-to-r from-amber-400 to-amber-600 p-6 flex justify-between items-center">
               <h2 class="text-xl font-bold text-white">
-                {{ isRecommended(selectedProduct) ? '⭐ Cancelar recomendación' : '⭐ Recomendar producto' }}
+                ⭐ Recomendar producto
               </h2>
               <button @click="closeModal" class="text-white hover:text-amber-100">
                 <XIcon :size="24" />
@@ -789,22 +816,22 @@
             </div>
 
             <div class="p-6">
-              <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
-                <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
-                  <img
-                    v-if="selectedProduct?.imagen_url"
-                    :src="selectedProduct.imagen_url"
-                    :alt="selectedProduct.nombre_producto"
-                    class="w-full h-full object-cover"
-                  />
-                  <div v-else class="w-full h-full flex items-center justify-center">
-                    <ImageOffIcon :size="24" class="text-gray-300" />
+              <form @submit.prevent="toggleRecommendation">
+                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
+                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                    <img
+                      v-if="selectedProduct?.imagen_url"
+                      :src="selectedProduct.imagen_url"
+                      :alt="selectedProduct.nombre_producto"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center">
+                      <ImageOffIcon :size="24" class="text-gray-300" />
+                    </div>
                   </div>
+                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
-                <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
-              </div>
 
-              <div v-if="isRecommended(selectedProduct)">
                 <div class="bg-amber-50 p-4 rounded-lg mb-6">
                   <div class="flex items-start gap-3">
                     <div class="text-amber-500 mt-0.5">
@@ -812,70 +839,101 @@
                     </div>
                     <div>
                       <p class="font-medium text-amber-800">
-                        Este producto está recomendado actualmente
+                        Recomendaciones por sucursal
                       </p>
                       <p class="text-sm text-amber-700 mt-1">
-                        Al quitar la recomendación, el producto dejará de aparecer destacado en el catálogo.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else>
-                <div class="bg-indigo-50 p-4 rounded-lg mb-6">
-                  <div class="flex items-start gap-3">
-                    <div class="text-indigo-500 mt-0.5">
-                      <InfoIcon :size="24" />
-                    </div>
-                    <div>
-                      <p class="font-medium text-indigo-800">
-                        Información de recomendaciones
-                      </p>
-                      <p class="text-sm text-indigo-700 mt-1">
-                        Tu plan <span class="font-semibold">{{ currentPlan }}</span> permite
-                        <span class="font-semibold">{{ recommendationLimits[currentPlan] }} recomendaciones</span>.
-                        Tienes <span class="font-semibold">{{ remainingRecommendations }}</span> disponibles.
+                        Marque las casillas para recomendar este producto.
+                        Desmarque para quitar la recomendación.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div v-if="remainingRecommendations <= 0" class="bg-red-50 p-4 rounded-lg mb-6">
-                  <div class="flex items-start gap-3">
-                    <div class="text-red-500 mt-0.5">
-                      <AlertTriangleIcon :size="24" />
+                <!-- Selección de sucursales para recomendar -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Sucursales disponibles:</label>
+                  <div class="space-y-2 max-h-52 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    <!-- Lista de sucursales -->
+                    <div class="space-y-3">
+                      <div
+                        v-for="branch in filteredBranches"
+                        :key="branch.id_direccion_local"
+                        class="flex items-center border-b border-gray-100 pb-3 pt-2"
+                      >
+                        <div class="flex items-center">
+                          <input
+                            :id="`recommend-branch-${branch.id_direccion_local}`"
+                            type="checkbox"
+                            :value="branch.id_direccion_local"
+                            v-model="recommendForm.selectedBranches"
+                            class="w-4 h-4 text-amber-600 rounded-sm focus:ring-amber-500"
+                            :disabled="!isBranchActive(selectedProduct, branch.id_direccion_local) || (remainingRecommendations <= 0 && !isBranchRecommended(selectedProduct, branch.id_direccion_local))"
+                          >
+                          <label :for="`recommend-branch-${branch.id_direccion_local}`" class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                            <MapPinIcon :size="14" class="mr-1 text-amber-500" />
+                            {{ branch.colonia }}
+                            <span v-if="isBranchRecommended(selectedProduct, branch.id_direccion_local)" class="text-amber-500 ml-1 flex items-center">
+                              <StarIcon :size="12" class="mr-0.5" />
+                              (recomendado)
+                            </span>
+                            <span v-if="!isBranchActive(selectedProduct, branch.id_direccion_local)" class="text-gray-500 italic ml-1 flex items-center">
+                              <EyeOffIcon :size="12" class="mr-0.5" />
+                              (deshabilitado)
+                            </span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p class="font-medium text-red-800">
-                        Límite alcanzado
-                      </p>
-                      <p class="text-sm text-red-700 mt-1">
-                        Has alcanzado el límite de recomendaciones para tu plan actual. Debes quitar alguna recomendación antes de agregar otra.
-                      </p>
+                  </div>
+                  <p v-if="!isRecommended(selectedProduct) && recommendForm.selectedBranches.length === 0" class="text-red-500 text-xs mt-1">
+                    Para recomendar este producto, debe seleccionar al menos una sucursal
+                  </p>
+                  <p v-else-if="isRecommended(selectedProduct) && recommendForm.selectedBranches.length === 0" class="text-amber-500 text-xs mt-1">
+                    Al desmarcar todas las sucursales, el producto dejará de estar recomendado
+                  </p>
+
+                  <div :class="remainingRecommendations <= 0 ? 'bg-red-50' : 'bg-indigo-50'" class="p-3 rounded-lg mt-3">
+                    <div class="flex items-start gap-2">
+                      <div :class="remainingRecommendations <= 0 ? 'text-red-500' : 'text-indigo-500'" class="mt-0.5">
+                        <component :is="remainingRecommendations <= 0 ? AlertTriangleIcon : InfoIcon" :size="18" />
+                      </div>
+                      <div>
+                        <p :class="remainingRecommendations <= 0 ? 'text-sm text-red-700' : 'text-sm text-indigo-700'">
+                          Recomendaciones disponibles: <span class="font-semibold">{{ remainingRecommendations }}</span> de <span class="font-semibold">{{ localMembresiaInfo ? localMembresiaInfo.limite_recomendaciones : recommendationLimits[localPlan] }}</span>
+                        </p>
+                        <p class="text-sm text-indigo-700 mt-1">
+                          Cada sucursal donde recomiendas un producto cuenta como 1 recomendación.
+                        </p>
+                        <p v-if="remainingRecommendations < recommendForm.selectedBranches.length && !isRecommended(selectedProduct)" class="text-sm text-red-700 mt-1">
+                          Has seleccionado {{ recommendForm.selectedBranches.length }} sucursales, pero solo tienes {{ remainingRecommendations }} recomendaciones disponibles.
+                        </p>
+                        <p v-else-if="remainingRecommendations <= 0" class="text-sm text-red-700 mt-1">
+                          Has alcanzado el límite de recomendaciones para tu plan. Debes quitar alguna recomendación antes de agregar otra.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  @click="closeModal"
-                  class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  @click="toggleRecommendation"
-                  class="px-4 py-2.5 text-white rounded-lg transition-colors font-medium"
-                  :class="isRecommended(selectedProduct)
-                    ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700'"
-                  :disabled="!isRecommended(selectedProduct) && remainingRecommendations <= 0"
-                >
-                  {{ isRecommended(selectedProduct) ? 'Confirmar cancelación' : 'Confirmar recomendación' }}
-                </button>
-              </div>
+                <div class="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    @click="closeModal"
+                    class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2.5 text-white rounded-lg transition-colors font-medium bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700"
+                    :disabled="(!isRecommended(selectedProduct) && recommendForm.selectedBranches.length === 0) ||
+                              (!isRecommended(selectedProduct) && recommendForm.selectedBranches.length > remainingRecommendations)"
+                    :class="{'opacity-50': (!isRecommended(selectedProduct) && recommendForm.selectedBranches.length > remainingRecommendations)}"
+                  >
+                    Recomendar
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -1294,6 +1352,10 @@
   branchOfferPrices: {}
   });
 
+  const recommendForm = ref({
+  selectedBranches: []
+  });
+
   const extraForm = ref({
   nombre: '',
   precio: ''
@@ -1315,12 +1377,14 @@
   const subcategories = ref([]);
   const branches = ref([]);
   const recommendations = ref([]);
-  const currentPlan = ref('premium'); // 'básico', 'estándar', 'premium'
-  const recommendationLimits = {
-  'básico': 1,
-  'estándar': 3,
-  'premium': 5
-  };
+  const localInfo = ref(null);
+  const localPlan = ref('básico'); // 'básico', 'estándar', 'premium'
+  const localMembresiaInfo = ref(null);
+  const recommendationLimits = ref({
+    'básico': 1,
+    'estándar': 3,
+    'premium': 5
+  });
 
   // Computed properties
   const filteredBranches = computed(() => {
@@ -1412,8 +1476,23 @@
   });
 
   const remainingRecommendations = computed(() => {
-  const activeRecommendations = recommendations.value.filter(r => r.activo).length;
-  return recommendationLimits[currentPlan.value] - activeRecommendations;
+  // Contar cada combinación producto-sucursal como una recomendación separada
+  let totalRecommendations = 0;
+
+  // Recorrer todas las recomendaciones
+  recommendations.value.forEach(recommendation => {
+    // Si tiene sucursales específicas, contar cada una
+    if (recommendation.sucursales && Array.isArray(recommendation.sucursales) && recommendation.sucursales.length > 0) {
+      totalRecommendations += recommendation.sucursales.length;
+    } else {
+      // Si no tiene sucursales específicas, contar como 1
+      totalRecommendations += 1;
+    }
+  });
+
+  // Usar el límite de recomendaciones de la membresía si está disponible
+  const limite = localMembresiaInfo.value ? localMembresiaInfo.value.limite_recomendaciones : recommendationLimits.value[localPlan.value];
+  return limite - totalRecommendations;
   });
 
 
@@ -1484,7 +1563,20 @@
 
   const isRecommended = (product) => {
   if (!product) return false;
-  return recommendations.value.some(r => r.id_producto === product.id_producto && r.activo);
+  return recommendations.value.some(r => r.id_producto === product.id_producto);
+  };
+
+  // Verificar si un producto está recomendado en una sucursal específica
+  const isBranchRecommended = (product, branchId) => {
+    if (!product) return false;
+    const recommendation = recommendations.value.find(r => r.id_producto === product.id_producto);
+    if (!recommendation) return false;
+
+    // Si no tiene la propiedad sucursales, se considera recomendado en todas las sucursales
+    if (!recommendation.sucursales || recommendation.sucursales.length === 0) return true;
+
+    // Verificar si la sucursal está en la lista de sucursales recomendadas
+    return recommendation.sucursales.includes(branchId);
   };
 
   // Verificar si una sucursal específica está activa
@@ -1693,6 +1785,33 @@
         }
       }
     }
+  } else if (type === 'recommend') {
+    // Inicializar el formulario de recomendación
+    recommendForm.value = {
+      selectedBranches: []
+    };
+
+    // Si el producto ya está recomendado, cargar las sucursales recomendadas
+    if (isRecommended(product)) {
+      const recommendation = recommendations.value.find(r => r.id_producto === product.id_producto);
+
+      if (recommendation && recommendation.sucursales && Array.isArray(recommendation.sucursales)) {
+        // Cargar las sucursales que ya están recomendadas
+        recommendForm.value.selectedBranches = recommendation.sucursales.filter(sucursalId =>
+          isBranchActive(product, sucursalId)
+        );
+      } else {
+        // Si no tiene sucursales específicas, seleccionar todas las sucursales activas
+        if (product.sucursales && Array.isArray(product.sucursales)) {
+          recommendForm.value.selectedBranches = product.sucursales.filter(sucursalId =>
+            isBranchActive(product, sucursalId)
+          );
+        }
+      }
+    } else {
+      // Si no está recomendado, no seleccionar ninguna sucursal por defecto
+      recommendForm.value.selectedBranches = [];
+    }
   }
   } else {
   // Resetear formularios
@@ -1896,9 +2015,7 @@
   const loadProducts = async () => {
   loading.value = true;
   try {
-  // Obtener el ID del local (lo haríamos desde una respuesta de API o estado global)
-  // En un entorno real, este ID vendría de la autenticación del usuario o de un parámetro en la URL
-  localId.value = 10; // Por ahora usamos un valor fijo
+  // El ID del local ya está establecido en onMounted
 
   // Cargar subcategorías
   const subcatResponse = await axios.get(`${API_URL}/subcategorias`);
@@ -1981,8 +2098,13 @@
   }));
 
   // Cargar recomendaciones
-  const recsResponse = await axios.get(`${API_URL}/recomendados`);
-  recommendations.value = recsResponse.data;
+  try {
+    const recsResponse = await axios.get(`${API_URL}/recomendados/${localId.value}`);
+    recommendations.value = recsResponse.data;
+  } catch (error) {
+    console.log('No se encontraron recomendaciones para este local:', error);
+    recommendations.value = []; // Inicializar como array vacío si no hay recomendaciones
+  }
 
   } catch (error) {
   console.error('Error al cargar datos de producción:', error);
@@ -2105,8 +2227,8 @@
   ];
 
   recommendations.value = [
-  { id_recomendacion: 1, id_producto: 1, id_local: localId.value, activo: true },
-  { id_recomendacion: 2, id_producto: 2, id_local: localId.value, activo: true }
+  { id_recomendacion: 1, id_producto: 1, id_local: localId.value, sucursales: [1, 2] },
+  { id_recomendacion: 2, id_producto: 2, id_local: localId.value, sucursales: [1, 3] }
   ];
 
   // Crear subcategorías de prueba si no hay datos reales
@@ -2290,76 +2412,95 @@
   try {
   loading.value = true;
 
-  if (isRecommended(selectedProduct.value)) {
-  // Quitar recomendación
-  if (appMode.value === 'production') {
-  const rec = recommendations.value.find(r => r.id_producto === selectedProduct.value.id_producto);
-  if (rec) {
-  await axios.put(`${API_URL}/recomendados/${rec.id_recomendacion}`, {
-  activo: false
-  });
+  // Verificar si es un producto nuevo para recomendar
+  const isNewRecommendation = !isRecommended(selectedProduct.value);
+
+  // Si es un producto nuevo, debe tener al menos una sucursal seleccionada
+  if (isNewRecommendation && recommendForm.value.selectedBranches.length === 0) {
+    showToast('Debes seleccionar al menos una sucursal para recomendar el producto', 'error');
+    loading.value = false;
+    return;
   }
 
-  // Recargar recomendaciones
-  const recsResponse = await axios.get(`${API_URL}/recomendados`);
-  recommendations.value = recsResponse.data;
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Si es un producto nuevo, verificar si hay suficientes recomendaciones disponibles
+  if (isNewRecommendation) {
+    // Calcular cuántas nuevas recomendaciones se agregarán
+    const nuevasRecomendaciones = recommendForm.value.selectedBranches.length;
 
-  // Simular eliminación de recomendación
-  const index = recommendations.value.findIndex(r => r.id_producto === selectedProduct.value.id_producto);
-
-  if (index !== -1) {
-  recommendations.value[index].activo = false;
-  }
-  }
-
-  showToast('Recomendación eliminada correctamente', 'success');
-  } else {
-  // Agregar recomendación
-  if (remainingRecommendations.value <= 0) {
-  throw new Error('Has alcanzado el límite de recomendaciones para tu plan');
+    // Verificar si hay suficientes recomendaciones disponibles
+    if (nuevasRecomendaciones > remainingRecommendations.value) {
+      throw new Error(`No puedes agregar ${nuevasRecomendaciones} recomendaciones. Solo tienes ${remainingRecommendations.value} disponibles según tu plan.`);
+    }
   }
 
   if (appMode.value === 'production') {
-  // Comprobar si ya existe pero está inactiva
-  const existingRec = recommendations.value.find(r => r.id_producto === selectedProduct.value.id_producto);
+    const rec = recommendations.value.find(r => r.id_producto === selectedProduct.value.id_producto);
 
-  if (existingRec) {
-  await axios.put(`${API_URL}/recomendados/${existingRec.id_recomendacion}`, {
-  activo: true
-  });
+    if (rec) {
+      // Si no hay sucursales seleccionadas, eliminar la recomendación completamente
+      if (recommendForm.value.selectedBranches.length === 0) {
+        await axios.delete(`${API_URL}/recomendados/${rec.id_recomendacion}`);
+        showToast('Recomendación eliminada correctamente', 'success');
+      } else {
+        // Verificar si hay suficientes recomendaciones disponibles para la actualización
+        const sucursalesActuales = rec.sucursales && Array.isArray(rec.sucursales) ? rec.sucursales.length : 0;
+        const nuevasSucursales = recommendForm.value.selectedBranches.length;
+        const diferencia = nuevasSucursales - sucursalesActuales;
+
+        if (diferencia > remainingRecommendations.value) {
+          throw new Error(`No puedes agregar ${diferencia} recomendaciones adicionales. Solo tienes ${remainingRecommendations.value} disponibles.`);
+        }
+
+        // Actualizar las sucursales seleccionadas
+        await axios.put(`${API_URL}/recomendados/${rec.id_recomendacion}`, {
+          sucursales: recommendForm.value.selectedBranches
+        });
+        showToast(`Recomendaciones actualizadas correctamente`, 'success');
+      }
+    } else {
+      // Crear una nueva recomendación
+      await axios.post(`${API_URL}/recomendados/${localId.value}`, {
+        id_producto: selectedProduct.value.id_producto,
+        id_local: localId.value,
+        sucursales: recommendForm.value.selectedBranches
+      });
+      showToast(`Producto recomendado en ${recommendForm.value.selectedBranches.length} sucursales`, 'success');
+    }
+
+    // Recargar recomendaciones
+    try {
+      const recsResponse = await axios.get(`${API_URL}/recomendados/${localId.value}`);
+      recommendations.value = recsResponse.data;
+    } catch (error) {
+      console.log('No se encontraron recomendaciones para este local:', error);
+      recommendations.value = []; // Inicializar como array vacío si no hay recomendaciones
+    }
   } else {
-  await axios.post(`${API_URL}/recomendados/${localId.value}`, {
-  id_producto: selectedProduct.value.id_producto,
-  id_local: localId.value
-  });
-  }
+    // Modo demo
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-  // Recargar recomendaciones
-  const recsResponse = await axios.get(`${API_URL}/recomendados`);
-  recommendations.value = recsResponse.data;
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 500));
+    const existingIndex = recommendations.value.findIndex(r => r.id_producto === selectedProduct.value.id_producto);
 
-  // Comprobar si ya existe pero está inactiva
-  const existingIndex = recommendations.value.findIndex(r => r.id_producto === selectedProduct.value.id_producto);
-
-  if (existingIndex !== -1) {
-  recommendations.value[existingIndex].activo = true;
-  } else {
-  recommendations.value.push({
-  id_recomendacion: Math.max(...recommendations.value.map(r => r.id_recomendacion), 0) + 1,
-  id_producto: selectedProduct.value.id_producto,
-  id_local: localId.value,
-  activo: true
-  });
-  }
-  }
-
-  showToast('Producto recomendado correctamente', 'success');
+    if (existingIndex !== -1) {
+      // Si no hay sucursales seleccionadas, eliminar la recomendación completamente
+      if (recommendForm.value.selectedBranches.length === 0) {
+        recommendations.value = recommendations.value.filter(r => r.id_producto !== selectedProduct.value.id_producto);
+        showToast('Recomendación eliminada correctamente', 'success');
+      } else {
+        // Actualizar las sucursales seleccionadas
+        recommendations.value[existingIndex].sucursales = [...recommendForm.value.selectedBranches];
+        showToast(`Recomendaciones actualizadas correctamente`, 'success');
+      }
+    } else {
+      // Añadir nueva recomendación
+      recommendations.value.push({
+        id_recomendacion: Math.max(...recommendations.value.map(r => r.id_recomendacion || 0), 0) + 1,
+        id_producto: selectedProduct.value.id_producto,
+        id_local: localId.value,
+        sucursales: [...recommendForm.value.selectedBranches]
+      });
+      showToast(`Producto recomendado en ${recommendForm.value.selectedBranches.length} sucursales`, 'success');
+    }
   }
 
   closeModal();
@@ -2901,8 +3042,91 @@ watch(filteredProducts, () => {
   }
 });
 
+// Función para cargar información del local
+const loadLocalInfo = async () => {
+  try {
+    // Cargar información básica del local
+    const response = await axios.get(`${API_URL}/locales/${localId.value}`);
+    localInfo.value = response.data;
+
+    console.log('INFO DEL LOCAL:', localInfo.value);
+    console.log('ID de membresía del local:', localInfo.value.id_membresia);
+
+    // Cargar información de la membresía del local
+    try {
+      const membresiaResponse = await axios.get(`${API_URL}/locales/${localId.value}/membresia`);
+      localMembresiaInfo.value = membresiaResponse.data;
+
+      console.log('INFORMACIÓN DE MEMBRESÍA OBTENIDA DE LA API:', localMembresiaInfo.value);
+
+      // Determinar el plan del local basado en su membresía
+      if (localMembresiaInfo.value && localMembresiaInfo.value.nombre_membresia) {
+        const nombreMembresia = localMembresiaInfo.value.nombre_membresia.toLowerCase();
+        console.log('Nombre de membresía (lowercase):', nombreMembresia);
+
+        if (nombreMembresia.includes('básico')) {
+          localPlan.value = 'básico';
+        } else if (nombreMembresia.includes('estándar')) {
+          localPlan.value = 'estándar';
+        } else if (nombreMembresia.includes('premium')) {
+          localPlan.value = 'premium';
+        } else {
+          localPlan.value = 'básico';
+        }
+
+        console.log('Plan asignado basado en nombre:', localPlan.value);
+
+        // Actualizar los límites de recomendaciones
+        if (localMembresiaInfo.value.limite_recomendaciones) {
+          recommendationLimits.value[localPlan.value] = localMembresiaInfo.value.limite_recomendaciones;
+          console.log('Límite de recomendaciones actualizado:', recommendationLimits.value[localPlan.value]);
+        }
+      }
+    } catch (membresiaError) {
+      console.error('Error al cargar información de la membresía:', membresiaError);
+
+      // Determinar el plan del local basado en su membresía (fallback)
+      if (localInfo.value && localInfo.value.id_membresia) {
+        console.log('Usando fallback para determinar el plan basado en id_membresia:', localInfo.value.id_membresia);
+
+        switch (localInfo.value.id_membresia) {
+          case 1:
+            localPlan.value = 'básico';
+            break;
+          case 2:
+            localPlan.value = 'estándar';
+            break;
+          case 3:
+            localPlan.value = 'premium';
+            break;
+          default:
+            localPlan.value = 'básico';
+        }
+
+        console.log('Plan asignado por fallback:', localPlan.value);
+      }
+    }
+
+    console.log('RESUMEN FINAL:');
+    console.log('- ID de membresía:', localInfo.value.id_membresia);
+    console.log('- Plan asignado:', localPlan.value);
+    console.log('- Límite de recomendaciones:', localMembresiaInfo.value ? localMembresiaInfo.value.limite_recomendaciones : recommendationLimits.value[localPlan.value]);
+
+  } catch (error) {
+    console.error('Error al cargar información del local:', error);
+    showToast('Error al cargar información del local', 'error');
+  }
+};
+
 // Inicialización
-onMounted(() => {
+onMounted(async () => {
+  // Primero establecemos el ID del local
+  localId.value = 10; // Por ahora usamos un valor fijo
+
+  // Luego cargamos la información del local para obtener el plan
+  await loadLocalInfo();
+
+  // Finalmente cargamos los productos y demás datos
   loadProducts();
   loadBranches();
   loadSubcategories();

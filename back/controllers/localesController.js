@@ -1,4 +1,5 @@
 const Local = require("../models/Local");
+const MembresiaLocal = require("../models/MembresiaLocales");
 const { cloudinary } = require("../config/cloudinary");
 
 // Obtener todos los locales
@@ -21,6 +22,30 @@ const getLocalById = async (req, res) => {
     res.json(local);
   } catch (error) {
     res.status(500).json({ message: "Error al obtener el local", error });
+  }
+};
+
+// Obtener la membresía de un local por su ID
+const getLocalMembresiaById = async (req, res) => {
+  try {
+    const local = await Local.findByPk(req.params.id);
+    if (!local) {
+      return res.status(404).json({ message: "Local no encontrado" });
+    }
+
+    const membresia = await MembresiaLocal.findByPk(local.id_membresia);
+    if (!membresia) {
+      return res.status(404).json({ message: "Membresía no encontrada" });
+    }
+
+    res.json({
+      id_local: local.id_local,
+      id_membresia: local.id_membresia,
+      nombre_membresia: membresia.nombre_membresia,
+      limite_recomendaciones: membresia.limite_recomendaciones || 1 // Por defecto, 1 recomendación
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener la membresía del local", error });
   }
 };
 
@@ -176,6 +201,7 @@ const deleteLocal = async (req, res) => {
 module.exports = {
   getLocales,
   getLocalById,
+  getLocalMembresiaById,
   createLocal,
   updateLocal,
   deleteLocal,

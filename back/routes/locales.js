@@ -4,6 +4,7 @@ const { uploadStore } = require("../config/cloudinary");
 const {
   getLocales,
   getLocalById,
+  getLocalMembresiaById,
   createLocal,
   updateLocal,
   deleteLocal,
@@ -28,6 +29,14 @@ router.get(
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   getLocalById
+);
+
+// Obtener la membresía de un local por su ID
+router.get(
+  "/:id/membresia",
+  [param("id").isInt().withMessage("El ID debe ser un número entero")],
+  validarErrores,
+  getLocalMembresiaById
 );
 
 // Crear un nuevo local

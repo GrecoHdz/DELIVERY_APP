@@ -5,6 +5,7 @@ const {
   getRecomendacionesByLocal,
   createRecomendacion,
   updateRecomendacion,
+  deleteRecomendacion,
 } = require("../controllers/recomendadosController");
 
 const router = express.Router();
@@ -17,12 +18,13 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-// Obtener todas las recomendaciones 
+// Obtener todas las recomendaciones
 router.get(
   "/",
   validarErrores,
   getRecomendaciones
 );
+
 // Obtener todas las recomendaciones de un local
 router.get(
   "/:id_local",
@@ -30,26 +32,36 @@ router.get(
   validarErrores,
   getRecomendacionesByLocal
 );
+
 // Crear una nueva recomendación
 router.post(
   "/:id_local",
   [
     param("id_local").isInt().withMessage("El ID del local debe ser un número entero"),
     body("id_producto").isInt().withMessage("El ID del producto debe ser un número entero"),
+    body("sucursales").optional().isArray().withMessage("Las sucursales deben ser un array"),
   ],
   validarErrores,
   createRecomendacion
 );
-// Editar estado una recomendación
+
+// Actualizar una recomendación
 router.put(
   "/:id_recomendacion",
-  [param("id_recomendacion")
-  .isInt().
-  withMessage("El ID debe ser un número entero"),
-  body("activo").optional(),
-],
+  [
+    param("id_recomendacion").isInt().withMessage("El ID debe ser un número entero"),
+    body("sucursales").optional().isArray().withMessage("Las sucursales deben ser un array"),
+  ],
   validarErrores,
   updateRecomendacion
-); 
+);
+
+// Eliminar una recomendación
+router.delete(
+  "/:id_recomendacion",
+  [param("id_recomendacion").isInt().withMessage("El ID debe ser un número entero")],
+  validarErrores,
+  deleteRecomendacion
+);
 
 module.exports = router;

@@ -17,9 +17,10 @@ const Recomendado = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    activo: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
+    sucursales: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: [],
     },
   },
   {

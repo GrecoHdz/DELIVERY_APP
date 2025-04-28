@@ -25,10 +25,16 @@ const getMembresiaLocalById = async (req, res) => {
 
 // Crear una nueva membresía local
 const createMembresiaLocal = async (req, res) => {
-  const { nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra } = req.body;
+  const { nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra, limite_recomendaciones } = req.body;
 
   try {
-    await MembresiaLocal.create({ nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra });
+    await MembresiaLocal.create({
+      nombre_membresia,
+      precio,
+      deliveries_gratuitos,
+      precio_delivery_extra,
+      limite_recomendaciones
+    });
     res.status(201).json({ message: "Membresía local creada exitosamente" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
@@ -41,7 +47,7 @@ const createMembresiaLocal = async (req, res) => {
 // Actualizar una membresía local
 const updateMembresiaLocal = async (req, res) => {
   const { id } = req.params;
-  const { nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra } = req.body;
+  const { nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra, limite_recomendaciones } = req.body;
 
   try {
     const membresia = await MembresiaLocal.findByPk(id);
@@ -49,7 +55,13 @@ const updateMembresiaLocal = async (req, res) => {
       return res.status(404).json({ message: "Membresía local no encontrada" });
     }
 
-    await membresia.update({ nombre_membresia, precio, deliveries_gratuitos, precio_delivery_extra });
+    await membresia.update({
+      nombre_membresia,
+      precio,
+      deliveries_gratuitos,
+      precio_delivery_extra,
+      limite_recomendaciones
+    });
     res.status(200).json({ message: "Membresía local actualizada correctamente" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {

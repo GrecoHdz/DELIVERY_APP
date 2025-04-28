@@ -45,6 +45,9 @@ router.post(
     body("precio_delivery_extra")
       .optional()
       .isInt().withMessage("El precio del delivery extra debe ser un número entero"),
+    body("limite_recomendaciones")
+      .optional()
+      .isInt().withMessage("El límite de recomendaciones debe ser un número entero"),
   ],
   validarErrores,
   createMembresiaLocal
@@ -67,6 +70,9 @@ router.put(
     body("precio_delivery_extra")
       .optional()
       .isInt().withMessage("El precio del delivery extra debe ser un número entero"),
+    body("limite_recomendaciones")
+      .optional()
+      .isInt().withMessage("El límite de recomendaciones debe ser un número entero"),
   ],
   validarErrores,
   updateMembresiaLocal

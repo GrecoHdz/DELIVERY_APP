@@ -22,6 +22,10 @@ const MembresiaLocal = sequelize.define("MembresiaLocal", {
   precio_delivery_extra: {
     type: DataTypes.INTEGER,
   },
+  limite_recomendaciones: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1, // Por defecto, 1 recomendación
+  },
 }, {
   timestamps: false, // Desactiva los timestamps automáticos de Sequelize
   tableName: "MembresiasLocales", // Nombre de la tabla en la base de datos
