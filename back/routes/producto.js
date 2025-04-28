@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
-const { upload } = require("../config/cloudinary");
+const { uploadProduct } = require("../config/cloudinary");
 const {
   getProductos,
   getProductoById,
@@ -37,7 +37,7 @@ router.get(
 // Crear un nuevo producto con subida de imagen
 router.post(
   "/:id_local",
-  upload.single("imagen"), // Middleware de subida de imagen
+  uploadProduct.single("imagen"), // Middleware de subida de imagen optimizado para productos
   [
     param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("id_subcategoria").optional().isInt().withMessage("ID de subcategoría inválido"),
@@ -63,7 +63,7 @@ router.post(
 );
 
 // Ruta para subir imagen a Cloudinary
-router.post("/upload", upload.single("imagen"), async (req, res) => {
+router.post("/upload", uploadProduct.single("imagen"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No se ha proporcionado una imagen" });
@@ -82,6 +82,7 @@ router.post("/upload", upload.single("imagen"), async (req, res) => {
 // Actualizar un producto
 router.put(
   "/:id",
+  uploadProduct.single("imagen"), // Middleware de subida de imagen optimizado para productos
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("id_local")
@@ -103,12 +104,32 @@ router.put(
       .withMessage("El precio debe ser un número decimal válido"),
     body("preciooferta")
     .optional({ nullable: true })
-    .isDecimal()
-    .withMessage("El precio oferta debe ser un número decimal"),
+    .custom(value => {
+      // Permitir valores vacíos, null o números decimales
+      if (value === '' || value === null || value === undefined) {
+        return true;
+      }
+      // Verificar si es un número decimal válido
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        return true;
+      }
+      throw new Error('El precio oferta debe ser un número decimal válido o vacío');
+    }),
     body("precioofertafinal")
     .optional({ nullable: true })
-    .isDecimal()
-    .withMessage("El precio de oferta final debe ser un número decimal"),
+    .custom(value => {
+      // Permitir valores vacíos, null o números decimales
+      if (value === '' || value === null || value === undefined) {
+        return true;
+      }
+      // Verificar si es un número decimal válido
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        return true;
+      }
+      throw new Error('El precio de oferta final debe ser un número decimal válido o vacío');
+    }),
     body("preciofinal")
     .optional()
     .isDecimal()
@@ -120,8 +141,16 @@ router.put(
     body("imagen_public_id").optional(),
     body("activo")
       .optional()
-      .isBoolean()
-      .withMessage("El campo 'activo' debe ser un valor booleano"),
+      .custom(value => {
+        // Aceptar booleanos, strings 'true'/'false', y números 0/1
+        if (value === true || value === false ||
+            value === 'true' || value === 'false' ||
+            value === 1 || value === 0 ||
+            value === '1' || value === '0') {
+          return true;
+        }
+        throw new Error('El campo "activo" debe ser un valor booleano o equivalente (true/false, 1/0)');
+      }),
   ],
   validarErrores,
   updateProducto

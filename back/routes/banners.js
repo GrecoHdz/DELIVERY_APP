@@ -1,5 +1,6 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
+const { uploadBanner } = require("../config/cloudinary");
 const {
   getAllBanners,
   getActiveBanners,
@@ -36,6 +37,7 @@ router.get(
 // Crear un nuevo banner
 router.post(
   "/:id_local",
+  uploadBanner.single("imagen"), // Middleware de subida de imagen optimizado para banners
   [
     param("id_local").isInt().withMessage("El ID debe ser un número entero"),
     body("titulo")
@@ -43,13 +45,8 @@ router.post(
       .withMessage("El título es obligatorio")
       .isLength({ max: 255 })
       .withMessage("El título no puede exceder los 255 caracteres"),
-      body("descripcion")
-      .optional(),  
-      body("imagen_url")
-      .notEmpty()
-      .withMessage("La URL de la imagen es obligatoria")
-      .isURL()
-      .withMessage("La URL de la imagen debe ser válida"),
+    body("descripcion")
+      .optional(),
     body("url_destino")
       .optional()
       .isURL()
@@ -62,16 +59,13 @@ router.post(
 // Actualizar un banner
 router.put(
   "/:id",
+  uploadBanner.single("imagen"), // Middleware de subida de imagen optimizado para banners
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("titulo")
       .optional()
       .isLength({ max: 255 })
       .withMessage("El título no puede exceder los 255 caracteres"),
-    body("imagen_url")
-      .optional()
-      .isURL()
-      .withMessage("La URL de la imagen debe ser válida"),
     body("url_destino")
       .optional()
       .isURL()

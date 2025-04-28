@@ -38,6 +38,10 @@ const Local = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true, // URL de la imagen (opcional)
     },
+    imagen_public_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true, // ID público de la imagen en Cloudinary
+    },
     activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

@@ -19,7 +19,19 @@ const ProductoSucursal = sequelize.define(
     },
     precio: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true, // El precio es opcional (puede variar por sucursal)
+      allowNull: true, // Precio original puesto por el local (puede variar por sucursal)
+    },
+    preciooferta: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true, // Precio de oferta puesto por el local
+    },
+    preciofinal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true, // Precio original + porcentaje de ganancia (para clientes)
+    },
+    precioofertafinal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true, // Precio de oferta + porcentaje de ganancia (para clientes)
     },
     activo: {
       type: DataTypes.BOOLEAN,

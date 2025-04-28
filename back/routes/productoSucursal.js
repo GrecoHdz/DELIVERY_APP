@@ -33,7 +33,7 @@ router.post(
     body("precio")
       .optional()
       .isDecimal()
-      .withMessage("El precio debe ser un número decimal válido"), 
+      .withMessage("El precio debe ser un número decimal válido"),
   ],
   validarErrores,
   createProductoSucursal
@@ -44,14 +44,31 @@ router.put(
   "/:id",
   [
     param("id").isInt().withMessage("ID inválido"),
-    body("id_producto").isInt().withMessage("ID de producto inválido"),
-    body("id_direccion_local")    
-    .optional()
-    .isInt(),
+    body("id_producto")
+      .optional()
+      .isInt()
+      .withMessage("ID de producto inválido"),
+    body("id_direccion_local")
+      .optional()
+      .isInt()
+      .withMessage("ID de dirección de local inválido"),
     body("precio")
       .optional()
       .isDecimal()
       .withMessage("El precio debe ser un número decimal válido"),
+    body("preciooferta")
+      .optional()
+      .custom((value) => {
+        // Permitir null, cadena vacía o un número decimal válido
+        if (value === null || value === '') {
+          return true;
+        }
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+          throw new Error('El precio de oferta debe ser un número decimal válido');
+        }
+        return true;
+      }),
     body("activo")
       .optional()
       .isBoolean()

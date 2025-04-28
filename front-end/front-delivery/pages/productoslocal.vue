@@ -30,7 +30,7 @@
         </button>
       </div>
     </transition>
-  
+
     <!-- Contenido Principal -->
     <div class="px-6 py-8 pb-32 max-w-7xl mx-auto">
       <!-- Header de Página con Diseño Mejorado -->
@@ -54,7 +54,7 @@
           </div>
         </div>
       </div>
-  
+
       <!-- Panel de control y búsqueda -->
       <div class="mb-8 bg-white rounded-xl shadow-md p-6 border border-indigo-100">
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -71,7 +71,7 @@
               <SearchIcon class="absolute left-4 top-3 text-indigo-400" :size="20" />
             </div>
           </div>
-  
+
           <!-- Filtros -->
           <div class="relative">
             <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Categoría</label>
@@ -86,7 +86,7 @@
             </select>
             <ChevronDownIcon class="absolute right-3 bottom-3 text-indigo-400" :size="18" />
           </div>
-  
+
           <div class="relative">
             <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Estado</label>
             <select
@@ -100,7 +100,7 @@
             </select>
             <ChevronDownIcon class="absolute right-3 bottom-3 text-indigo-400" :size="18" />
           </div>
-  
+
           <div class="relative">
             <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Sucursal</label>
             <select
@@ -115,7 +115,7 @@
             <ChevronDownIcon class="absolute right-3 bottom-3 text-indigo-400" :size="18" />
           </div>
         </div>
-  
+
         <!-- Filtros activos y botón de agregar producto -->
         <div class="flex flex-wrap items-center justify-between mt-6">
           <div class="flex flex-wrap gap-2">
@@ -128,7 +128,7 @@
                 <XIcon :size="16" />
               </button>
             </div>
-  
+
             <div
               v-if="filterCategory"
               class="bg-indigo-100 text-indigo-800 rounded-full px-3 py-1.5 text-sm flex items-center"
@@ -138,7 +138,7 @@
                 <XIcon :size="16" />
               </button>
             </div>
-  
+
             <div
               v-if="filterStatus"
               class="bg-indigo-100 text-indigo-800 rounded-full px-3 py-1.5 text-sm flex items-center"
@@ -148,7 +148,7 @@
                 <XIcon :size="16" />
               </button>
             </div>
-  
+
             <div
               v-if="selectedBranch"
               class="bg-indigo-100 text-indigo-800 rounded-full px-3 py-1.5 text-sm flex items-center"
@@ -159,7 +159,7 @@
               </button>
             </div>
           </div>
-  
+
           <button
             @click="openModal('add')"
             class="mt-4 sm:mt-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all shadow-sm"
@@ -169,7 +169,7 @@
           </button>
         </div>
       </div>
-  
+
       <!-- Estado de carga -->
       <div v-if="loading" class="flex justify-center items-center py-20">
         <div class="relative w-20 h-20">
@@ -177,7 +177,7 @@
           <div class="absolute top-0 left-0 w-full h-full rounded-full border-8 border-transparent border-t-indigo-600 animate-spin"></div>
         </div>
       </div>
-  
+
       <!-- Mensaje sin resultados -->
       <div v-else-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
         <div class="bg-indigo-50 p-6 rounded-full mb-6">
@@ -195,7 +195,7 @@
           <span>Agregar Producto</span>
         </button>
       </div>
-  
+
       <!-- Grid de Productos Mejorado -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
@@ -213,7 +213,7 @@
                 <StarIcon :size="12" class="mr-1" />
                 Recomendado
               </div>
-  
+
               <div
                 v-if="product.preciooferta"
                 class="bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
@@ -222,7 +222,7 @@
                 Oferta
               </div>
             </div>
-  
+
             <div
               v-if="!product.activo"
               class="bg-gray-800 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm"
@@ -230,7 +230,7 @@
               Inactivo
             </div>
           </div>
-  
+
           <!-- Imagen del producto -->
           <div class="relative h-56 overflow-hidden bg-indigo-50">
             <div
@@ -239,7 +239,7 @@
             >
               <span class="bg-white bg-opacity-80 text-gray-800 font-bold text-lg py-1 px-4 rounded-lg">Deshabilitado</span>
             </div>
-  
+
             <img
               v-if="product.imagen_url"
               :src="product.imagen_url"
@@ -252,7 +252,7 @@
               </div>
             </div>
           </div>
-  
+
           <!-- Información del producto -->
           <div class="p-5 pt-4 flex-grow flex flex-col">
             <!-- Categoría del producto -->
@@ -261,28 +261,28 @@
                 {{ getCategoryName(product.id_subcategoria) || 'Sin categoría' }}
               </span>
             </div>
-  
+
             <!-- Nombre y precio -->
             <div class="flex justify-between items-start mb-2">
               <h3 class="font-semibold text-gray-800 text-lg line-clamp-2 pr-2">
                 {{ product.nombre_producto }}
               </h3>
               <div>
-                <div v-if="product.preciooferta" class="flex flex-col items-end">
-                  <span class="line-through text-gray-500 text-sm">${{ formatPrice(product.precio) }}</span>
-                  <span class="font-bold text-red-600 text-lg">${{ formatPrice(product.preciooferta) }}</span>
+                <div v-if="getFirstBranchOfferPrice(product)" class="flex flex-col items-end">
+                  <span class="line-through text-gray-500 text-sm">L. {{ formatPrice(getFirstBranchPrice(product)) }}</span>
+                  <span class="font-bold text-red-600 text-lg">L. {{ formatPrice(getFirstBranchOfferPrice(product)) }}</span>
                 </div>
                 <div v-else class="font-bold text-indigo-600 text-lg">
-                  ${{ formatPrice(product.precio) }}
+                  L. {{ formatPrice(getFirstBranchPrice(product)) }}
                 </div>
               </div>
             </div>
-  
+
             <!-- Descripción -->
             <p class="text-gray-600 text-sm mb-4 line-clamp-2">
               {{ product.descripcion_producto || 'Sin descripción disponible' }}
             </p>
-  
+
             <!-- Extras y atributos -->
             <div v-if="hasExtrasOrAttributes(product)" class="mb-4">
               <div v-if="product.extras && product.extras.length > 0" class="flex flex-wrap gap-1 mb-1">
@@ -318,7 +318,7 @@
                 </span>
               </div>
             </div>
-  
+
             <!-- Disponibilidad en sucursales -->
             <div v-if="product.sucursales && product.sucursales.length > 0" class="mb-4 mt-auto">
               <div class="flex flex-wrap gap-2">
@@ -328,7 +328,7 @@
                   class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded flex items-center"
                 >
                   <MapPinIcon :size="11" class="mr-1" />
-                  {{ getBranchName(sucursalId) }}
+                  {{ getBranchColony(sucursalId) }}
                 </span>
                 <span
                   v-if="product.sucursales.length > 2"
@@ -338,7 +338,7 @@
                 </span>
               </div>
             </div>
-  
+
             <!-- Acciones -->
             <div class="border-t border-indigo-50 pt-3 mt-auto">
               <div class="grid grid-cols-3 gap-2">
@@ -350,43 +350,42 @@
                   <PencilIcon :size="16" class="mb-1" />
                   Editar
                 </button>
-                
+
                 <button
                   @click="toggleProductStatus(product)"
-                  class="rounded-lg p-2 flex flex-col items-center text-xs transition-colors"
-                  :class="product.activo ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' : 'bg-green-50 text-green-600 hover:bg-green-100'"
+                  class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <component :is="product.activo ? EyeOffIcon : EyeIcon" :size="16" class="mb-1" />
                   {{ product.activo ? 'Desactivar' : 'Activar' }}
                 </button>
-                
+
                 <button
                   @click="openModal('offer', product)"
-                  class="bg-amber-50 text-amber-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-amber-100"
+                  class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <TagIcon :size="16" class="mb-1" />
-                  {{ product.preciooferta ? 'Editar oferta' : 'Crear oferta' }}
+                  {{ getFirstBranchOfferPrice(product) ? 'Editar oferta' : 'Crear oferta' }}
                 </button>
 
                 <!-- Segunda fila -->
                 <button
                   @click="openModal('recommend', product)"
-                  class="bg-purple-50 text-purple-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-purple-100"
+                  class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <StarIcon :size="16" class="mb-1" />
                   {{ isRecommended(product) ? 'Quitar rec.' : 'Recomendar' }}
                 </button>
-                
+
                 <button
                   @click="openModal('extra', product)"
-                  class="bg-purple-50 text-purple-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-purple-100"
+                  class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 ><PlusCircleIcon :size="16" class="mb-1" />
                   Añadir extra
                 </button>
-                
+
                 <button
                   @click="openModal('attribute', product)"
-                  class="bg-purple-50 text-purple-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-purple-100"
+                  class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <ListPlusIcon :size="16" class="mb-1" />
                   Añadir atr.
@@ -396,7 +395,7 @@
           </div>
         </div>
       </div>
-  
+
       <!-- Paginación Mejorada -->
       <div v-if="filteredProducts.length > 0" class="mt-10 flex justify-between items-center">
         <p class="text-gray-600 text-sm">
@@ -404,7 +403,7 @@
           <span class="font-semibold">{{ paginationEnd }}</span> de
           <span class="font-semibold">{{ filteredProducts.length }}</span> productos
         </p>
-  
+
         <div class="flex items-center gap-2">
           <button
             @click="currentPage > 1 && currentPage--"
@@ -414,7 +413,7 @@
           >
             <ChevronLeftIcon :size="20" />
           </button>
-  
+
           <div class="flex">
   <template v-for="page in paginationNumbers">
     <button
@@ -436,7 +435,7 @@
   </template>
 </div>
 
-  
+
           <button
             @click="currentPage < totalPages && currentPage++"
             :disabled="currentPage >= totalPages"
@@ -448,7 +447,7 @@
         </div>
       </div>
     </div>
-  
+
     <!-- Modales -->
     <!-- Modal de Agregar/Editar Producto -->
     <transition name="modal">
@@ -465,7 +464,7 @@
                 <XIcon :size="24" />
               </button>
             </div>
-  
+
             <div class="p-6 max-h-[70vh] overflow-y-auto">
               <form @submit.prevent="currentModal === 'add' ? addProduct() : updateProduct()">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -481,7 +480,7 @@
                         placeholder="Ej: Hamburguesa Especial"
                       >
                     </div>
-  
+
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Categoría*</label>
                       <div class="relative">
@@ -498,41 +497,9 @@
                         <ChevronDownIcon class="absolute right-3 top-3.5 text-gray-400" :size="18" />
                       </div>
                     </div>
-  
-                    <div class="grid grid-cols-2 gap-4">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio*</label>
-                        <div class="relative">
-                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
-                          <input
-                            v-model="productForm.preciofinal"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                            class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="0.00"
-                          >
-                        </div>
-                      </div>
-  
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio de oferta</label>
-                        <div class="relative">
-                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
-                          <input
-                            v-model="productForm.precioofertafinal"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            :max="productForm.preciofinal"
-                            class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="0.00"
-                          >
-                        </div>
-                      </div>
-                    </div>
-  
+
+
+
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                       <textarea
@@ -543,7 +510,7 @@
                       ></textarea>
                     </div>
                   </div>
-  
+
                   <!-- Columna derecha -->
                   <div class="space-y-6">
                     <!-- Imagen del producto -->
@@ -566,7 +533,7 @@
                             </button>
                           </div>
                         </div>
-  
+
                         <div v-else class="flex flex-col items-center justify-center">
                           <div class="bg-white p-3 rounded-full mb-3">
                             <UploadCloudIcon :size="32" class="text-indigo-500" />
@@ -576,7 +543,7 @@
                             haz clic para seleccionar un archivo
                           </p>
                         </div>
-  
+
                         <div class="flex justify-center">
                           <label class="cursor-pointer bg-white text-indigo-600 px-4 py-2 rounded-lg border border-indigo-300 hover:bg-indigo-50 transition-colors flex items-center gap-1">
                             <UploadIcon :size="16" />
@@ -586,7 +553,7 @@
                         </div>
                       </div>
                     </div>
-  
+
                     <!-- Sucursales disponibles -->
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-2">Disponibilidad en sucursales*</label>
@@ -606,7 +573,7 @@
                             >
                             <label :for="`branch-${branch.id_direccion_local}`" class="ml-2 text-sm text-gray-700 flex items-center">
                               <MapPinIcon :size="14" class="mr-1 text-indigo-500" />
-                              {{ branch.colonia }} <span class="text-xs text-gray-500 ml-1">({{ branch.direccion_precisa }})</span>
+                              {{ branch.colonia }}
                             </label>
                           </div>
                           <div
@@ -615,12 +582,13 @@
                           >
                             <span class="text-xs text-gray-500">Precio:</span>
                             <div class="relative">
-                              <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">$</span>
+                              <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">L.</span>
                               <input
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="Igual"
+                                placeholder="100"
+                                required
                                 :value="productForm.sucursalesPrecios[branch.id_direccion_local] || ''"
                                 @input="e => updateBranchPrice(branch.id_direccion_local, e.target.value)"
                                 class="w-24 pl-6 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -630,32 +598,11 @@
                         </div>
                       </div>
                     </div>
-  
-<!-- Estado del producto -->
-<div>
-  <label class="block text-sm font-medium text-gray-700 mb-1">Estado del producto</label>
-  <div class="flex bg-indigo-50 p-1 rounded-lg">
-    <button
-      type="button"
-      @click="productForm.activo = (productForm.activo === 1 ? 0 : 1)"
-      :class="productForm.activo === 1 ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-indigo-600'"
-      class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-    >
-      Activo
-    </button>
-    <button
-      type="button"
-      @click="productForm.activo = (productForm.activo === 0 ? 1 : 0)"
-      :class="productForm.activo === 0 ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-indigo-600'"
-      class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-    >
-      Inactivo
-    </button>
-  </div>
-</div>
+
+<!-- El apartado de estado del producto ha sido eliminado -->
                   </div>
                 </div>
-  
+
                 <div class="flex justify-end gap-3 mt-8">
                   <button
                     type="button"
@@ -677,7 +624,7 @@
         </div>
       </div>
     </transition>
-  
+
     <!-- Modal de Oferta -->
     <transition name="modal">
       <div v-if="currentModal === 'offer'" class="fixed inset-0 z-50 overflow-y-auto">
@@ -685,22 +632,21 @@
           <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
           <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto z-10 overflow-hidden">
             <!-- Modal Header con gradiente -->
-            <div class="bg-gradient-to-r from-orange-500 to-red-500 p-6 flex justify-between items-center">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 flex justify-between items-center">
               <h2 class="text-xl font-bold text-white">
                 {{ selectedProduct?.preciooferta ? '🏷️ Editar oferta' : '🔥 Crear oferta' }}
               </h2>
-              <button @click="closeModal" class="text-white hover:text-red-100">
+              <button @click="closeModal" class="text-white hover:text-indigo-100">
                 <XIcon :size="24" />
               </button>
             </div>
-  
+
             <div class="p-6">
               <form @submit.prevent="createOffer">
                 <div class="space-y-6">
                   <div>
                     <div class="flex justify-between items-center mb-1">
                       <label class="block text-sm font-medium text-gray-700">Producto</label>
-                      <span class="font-medium text-indigo-600">${{ formatPrice(selectedProduct?.precio) }}</span>
                     </div>
                     <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
                       <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
@@ -717,24 +663,73 @@
                       <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                     </div>
                   </div>
-  
+
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Precio de oferta*</label>
-                    <div class="relative">
-                      <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
-                      <input
-                        v-model="offerForm.precio_oferta"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        :max="selectedProduct?.precio"
-                        required
-                        class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="0.00"
-                      >
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Precios</label>
+                    <div class="flex items-center space-x-4">
+                      <!-- Precio original (no editable) -->
+                      <div class="flex-1">
+                        <label class="block text-xs text-gray-500 mb-1">Precio original</label>
+                        <div class="relative">
+                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-indigo-500">L.</span>
+                          <input
+                            type="text"
+                            :value="formatPrice(getFirstBranchPrice(selectedProduct))"
+                            disabled
+                            class="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-indigo-500"
+                          >
+                        </div>
+                      </div>
+
+                      <!-- Precio de oferta (editable) -->
+                      <div class="flex-1">
+                        <label class="block text-xs text-gray-500 mb-1">Precio de oferta*</label>
+                        <div class="relative">
+                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">L.</span>
+                          <input
+                            v-model="offerForm.precio_oferta"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            :max="getFirstBranchPrice(selectedProduct) - 0.01"
+                            required
+                            class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            placeholder="Precio oferta"
+                            @change="validateOfferPrice"
+                          >
+                        </div>
+                      </div>
                     </div>
                   </div>
-  
+
+                  <!-- Selección de sucursales -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Aplicar oferta en Sucursal:</label>
+                    <div class="space-y-2 max-h-52 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                      <!-- Lista de sucursales -->
+                      <div class="space-y-3">
+                        <div
+                          v-for="branch in filteredBranches"
+                          :key="branch.id_direccion_local"
+                          class="flex items-center border-b border-gray-100 pb-3 pt-2"
+                        >
+                          <div class="flex items-center">
+                            <input
+                              :id="`offer-branch-${branch.id_direccion_local}`"
+                              type="checkbox"
+                              :value="branch.id_direccion_local"
+                              v-model="offerForm.selectedBranches"
+                              class="w-4 h-4 text-indigo-600 rounded-sm focus:ring-indigo-500"
+                            >
+                            <label :for="`offer-branch-${branch.id_direccion_local}`" class="ml-2 text-sm font-medium text-gray-700">
+                              {{ branch.colonia }}
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div v-if="offerForm.precio_oferta && selectedProduct?.precio" class="bg-green-50 p-3 rounded-lg">
                     <div class="flex items-start gap-2">
                       <div class="bg-green-100 p-1 rounded-full text-green-600 mt-0.5">
@@ -745,24 +740,24 @@
                         <div class="mt-1 text-sm text-green-700">
                           <div class="flex justify-between items-center">
                             <span>Descuento:</span>
-                            <span class="font-medium">{{ calculateDiscount(offerForm.precio_oferta, selectedProduct.precio) }}%</span>
+                            <span class="font-medium">{{ calculateDiscount(offerForm.precio_oferta, getFirstBranchPrice(selectedProduct)) }}%</span>
                           </div>
                           <div class="flex justify-between items-center mt-1">
                             <span>Ahorro:</span>
-                            <span class="font-medium">${{ formatPrice(selectedProduct.precio - offerForm.precio_oferta) }}</span>
+                            <span class="font-medium">L. {{ formatPrice(getFirstBranchPrice(selectedProduct) - offerForm.precio_oferta) }}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-  
+
                 <div class="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
                     @click="removeOffer"
-                    v-if="selectedProduct?.preciooferta"
-                    class="px-4 py-2.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium"
+                    v-if="hasAnyBranchOffer(selectedProduct)"
+                    class="px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >
                     Eliminar oferta
                   </button>
@@ -775,7 +770,7 @@
                   </button>
                   <button
                     type="submit"
-                    class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 transition-colors font-medium"
+                    class="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors font-medium"
                     :disabled="!isValidOffer()"
                     :class="{'opacity-50 cursor-not-allowed': !isValidOffer()}"
                   >
@@ -788,7 +783,7 @@
         </div>
       </div>
     </transition>
-  
+
     <!-- Modal para Recomendar -->
     <transition name="modal">
       <div v-if="currentModal === 'recommend'" class="fixed inset-0 z-50 overflow-y-auto">
@@ -804,7 +799,7 @@
                 <XIcon :size="24" />
               </button>
             </div>
-  
+
             <div class="p-6">
               <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
                 <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
@@ -820,7 +815,7 @@
                 </div>
                 <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
               </div>
-  
+
               <div v-if="isRecommended(selectedProduct)">
                 <div class="bg-amber-50 p-4 rounded-lg mb-6">
                   <div class="flex items-start gap-3">
@@ -856,7 +851,7 @@
                     </div>
                   </div>
                 </div>
-  
+
                 <div v-if="remainingRecommendations <= 0" class="bg-red-50 p-4 rounded-lg mb-6">
                   <div class="flex items-start gap-3">
                     <div class="text-red-500 mt-0.5">
@@ -873,7 +868,7 @@
                   </div>
                 </div>
               </div>
-  
+
               <div class="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
@@ -898,7 +893,7 @@
         </div>
       </div>
     </transition>
-  
+
     <!-- Modal para Agregar Extra -->
     <transition name="modal">
       <div v-if="currentModal === 'extra'" class="fixed inset-0 z-50 overflow-y-auto">
@@ -914,7 +909,7 @@
                 <XIcon :size="24" />
               </button>
             </div>
-  
+
             <div class="p-6">
               <form @submit.prevent="addExtra">
                 <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
@@ -931,7 +926,7 @@
                   </div>
                   <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
-  
+
                 <div class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del extra*</label>
@@ -943,7 +938,7 @@
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                   </div>
-  
+
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional*</label>
                     <div class="relative">
@@ -960,7 +955,7 @@
                     </div>
                   </div>
                 </div>
-  
+
                 <div class="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
@@ -982,7 +977,7 @@
         </div>
       </div>
     </transition>
-  
+
     <!-- Modal para Agregar Atributo -->
     <transition name="modal">
       <div v-if="currentModal === 'attribute'" class="fixed inset-0 z-50 overflow-y-auto">
@@ -998,7 +993,7 @@
                 <XIcon :size="24" />
               </button>
             </div>
-  
+
             <div class="p-6">
               <form @submit.prevent="addAttribute">
                 <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
@@ -1015,7 +1010,7 @@
                   </div>
                   <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
-  
+
                 <div class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del atributo*</label>
@@ -1027,7 +1022,7 @@
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                   </div>
-  
+
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Valor*</label>
                     <input
@@ -1038,7 +1033,7 @@
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                   </div>
-  
+
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional</label>
                     <div class="relative">
@@ -1054,7 +1049,7 @@
                     </div>
                   </div>
                 </div>
-  
+
                 <div class="flex justify-end gap-3 mt-6">
                   <button
                     type="button"
@@ -1076,7 +1071,7 @@
         </div>
       </div>
     </transition>
-  
+
     <!-- Toast de notificación mejorado -->
     <transition name="toast">
       <div
@@ -1093,16 +1088,16 @@
         </button>
       </div>
     </transition>
-  
+
      <!-- Footer -->
      <FooterLocal />
   </div>
 </template>
-  
+
   <script setup>
   import { ref, computed, onMounted, watch } from 'vue';
   import axios from 'axios';
-  
+
   // Importación de iconos
   import {
   Truck as TruckIcon,
@@ -1138,15 +1133,14 @@
   Copy as CopyIcon,
   MapPin as MapPinIcon
   } from 'lucide-vue-next';
-  
+
   // Configuración de API
   const API_URL = 'http://localhost:4000';
-  const isModalOpen = ref(false); 
-const router = useRouter(); 
- 
- 
+  const isModalOpen = ref(false);
+
+
   // Estados generales
-  const loading = ref(false); 
+  const loading = ref(false);
   const appMode = ref('production'); // demo o production
   const currentPage = ref(1);
   const pageSize = ref(9);
@@ -1158,15 +1152,16 @@ const router = useRouter();
   const currentModal = ref(null);
   const selectedProduct = ref(null);
   const localId = ref(null);
-   
-  
+  const selectedImageFile = ref(null); // Para almacenar el archivo de imagen seleccionado
+
+
   // Toast notifications
   const toast = ref({
   show: false,
   type: 'success', // success, error, info, warning
   message: ''
   });
-  
+
   const toastClasses = computed(() => {
   switch (toast.value.type) {
   case 'success': return 'bg-gradient-to-r from-emerald-500 to-green-500';
@@ -1176,7 +1171,7 @@ const router = useRouter();
   default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
   }
   });
-  
+
   const toastIcon = computed(() => {
   switch (toast.value.type) {
   case 'success': return CheckCircleIcon;
@@ -1186,7 +1181,7 @@ const router = useRouter();
   default: return InfoIcon;
   }
   });
-  
+
   // Datos para formularios
   const productForm = ref({
   nombre_producto: '',
@@ -1197,24 +1192,27 @@ const router = useRouter();
   imagen_url: null,
   sucursales: [],
   sucursalesPrecios: {},
+  sucursalesPreciosOferta: {},
   activo: true
   });
-  
+
   const offerForm = ref({
-  precio_oferta: ''
+  precio_oferta: '',
+  selectedBranches: [],
+  branchOfferPrices: {}
   });
-  
+
   const extraForm = ref({
   nombre: '',
   precio: ''
   });
-  
+
   const attributeForm = ref({
   nombre_atributo: '',
   valor: '',
   precio_adicional: ''
   });
-  
+
   // Datos
   const products = ref([]);
   const subcategories = ref([]);
@@ -1226,11 +1224,22 @@ const router = useRouter();
   'estándar': 3,
   'premium': 5
   };
-  
+
   // Computed properties
+  const filteredBranches = computed(() => {
+    if (!selectedProduct.value || !selectedProduct.value.sucursales) {
+      return branches.value;
+    }
+
+    // Filtrar solo las sucursales donde está disponible el producto
+    return branches.value.filter(branch =>
+      selectedProduct.value.sucursales.includes(branch.id_direccion_local)
+    );
+  });
+
   const filteredProducts = computed(() => {
   let result = [...products.value];
-  
+
   // Filtrar por búsqueda
   if (searchQuery.value) {
   const query = searchQuery.value.toLowerCase();
@@ -1239,12 +1248,12 @@ const router = useRouter();
   p.descripcion_producto?.toLowerCase().includes(query)
   );
   }
-  
+
   // Filtrar por categoría
   if (filterCategory.value) {
   result = result.filter(p => p.id_subcategoria == filterCategory.value);
   }
-  
+
   // Filtrar por estado
   if (filterStatus.value) {
   switch (filterStatus.value) {
@@ -1259,85 +1268,151 @@ const router = useRouter();
   break;
   }
   }
-  
+
   // Filtrar por sucursal
   if (selectedBranch.value) {
   result = result.filter(p => {
   return p.sucursales && p.sucursales.some(s => s == selectedBranch.value);
   });
   }
-  
+
   return result;
   });
-  
+
   const paginatedProducts = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return filteredProducts.value.slice(start, end);
   });
-  
+
   const totalPages = computed(() => {
   return Math.ceil(filteredProducts.value.length / pageSize.value);
   });
-  
+
   const paginationStart = computed(() => {
   return filteredProducts.value.length === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1;
   });
-  
+
   const paginationEnd = computed(() => {
   const end = currentPage.value * pageSize.value;
   return end > filteredProducts.value.length ? filteredProducts.value.length : end;
   });
-  
+
   const paginationNumbers = computed(() => {
   if (totalPages.value <= 5) {
   return Array.from({ length: totalPages.value }, (_, i) => i + 1);
   }
-  
+
   if (currentPage.value <= 3) {
   return [1, 2, 3, 4, '...', totalPages.value];
   }
-  
+
   if (currentPage.value >= totalPages.value - 2) {
   return [1, '...', totalPages.value - 3, totalPages.value - 2, totalPages.value - 1, totalPages.value];
   }
-  
+
   return [1, '...', currentPage.value - 1, currentPage.value, currentPage.value + 1, '...', totalPages.value];
   });
-  
+
   const remainingRecommendations = computed(() => {
   const activeRecommendations = recommendations.value.filter(r => r.activo).length;
   return recommendationLimits[currentPlan.value] - activeRecommendations;
   });
-   
-  
+
+
   // Métodos de utilidad
-  const formatPrice = (price) => {
-  if (!price) return '0.00';
-  return parseFloat(price).toFixed(2);
+  const getFirstBranchPrice = (product) => {
+    if (!product || !product.sucursales || product.sucursales.length === 0) {
+      return product?.precio || 0;
+    }
+
+    const firstBranchId = product.sucursales[0];
+    return product.sucursalesPrecios && product.sucursalesPrecios[firstBranchId]
+      ? product.sucursalesPrecios[firstBranchId]
+      : product.precio || 0;
   };
-  
+
+  const getBranchPrice = (product, branchId) => {
+    if (!product || !branchId) {
+      return 0;
+    }
+
+    return product.sucursalesPrecios && product.sucursalesPrecios[branchId]
+      ? product.sucursalesPrecios[branchId]
+      : product.precio || 0;
+  };
+
+  const getFirstBranchOfferPrice = (product) => {
+    if (!product || !product.sucursales || product.sucursales.length === 0) {
+      return product?.preciooferta || null;
+    }
+
+    const firstBranchId = product.sucursales[0];
+
+    // Si hay precios de oferta específicos por sucursal
+    if (product.sucursalesPreciosOferta && product.sucursalesPreciosOferta[firstBranchId]) {
+      return product.sucursalesPreciosOferta[firstBranchId];
+    }
+
+    // Si no hay precio de oferta específico, usar el precio de oferta general
+    return product?.preciooferta || null;
+  };
+
+  // Verificar si hay ofertas en cualquier sucursal
+  const hasAnyBranchOffer = (product) => {
+    if (!product) return false;
+
+    // Si hay precio de oferta general
+    if (product.preciooferta) return true;
+
+    // Si hay precios de oferta específicos por sucursal
+    if (product.sucursalesPreciosOferta && Object.keys(product.sucursalesPreciosOferta).length > 0) {
+      // Verificar si al menos una sucursal tiene un precio de oferta
+      for (const branchId in product.sucursalesPreciosOferta) {
+        if (product.sucursalesPreciosOferta[branchId]) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+
+
+  const formatPrice = (price) => {
+    if (!price) return '0.00';
+    return parseFloat(price).toFixed(2);
+  };
+
   const hasExtrasOrAttributes = (product) => {
   return (product.extras && product.extras.length > 0) || (product.atributos && product.atributos.length > 0);
   };
-  
+
   const isRecommended = (product) => {
   if (!product) return false;
   return recommendations.value.some(r => r.id_producto === product.id_producto && r.activo);
   };
-  
+
   const getCategoryName = (id) => {
   if (!id) return 'Sin categoría';
   const category = subcategories.value.find(c => c.id_subcategoria == id);
   return category ? category.nombre_subcategoria : 'Sin categoría';
   };
-  
+
   const getBranchName = (id) => {
-  if (!id) return 'Sin sucursal';
-  const branch = branches.value.find(b => b.id_direccion_local == id);
-  return branch ? branch.colonia : 'Sin sucursal';
+    if (!id) return 'Sin sucursal';
+    const branch = branches.value.find(b => b.id_direccion_local == id);
+    return branch ? `${branch.colonia} (${branch.direccion_precisa})` : `Sucursal ${id}`;
   };
-  
+
+  // Función para obtener solo la colonia de una sucursal (para tarjetas de productos)
+  const getBranchColony = (id) => {
+    if (!id) return 'Sin sucursal';
+    const branch = branches.value.find(b => b.id_direccion_local == id);
+    return branch ? branch.colonia : `Sucursal ${id}`;
+  };
+
   const getStatusLabel = (status) => {
   switch (status) {
   case 'active': return 'Activos';
@@ -1346,41 +1421,141 @@ const router = useRouter();
   default: return 'Todos';
   }
   };
-  
+
   const calculateDiscount = (offerPrice, originalPrice) => {
-  if (!offerPrice || !originalPrice) return 0;
-  return Math.round((1 - (offerPrice / originalPrice)) * 100);
+    try {
+      // Convertir a números
+      const offerPriceNum = parseFloat(offerPrice);
+      const originalPriceNum = parseFloat(originalPrice);
+
+      // Validar que sean números válidos y mayores que cero
+      if (isNaN(offerPriceNum) || isNaN(originalPriceNum) || offerPriceNum <= 0 || originalPriceNum <= 0) {
+        return 0;
+      }
+
+      // Calcular el descuento
+      return Math.round((1 - (offerPriceNum / originalPriceNum)) * 100);
+    } catch (error) {
+      console.error('Error al calcular descuento:', error);
+      return 0;
+    }
   };
-  
+
   const isValidOffer = () => {
-  const offerPrice = parseFloat(offerForm.value.precio_oferta);
-  const originalPrice = parseFloat(selectedProduct.value?.precio);
-  
-  return offerPrice > 0 && offerPrice < originalPrice;
+    try {
+      // Verificar que el precio de oferta sea válido
+      if (!offerForm.value.precio_oferta) {
+        return false;
+      }
+
+      // Si es una cadena, verificar que no esté vacía
+      if (typeof offerForm.value.precio_oferta === 'string' && offerForm.value.precio_oferta.trim() === '') {
+        return false;
+      }
+
+      const offerPrice = parseFloat(offerForm.value.precio_oferta);
+      const originalPrice = getFirstBranchPrice(selectedProduct.value);
+
+      if (isNaN(offerPrice) || offerPrice <= 0 || offerPrice >= originalPrice) {
+        return false;
+      }
+
+      // Verificar que al menos una sucursal esté seleccionada
+      if (!Array.isArray(offerForm.value.selectedBranches) || offerForm.value.selectedBranches.length === 0) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error en isValidOffer:', error);
+      return false;
+    }
   };
-  
+
+  // Validar el precio de oferta mientras el usuario escribe
+  const validateOfferPrice = (event) => {
+    const input = event.target;
+    const value = parseFloat(input.value);
+    const originalPrice = getFirstBranchPrice(selectedProduct.value);
+
+    if (isNaN(value)) {
+      input.setCustomValidity('El precio debe ser un número válido');
+    } else if (value <= 0) {
+      input.setCustomValidity('El precio debe ser mayor que cero');
+    } else if (originalPrice && value >= originalPrice) {
+      input.setCustomValidity('El precio de oferta debe ser menor al precio original');
+    } else {
+      input.setCustomValidity('');
+    }
+
+    // No llamar a reportValidity() para evitar que se muestre el mensaje de error
+    // mientras el usuario está escribiendo
+    // input.reportValidity();
+  };
+
   const toggleAppMode = () => {
   appMode.value = appMode.value === 'production' ? 'demo' : 'production';
   loadProducts();
   };
-  
+
   // Métodos para modales
   const openModal = (type, product = null) => {
   currentModal.value = type;
-  
+
   if (product) {
   selectedProduct.value = { ...product };
-  
+
   // Preparar formulario según tipo de modal
   if (type === 'edit') {
-  // Clonar el producto para evitar mutaciones directas
-  productForm.value = {
-  ...JSON.parse(JSON.stringify(product)),
-  sucursales: Array.isArray(product.sucursales) ? [...product.sucursales] : [],
-  sucursalesPrecios: product.sucursalesPrecios ? {...product.sucursalesPrecios} : {}
-  };
+    // Clonar el producto para evitar mutaciones directas
+    console.log('Producto a editar:', product);
+    console.log('Precio del producto:', product.precio);
+
+    productForm.value = {
+      ...JSON.parse(JSON.stringify(product)),
+      sucursales: Array.isArray(product.sucursales) ? [...product.sucursales] : [],
+      sucursalesPrecios: product.sucursalesPrecios ? {...product.sucursalesPrecios} : {},
+      sucursalesPreciosOferta: product.sucursalesPreciosOferta ? {...product.sucursalesPreciosOferta} : {}
+    };
+
+    console.log('Formulario cargado:', productForm.value);
+    console.log('Precio en el formulario:', productForm.value.precio);
   } else if (type === 'offer') {
-  offerForm.value.precio_oferta = product.preciooferta || '';
+    // Inicializar el formulario de oferta
+    offerForm.value = {
+      precio_oferta: product.preciooferta || '',
+      selectedBranches: [],
+      branchOfferPrices: {}
+    };
+
+    // Obtener las sucursales del producto con sus precios de oferta
+    if (appMode.value === 'production') {
+      // En modo producción, cargar las sucursales desde el servidor
+      axios.get(`${API_URL}/productoSucursal/${product.id_producto}`)
+        .then(response => {
+          const sucursales = response.data;
+
+          // Verificar si hay sucursales con precios de oferta específicos
+          const sucursalesConOferta = sucursales.filter(s => s.preciooferta !== null);
+
+          if (sucursalesConOferta.length > 0) {
+            // Si hay sucursales con oferta, cambiar el modo a 'specific'
+            offerForm.value.applyTo = 'specific';
+            offerForm.value.selectedBranches = sucursalesConOferta.map(s => s.id_direccion_local);
+
+            // Si todas las sucursales tienen el mismo precio de oferta, usarlo como precio de oferta general
+            const primerPrecioOferta = parseFloat(sucursalesConOferta[0].preciooferta);
+            const todosIguales = sucursalesConOferta.every(s => parseFloat(s.preciooferta) === primerPrecioOferta);
+
+            if (todosIguales) {
+              offerForm.value.precio_oferta = primerPrecioOferta;
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error al cargar sucursales para oferta:', error);
+        });
+    }
   }
   } else {
   // Resetear formularios
@@ -1388,26 +1563,26 @@ const router = useRouter();
   productForm.value = {
   nombre_producto: '',
   descripcion_producto: '',
-  precio: '',
   preciooferta: '',
   id_subcategoria: '',
   imagen_url: null,
   sucursales: [],
   sucursalesPrecios: {},
+  sucursalesPreciosOferta: {},
   activo: 1
   };
   }
   }
-  
+
   // Cerrar cualquier dropdown abierto
   openDropdownId.value = null;
   };
-  
+
   const closeModal = () => {
   currentModal.value = null;
   selectedProduct.value = null;
   };
-  
+
   const toggleDropdown = (id) => {
   if (openDropdownId.value === id) {
   openDropdownId.value = null;
@@ -1415,66 +1590,75 @@ const router = useRouter();
   openDropdownId.value = id;
   }
   };
-  
+
   // Métodos para manejo de imágenes
   const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  
-  // Validar el tamaño del archivo (máximo 2MB)
-  if (file.size > 2 * 1024 * 1024) {
-  showToast('La imagen no debe superar los 2MB', 'error');
+
+  // Validar el tamaño del archivo (máximo 4MB)
+  if (file.size > 4 * 1024 * 1024) {
+  showToast('La imagen no debe superar los 4MB', 'error');
   return;
   }
-  
+
   // Validar el tipo de archivo
   if (!file.type.match('image.*')) {
   showToast('El archivo debe ser una imagen', 'error');
   return;
   }
-  
+
+  // Guardar el archivo para subirlo después
+  selectedImageFile.value = file;
+
+  // Crear una vista previa local
   const reader = new FileReader();
   reader.onload = (e) => {
   productForm.value.imagen_url = e.target.result;
   };
   reader.readAsDataURL(file);
-  
-  // En producción, aquí se cargaría la imagen a un servidor o servicio de almacenamiento
-  // y se obtendría su URL para guardarla en productForm.value.imagen_url
+
+  console.log('Imagen seleccionada:', file.name);
   };
-  
+
   const removeImage = () => {
   productForm.value.imagen_url = null;
-  
+  selectedImageFile.value = null; // Limpiar también el archivo seleccionado
+
   // En producción, si estamos editando un producto existente, eliminaríamos la imagen del servidor
   if (currentModal.value === 'edit' && selectedProduct.value?.imagen_public_id) {
-  // Eliminar la imagen del servicio de almacenamiento sería una tarea que depende del servicio utilizado
-  // Por ejemplo, para Cloudinary sería algo como:
-  /*
-  axios.delete(`${API_URL}/uploads/images/${selectedProduct.value.imagen_public_id}`)
-  .then(() => {
-  console.log('Imagen eliminada del servidor correctamente');
-  })
-  .catch(error => {
-  console.error('Error al eliminar la imagen:', error);
-  });
-  */
+    // No eliminaremos la imagen del servidor aquí, solo cuando se guarde el producto
+    // La imagen se eliminará automáticamente en el backend cuando se actualice el producto sin imagen
+    console.log('La imagen se eliminará del servidor cuando se guarde el producto');
   }
   };
-  
+
   // Actualizar precio de sucursales
   const updateBranchPrice = (branchId, price) => {
-  if (!productForm.value.sucursalesPrecios) {
-  productForm.value.sucursalesPrecios = {};
-  }
-  
-  if (price) {
-  productForm.value.sucursalesPrecios[branchId] = parseFloat(price);
-  } else {
-  delete productForm.value.sucursalesPrecios[branchId];
-  }
+    if (!productForm.value.sucursalesPrecios) {
+      productForm.value.sucursalesPrecios = {};
+    }
+
+    if (price) {
+      productForm.value.sucursalesPrecios[branchId] = parseFloat(price);
+    } else {
+      delete productForm.value.sucursalesPrecios[branchId];
+    }
   };
-  
+
+  // Actualizar precio de oferta de sucursales
+  const updateBranchOfferPrice = (branchId, price) => {
+    if (!offerForm.value.branchOfferPrices) {
+      offerForm.value.branchOfferPrices = {};
+    }
+
+    if (price) {
+      offerForm.value.branchOfferPrices[branchId] = parseFloat(price);
+    } else {
+      delete offerForm.value.branchOfferPrices[branchId];
+    }
+  };
+
   // Mostrar toast
   const showToast = (message, type = 'success') => {
   toast.value = {
@@ -1482,34 +1666,34 @@ const router = useRouter();
   type,
   message
   };
-  
+
   setTimeout(() => {
   toast.value.show = false;
   }, 3000);
   };
-  
+
   // Eliminar extra y atributo
   const removeExtra = async (product, extra) => {
   try {
   loading.value = true;
-  
+
   if (appMode.value === 'production') {
   // Implementación real de eliminación de extra
   await axios.delete(`${API_URL}/extra/${extra.id}`);
-  
+
   // Recargar datos del producto para actualizar la UI
   const productData = await axios.get(`${API_URL}/productos/${product.id_producto}`);
-  
+
   // Actualizar el producto en la lista
   const index = products.value.findIndex(p => p.id_producto === product.id_producto);
   if (index !== -1) {
   products.value[index] = productData.data;
   }
-  
+
   } else {
   // Modo demo
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Simular eliminación del extra
   const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
   if (productIndex !== -1 && products.value[productIndex].extras) {
@@ -1519,7 +1703,7 @@ const router = useRouter();
   }
   }
   }
-  
+
   showToast('Extra eliminado correctamente', 'success');
   } catch (error) {
   console.error('Error al eliminar extra:', error);
@@ -1528,28 +1712,28 @@ const router = useRouter();
   loading.value = false;
   }
   };
-  
+
   const removeAttribute = async (product, attribute) => {
   try {
   loading.value = true;
-  
+
   if (appMode.value === 'production') {
   // Implementación real de eliminación de atributo
   await axios.delete(`${API_URL}/atributos/${attribute.id_atributo}`);
-  
+
   // Recargar datos del producto para actualizar la UI
   const productData = await axios.get(`${API_URL}/productos/${product.id_producto}`);
-  
+
   // Actualizar el producto en la lista
   const index = products.value.findIndex(p => p.id_producto === product.id_producto);
   if (index !== -1) {
   products.value[index] = productData.data;
   }
-  
+
   } else {
   // Modo demo
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Simular eliminación del atributo
   const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
   if (productIndex !== -1 && products.value[productIndex].atributos) {
@@ -1561,7 +1745,7 @@ const router = useRouter();
   }
   }
   }
-  
+
   showToast('Atributo eliminado correctamente', 'success');
   } catch (error) {
   console.error('Error al eliminar atributo:', error);
@@ -1570,7 +1754,7 @@ const router = useRouter();
   loading.value = false;
   }
   };
-  
+
   // Métodos para la gestión de productos
   const loadProducts = async () => {
   loading.value = true;
@@ -1578,21 +1762,21 @@ const router = useRouter();
   // Obtener el ID del local (lo haríamos desde una respuesta de API o estado global)
   // En un entorno real, este ID vendría de la autenticación del usuario o de un parámetro en la URL
   localId.value = 10; // Por ahora usamos un valor fijo
-  
+
   // Cargar subcategorías
   const subcatResponse = await axios.get(`${API_URL}/subcategorias`);
   subcategories.value = subcatResponse.data;
-  
+
   // Cargar sucursales
   const branchesResponse = await axios.get(`${API_URL}/direccioneslocales/${localId.value}`);
   branches.value = branchesResponse.data;
-  
+
   if (appMode.value === 'production') {
   try {
   // Cargar productos
   const productsResponse = await axios.get(`${API_URL}/productos`);
   products.value = productsResponse.data;
-  
+
   // Cargar datos adicionales para cada producto
   await Promise.all(products.value.map(async (product) => {
   try {
@@ -1603,7 +1787,7 @@ const router = useRouter();
   console.error(`Error al cargar extras para producto ${product.id_producto}:`, error);
   product.extras = [];
   }
-  
+
   try {
   // Cargar atributos
   const attributesResponse = await axios.get(`${API_URL}/atributos/${product.id_producto}`);
@@ -1612,25 +1796,53 @@ const router = useRouter();
   console.error(`Error al cargar atributos para producto ${product.id_producto}:`, error);
   product.atributos = [];
   }
-  
+
   try {
   // Cargar sucursales
   const sucursalesResponse = await axios.get(`${API_URL}/productoSucursal/${product.id_producto}`);
+
+  // Guardar las sucursales y sus precios
   product.sucursales = sucursalesResponse.data.map(s => s.id_direccion_local);
+
+  // Inicializar los objetos de precios por sucursal si no existen
+  if (!product.sucursalesPrecios) {
+    product.sucursalesPrecios = {};
+  }
+
+  if (!product.sucursalesPreciosOferta) {
+    product.sucursalesPreciosOferta = {};
+  }
+
+  // Guardar los precios específicos por sucursal
+  sucursalesResponse.data.forEach(s => {
+    if (s.precio) {
+      product.sucursalesPrecios[s.id_direccion_local] = parseFloat(s.precio);
+    }
+
+    // Guardar los precios de oferta específicos por sucursal
+    if (s.preciooferta) {
+      product.sucursalesPreciosOferta[s.id_direccion_local] = parseFloat(s.preciooferta);
+    }
+  });
+
+  console.log(`Sucursales cargadas para producto ${product.id_producto}:`, product.sucursales);
+  console.log(`Precios por sucursal para producto ${product.id_producto}:`, product.sucursalesPrecios);
+  console.log(`Precios de oferta por sucursal para producto ${product.id_producto}:`, product.sucursalesPreciosOferta);
   } catch (error) {
   console.error(`Error al cargar sucursales para producto ${product.id_producto}:`, error);
   product.sucursales = [];
+  product.sucursalesPrecios = {};
   }
   }));
-  
+
   // Cargar recomendaciones
   const recsResponse = await axios.get(`${API_URL}/recomendados`);
   recommendations.value = recsResponse.data;
-  
+
   } catch (error) {
   console.error('Error al cargar datos de producción:', error);
   showToast('Error al cargar datos. Usando datos de demostración.', 'warning');
-  
+
   // Cargar datos de demostración en caso de error
   loadDemoData();
   }
@@ -1641,18 +1853,18 @@ const router = useRouter();
   } catch (error) {
   console.error('Error al cargar datos:', error);
   showToast('Error al cargar los datos. Usando datos de demostración.', 'error');
-  
+
   // Cargar datos de prueba en caso de error
   loadDemoData();
   } finally {
   loading.value = false;
   }
   };
-  
+
   // Función para cargar datos de demostración
   const loadDemoData = async () => {
   await new Promise(resolve => setTimeout(resolve, 800));
-  
+
   products.value = [
   {
   id_producto: 1,
@@ -1723,12 +1935,12 @@ const router = useRouter();
   sucursales: [1, 2, 3, 4]
   }
   ];
-  
+
   recommendations.value = [
   { id_recomendacion: 1, id_producto: 1, id_local: localId.value, activo: true },
   { id_recomendacion: 2, id_producto: 2, id_local: localId.value, activo: true }
   ];
-  
+
   // Crear subcategorías de prueba si no hay datos reales
   if (subcategories.value.length === 0) {
   subcategories.value = [
@@ -1739,7 +1951,7 @@ const router = useRouter();
   { id_subcategoria: 5, nombre_subcategoria: 'Ensaladas' }
   ];
   }
-  
+
   // Crear sucursales de prueba si no hay datos reales
   if (branches.value.length === 0) {
   branches.value = [
@@ -1750,110 +1962,183 @@ const router = useRouter();
   ];
   }
   };
-  
+
   // Operaciones CRUD
   const addProduct = async () => {
   try {
-  if (!productForm.value.id_subcategoria) {
-  showToast('Debe seleccionar una categoría', 'warning');
-  return;
-  }
-  
-  loading.value = true;
-  
-  const formData = {
-  id_local: localId.value,
-  nombre_producto: productForm.value.nombre_producto,
-  descripcion_producto: productForm.value.descripcion_producto,
-  precio: parseFloat(productForm.value.precio),
-  preciooferta: productForm.value.preciooferta ? parseFloat(productForm.value.preciooferta) : null,
-  id_subcategoria: productForm.value.id_subcategoria,
-  activo: productForm.value.activo
-  };
-  
-  if (appMode.value === 'production') {
-  // En un ambiente real, enviamos los datos al servidor
-  const response = await axios.post(`${API_URL}/productos/${localId.value}`, formData);
-  
-  // Crear relaciones con sucursales si hay seleccionadas
-  if (productForm.value.sucursales.length > 0) {
-  for (const sucursalId of productForm.value.sucursales) {
-  const sucursalData = {
-  id_direccion_local: sucursalId,
-  precio: productForm.value.sucursalesPrecios[sucursalId] || formData.precio
-  };
-  
-  await axios.post(`${API_URL}/productoSucursal/${response.data.producto.id_producto}`, sucursalData);
-  }
-  }
-  
-  // Recargar productos
-  await loadProducts();
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Simular creación de producto
-  const newProduct = {
-  id_producto: Math.max(...products.value.map(p => p.id_producto), 0) + 1,
-  ...formData,
-  imagen_url: productForm.value.imagen_url,
-  sucursales: [...productForm.value.sucursales],
-  extras: [],
-  atributos: []
-  };
-  
-  products.value.push(newProduct);
-  }
-  
-  showToast('Producto agregado correctamente', 'success');
-  closeModal();
+    if (!productForm.value.id_subcategoria) {
+      showToast('Debe seleccionar una categoría', 'warning');
+      return;
+    }
+
+    // Verificar que todas las sucursales tengan un precio
+    const sucursalesSinPrecio = productForm.value.sucursales.filter(sucursalId =>
+      !productForm.value.sucursalesPrecios[sucursalId] ||
+      productForm.value.sucursalesPrecios[sucursalId] <= 0
+    );
+
+    if (sucursalesSinPrecio.length > 0) {
+      const sucursalesSinPrecioNombres = sucursalesSinPrecio.map(id => getBranchName(id)).join(', ');
+      showToast(`Debe ingresar un precio válido para las sucursales: ${sucursalesSinPrecioNombres}`, 'warning');
+      return;
+    }
+
+    // Verificar que al menos haya una sucursal seleccionada
+    if (productForm.value.sucursales.length === 0) {
+      showToast('Debe seleccionar al menos una sucursal', 'warning');
+      return;
+    }
+
+    loading.value = true;
+
+    // Usar FormData para poder enviar archivos
+    const data = new FormData();
+    data.append('id_local', localId.value);
+    data.append('nombre_producto', productForm.value.nombre_producto);
+    data.append('descripcion_producto', productForm.value.descripcion_producto || '');
+
+    // Ya no enviamos un precio general, se usará el precio de la primera sucursal
+    // o se calculará en base a los precios de las sucursales
+
+    // Ya no enviamos preciofinal, se calculará automáticamente en el backend
+
+    // Manejar el precio de oferta
+    if (productForm.value.preciooferta) {
+      data.append('preciooferta', parseFloat(productForm.value.preciooferta));
+    } else {
+      data.append('preciooferta', ''); // Enviar string vacío para que el backend lo maneje como null
+    }
+
+    data.append('id_subcategoria', productForm.value.id_subcategoria);
+
+    // Convertir el valor de activo a un booleano real
+    const activoValue = productForm.value.activo === 1 || productForm.value.activo === true;
+    data.append('activo', activoValue);
+
+    // Añadir la imagen solo si se seleccionó un archivo
+    if (selectedImageFile.value) {
+      data.append('imagen', selectedImageFile.value);
+      console.log("Archivo de imagen añadido a FormData:", selectedImageFile.value.name);
+    }
+
+    if (appMode.value === 'production') {
+      // En un ambiente real, enviamos los datos al servidor
+      const response = await axios.post(`${API_URL}/productos/${localId.value}`, data);
+
+      // Limpiar archivo seleccionado después de subir
+      selectedImageFile.value = null;
+
+      // Crear relaciones con sucursales si hay seleccionadas
+      if (productForm.value.sucursales.length > 0) {
+        for (const sucursalId of productForm.value.sucursales) {
+          // Preparar datos de la sucursal
+          const sucursalData = {
+            id_direccion_local: sucursalId,
+            precio: productForm.value.sucursalesPrecios[sucursalId] || parseFloat(productForm.value.precio) || 0
+          };
+
+          // Añadir precio de oferta si existe
+          if (productForm.value.preciooferta) {
+            sucursalData.preciooferta = parseFloat(productForm.value.preciooferta);
+          }
+
+          await axios.post(`${API_URL}/productoSucursal/${response.data.producto.id_producto}`, sucursalData);
+        }
+      }
+
+      // Recargar productos
+      await loadProducts();
+    } else {
+      // Modo demo
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Simular creación de producto
+      const newProduct = {
+        id_producto: Math.max(...products.value.map(p => p.id_producto), 0) + 1,
+        id_local: localId.value,
+        nombre_producto: productForm.value.nombre_producto,
+        descripcion_producto: productForm.value.descripcion_producto,
+        precio: parseFloat(productForm.value.precio) || 0,
+        preciooferta: productForm.value.preciooferta ? parseFloat(productForm.value.preciooferta) : null,
+        id_subcategoria: productForm.value.id_subcategoria,
+        activo: productForm.value.activo,
+        imagen_url: productForm.value.imagen_url,
+        sucursales: [...productForm.value.sucursales],
+        extras: [],
+        atributos: []
+      };
+
+      products.value.push(newProduct);
+      selectedImageFile.value = null; // Limpiar archivo en demo también
+    }
+
+    showToast('Producto agregado correctamente', 'success');
+    closeModal();
   } catch (error) {
-  console.error('Error al agregar producto:', error);
-  showToast('Error al agregar el producto', 'error');
+    console.error('Error al agregar producto:', error);
+    showToast('Error al agregar el producto', 'error');
   } finally {
-  loading.value = false;
+    loading.value = false;
   }
   };
- 
-  
+
+
   const removeOffer = async () => {
   try {
-  loading.value = true;
-  
-  if (appMode.value === 'production') {
-  await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, {
-  preciooferta: null
-  });
-  
-  // Recargar productos
-  await loadProducts();
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Simular eliminación de oferta
-  const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
-  
-  if (index !== -1) {
-  products.value[index].preciooferta = null;
-  }
-  }
-  
-  showToast('Oferta eliminada correctamente', 'success');
-  closeModal();
+    loading.value = true;
+
+    if (appMode.value === 'production') {
+      // 1. Quitar la oferta del producto principal
+      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, {
+        preciooferta: null
+      });
+
+      // 2. Obtener las sucursales actuales del producto
+      const currentSucursalesResponse = await axios.get(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`);
+      const currentSucursales = currentSucursalesResponse.data;
+
+      // 3. Quitar la oferta de todas las sucursales
+      for (const sucursal of currentSucursales) {
+        console.log(`Quitando oferta de la sucursal ${sucursal.id_direccion_local}`);
+        await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, {
+          preciooferta: null
+        });
+      }
+
+      // Recargar productos
+      await loadProducts();
+    } else {
+      // Modo demo
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Simular eliminación de oferta
+      const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
+
+      if (index !== -1) {
+        // Eliminar precio de oferta general
+        products.value[index].preciooferta = null;
+
+        // Eliminar precios de oferta por sucursal
+        if (products.value[index].sucursalesPreciosOferta) {
+          products.value[index].sucursalesPreciosOferta = {};
+        }
+      }
+    }
+
+    showToast('Oferta eliminada correctamente', 'success');
+    closeModal();
   } catch (error) {
-  console.error('Error al eliminar oferta:', error);
-  showToast('Error al eliminar la oferta', 'error');
+    console.error('Error al eliminar oferta:', error);
+    showToast('Error al eliminar la oferta', 'error');
   } finally {
-  loading.value = false;
+    loading.value = false;
   }
   };
-  
+
   const toggleRecommendation = async () => {
   try {
   loading.value = true;
-  
+
   if (isRecommended(selectedProduct.value)) {
   // Quitar recomendación
   if (appMode.value === 'production') {
@@ -1863,33 +2148,33 @@ const router = useRouter();
   activo: false
   });
   }
-  
+
   // Recargar recomendaciones
   const recsResponse = await axios.get(`${API_URL}/recomendados`);
   recommendations.value = recsResponse.data;
   } else {
   // Modo demo
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Simular eliminación de recomendación
   const index = recommendations.value.findIndex(r => r.id_producto === selectedProduct.value.id_producto);
-  
+
   if (index !== -1) {
   recommendations.value[index].activo = false;
   }
   }
-  
+
   showToast('Recomendación eliminada correctamente', 'success');
   } else {
   // Agregar recomendación
   if (remainingRecommendations.value <= 0) {
   throw new Error('Has alcanzado el límite de recomendaciones para tu plan');
   }
-  
+
   if (appMode.value === 'production') {
   // Comprobar si ya existe pero está inactiva
   const existingRec = recommendations.value.find(r => r.id_producto === selectedProduct.value.id_producto);
-  
+
   if (existingRec) {
   await axios.put(`${API_URL}/recomendados/${existingRec.id_recomendacion}`, {
   activo: true
@@ -1900,17 +2185,17 @@ const router = useRouter();
   id_local: localId.value
   });
   }
-  
+
   // Recargar recomendaciones
   const recsResponse = await axios.get(`${API_URL}/recomendados`);
   recommendations.value = recsResponse.data;
   } else {
   // Modo demo
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Comprobar si ya existe pero está inactiva
   const existingIndex = recommendations.value.findIndex(r => r.id_producto === selectedProduct.value.id_producto);
-  
+
   if (existingIndex !== -1) {
   recommendations.value[existingIndex].activo = true;
   } else {
@@ -1922,10 +2207,10 @@ const router = useRouter();
   });
   }
   }
-  
+
   showToast('Producto recomendado correctamente', 'success');
   }
-  
+
   closeModal();
   } catch (error) {
   console.error('Error al gestionar recomendación:', error);
@@ -1934,48 +2219,48 @@ const router = useRouter();
   loading.value = false;
   }
   };
-   
+
   const addAttribute = async () => {
   try {
   loading.value = true;
-  
+
   const attrData = {
   nombre_atributo: attributeForm.value.nombre_atributo,
   valor: attributeForm.value.valor,
   precio_adicional: parseFloat(attributeForm.value.precio_adicional) || 0
   };
-  
+
   if (!attrData.nombre_atributo || !attrData.valor) {
   throw new Error('El nombre y valor del atributo son obligatorios');
   }
-  
+
   if (appMode.value === 'production') {
   await axios.post(`${API_URL}/atributos/${selectedProduct.value.id_producto}`, attrData);
-  
+
   // Recargar productos
   await loadProducts();
   } else {
   // Modo demo
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Simular agregar atributo
   const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
-  
+
   if (index !== -1) {
   if (!products.value[index].atributos) {
   products.value[index].atributos = [];
   }
-  
+
   // Generar un ID único para el nuevo atributo en el modo demo
   const newId = Math.max(...(products.value[index].atributos.map(a => a.id_atributo || 0)), 0) + 1;
-  
+
   products.value[index].atributos.push({
   id_atributo: newId,
   ...attrData
   });
   }
   }
-  
+
   showToast('Atributo agregado correctamente', 'success');
   closeModal();
   } catch (error) {
@@ -1985,7 +2270,7 @@ const router = useRouter();
   loading.value = false;
   }
   };
-  
+
   const updateProduct = async () => {
   try {
     if (!productForm.value.id_subcategoria) {
@@ -1993,34 +2278,147 @@ const router = useRouter();
       return;
     }
 
+    // Verificar que todas las sucursales tengan un precio
+    const sucursalesSinPrecio = productForm.value.sucursales.filter(sucursalId =>
+      !productForm.value.sucursalesPrecios[sucursalId] ||
+      productForm.value.sucursalesPrecios[sucursalId] <= 0
+    );
+
+    if (sucursalesSinPrecio.length > 0) {
+      const sucursalesSinPrecioNombres = sucursalesSinPrecio.map(id => getBranchName(id)).join(', ');
+      showToast(`Debe ingresar un precio válido para las sucursales: ${sucursalesSinPrecioNombres}`, 'warning');
+      return;
+    }
+
     loading.value = true;
 
-    const formData = {
-      nombre_producto: productForm.value.nombre_producto,
-      descripcion_producto: productForm.value.descripcion_producto,
-      precio: parseFloat(productForm.value.precio),
-      preciooferta: productForm.value.preciooferta ? parseFloat(productForm.value.preciooferta) : null,
-      id_subcategoria: productForm.value.id_subcategoria,
-      activo: productForm.value.activo
-    };
+    // Usar FormData para poder enviar archivos
+    const data = new FormData();
+    data.append('nombre_producto', productForm.value.nombre_producto);
+    data.append('descripcion_producto', productForm.value.descripcion_producto || '');
 
-    console.log('Actualizando producto con datos:', formData); // <- Añadir esto
+    // Ya no enviamos un precio general, se usará el precio de la primera sucursal
+    // o se calculará en base a los precios de las sucursales
+
+    // Ya no enviamos preciofinal, se calculará automáticamente en el backend
+
+    // Manejar el precio de oferta correctamente
+    if (productForm.value.preciooferta) {
+      data.append('preciooferta', parseFloat(productForm.value.preciooferta));
+    } else {
+      data.append('preciooferta', ''); // Enviar string vacío para que el backend lo maneje como null
+    }
+
+    data.append('id_subcategoria', productForm.value.id_subcategoria);
+
+    // Convertir el valor de activo a un booleano real
+    const activoValue = productForm.value.activo === 1 || productForm.value.activo === true;
+    data.append('activo', activoValue);
+
+    // Añadir la imagen solo si se seleccionó un archivo nuevo
+    if (selectedImageFile.value) {
+      data.append('imagen', selectedImageFile.value);
+      console.log("Archivo de imagen añadido a FormData para actualizar:", selectedImageFile.value.name);
+    } else {
+      console.log("No se seleccionó un archivo nuevo para actualizar.");
+    }
+
+    console.log('Actualizando producto ID:', selectedProduct.value.id_producto);
 
     if (appMode.value === 'production') {
-      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, formData);
+      // Enviar FormData al servidor para actualizar el producto
+      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, data);
+
+      // Limpiar archivo seleccionado después de subir
+      selectedImageFile.value = null;
+
+      // Gestionar las sucursales
+      // 1. Obtener las sucursales actuales del producto
+      const currentSucursalesResponse = await axios.get(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`);
+      const currentSucursales = currentSucursalesResponse.data;
+
+      console.log('Sucursales actuales:', currentSucursales);
+      console.log('Nuevas sucursales seleccionadas:', productForm.value.sucursales);
+
+      // 2. Eliminar las sucursales que ya no están seleccionadas
+      for (const sucursal of currentSucursales) {
+        if (!productForm.value.sucursales.includes(sucursal.id_direccion_local)) {
+          console.log(`Eliminando sucursal ${sucursal.id_direccion_local} del producto ${selectedProduct.value.id_producto}`);
+          await axios.delete(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`);
+        }
+      }
+
+      // 3. Añadir o actualizar las sucursales seleccionadas
+      for (const sucursalId of productForm.value.sucursales) {
+        // Verificar si la sucursal ya existe
+        const existingSucursal = currentSucursales.find(s => s.id_direccion_local === sucursalId);
+
+        // Obtener el precio específico para esta sucursal
+        const sucursalPrecio = productForm.value.sucursalesPrecios[sucursalId] || 0;
+
+        if (existingSucursal) {
+          // Preparar datos para actualizar
+          const updateData = {
+            precio: sucursalPrecio
+          };
+
+          // Ya no enviamos precios de oferta desde el modal de editar
+          // Los precios de oferta se gestionan exclusivamente desde el modal de oferta
+
+          // Actualizar la sucursal existente si hay cambios en el precio
+          const precioHaCambiado = existingSucursal.precio !== sucursalPrecio;
+
+          if (precioHaCambiado) {
+            console.log(`Actualizando sucursal ${sucursalId} con datos:`, updateData);
+            await axios.put(`${API_URL}/productoSucursal/${existingSucursal.id_producto_sucursal}`, updateData);
+          }
+        } else {
+          // Preparar datos para crear nueva relación
+          const newSucursalData = {
+            id_direccion_local: sucursalId,
+            precio: sucursalPrecio
+          };
+
+          // Ya no enviamos precios de oferta desde el modal de editar
+          // Los precios de oferta se gestionan exclusivamente desde el modal de oferta
+
+          // Crear una nueva relación producto-sucursal
+          console.log(`Añadiendo sucursal ${sucursalId} al producto ${selectedProduct.value.id_producto} con datos:`, newSucursalData);
+          await axios.post(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`, newSucursalData);
+        }
+      }
+
+      // Recargar productos para ver los cambios
       await loadProducts();
     } else {
       await new Promise(resolve => setTimeout(resolve, 800));
       const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
       if (index !== -1) {
-        products.value[index] = { ...products.value[index], ...formData };
+        // Actualizar datos básicos
+        const updatedData = {
+          nombre_producto: productForm.value.nombre_producto,
+          descripcion_producto: productForm.value.descripcion_producto,
+          // Usar el precio de la primera sucursal si está disponible
+          precio: productForm.value.sucursales.length > 0
+            ? (productForm.value.sucursalesPrecios[productForm.value.sucursales[0]] || 0)
+            : 0,
+          preciooferta: productForm.value.preciooferta ? parseFloat(productForm.value.preciooferta) : null,
+          id_subcategoria: productForm.value.id_subcategoria,
+          activo: productForm.value.activo,
+        };
+        // Actualizar imagen solo si se seleccionó una nueva
+        if (selectedImageFile.value) {
+          updatedData.imagen_url = productForm.value.imagen_url; // Usar la URL de previsualización
+        }
+        products.value[index] = { ...products.value[index], ...updatedData };
       }
+      selectedImageFile.value = null; // Limpiar archivo en demo también
     }
 
     showToast('Producto actualizado correctamente', 'success');
     closeModal();
   } catch (error) {
-    console.error('Error al actualizar producto:', error);
+    console.error('Error al actualizar producto:', error.response?.data || error);
     showToast('Error al actualizar el producto', 'error');
   } finally {
     loading.value = false;
@@ -2057,25 +2455,113 @@ const toggleProductStatus = async (product) => {
 const createOffer = async () => {
   try {
     loading.value = true;
+
+    // Validar que el precio de oferta sea un número válido
+    if (!offerForm.value.precio_oferta ||
+        (typeof offerForm.value.precio_oferta === 'string' && offerForm.value.precio_oferta.trim() === '')) {
+      throw new Error('Debe ingresar un precio de oferta');
+    }
+
     const offerPrice = parseFloat(offerForm.value.precio_oferta);
 
-    console.log('Creando oferta para el producto:', selectedProduct.value.id_producto, 'Con precio:', offerPrice); // <- Añadir esto
+    if (isNaN(offerPrice)) {
+      throw new Error(`El precio de oferta "${offerForm.value.precio_oferta}" no es un número válido`);
+    }
 
-    if (!offerPrice || offerPrice <= 0) {
+    console.log('Creando oferta para el producto:', selectedProduct.value.id_producto, 'Con precio:', offerPrice);
+    console.log('Sucursales seleccionadas:', offerForm.value.selectedBranches);
+
+    if (offerPrice <= 0) {
       throw new Error('El precio de oferta debe ser mayor que cero');
     }
 
-    if (offerPrice >= selectedProduct.value.precio) {
+    const originalPrice = getFirstBranchPrice(selectedProduct.value);
+    if (offerPrice >= originalPrice) {
       throw new Error('El precio de oferta debe ser menor al precio original');
     }
 
+    if (!offerForm.value.selectedBranches || offerForm.value.selectedBranches.length === 0) {
+      throw new Error('Debe seleccionar al menos una sucursal');
+    }
+
     if (appMode.value === 'production') {
-      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, { preciooferta: offerPrice });
+      // Aplicar oferta a sucursales específicas
+      console.log('Aplicando oferta a sucursales específicas');
+
+      // 1. Quitar la oferta del producto principal
+      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, { preciooferta: null });
+
+      // 2. Obtener las sucursales actuales del producto
+      const currentSucursalesResponse = await axios.get(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`);
+      const currentSucursales = currentSucursalesResponse.data;
+
+      console.log('Sucursales actuales del producto:', currentSucursales);
+
+      // 3. Actualizar cada sucursal seleccionada
+      for (const sucursalId of offerForm.value.selectedBranches) {
+        // Convertir a número para asegurar una comparación correcta
+        const sucursalIdNum = parseInt(sucursalId);
+        console.log(`Buscando sucursal con ID ${sucursalIdNum} (tipo: ${typeof sucursalIdNum})`);
+
+        const existingSucursal = currentSucursales.find(s => {
+          const direccionId = parseInt(s.id_direccion_local);
+          console.log(`Comparando con sucursal ${direccionId} (tipo: ${typeof direccionId})`);
+          return direccionId === sucursalIdNum;
+        });
+
+        if (existingSucursal) {
+          console.log(`Actualizando oferta para sucursal ${sucursalId} (ID: ${existingSucursal.id_producto_sucursal})`);
+          try {
+            // Usar el precio de oferta general para todas las sucursales
+            const offerPriceNumeric = parseFloat(offerPrice);
+            if (isNaN(offerPriceNumeric)) {
+              throw new Error(`El precio de oferta "${offerPrice}" no es un número válido`);
+            }
+
+            console.log(`Enviando precio de oferta para sucursal ${sucursalId}: ${offerPriceNumeric} (tipo: ${typeof offerPriceNumeric})`);
+
+            await axios.put(`${API_URL}/productoSucursal/${existingSucursal.id_producto_sucursal}`, {
+              preciooferta: offerPriceNumeric
+            });
+            console.log(`Oferta actualizada correctamente para sucursal ${sucursalId}`);
+          } catch (error) {
+            console.error(`Error al actualizar oferta para sucursal ${sucursalId}:`, error.response?.data || error);
+            throw new Error(`Error al actualizar oferta para sucursal ${sucursalId}: ${error.response?.data?.message || error.message}`);
+          }
+        } else {
+          console.log(`La sucursal ${sucursalId} no está asociada al producto, no se puede aplicar la oferta`);
+        }
+      }
+
+      // 4. Quitar la oferta de las sucursales no seleccionadas
+      for (const sucursal of currentSucursales) {
+        // Convertir a número para asegurar una comparación correcta
+        const sucursalIdNum = parseInt(sucursal.id_direccion_local);
+        const isSelected = offerForm.value.selectedBranches.some(id => parseInt(id) === sucursalIdNum);
+
+        if (!isSelected) {
+          console.log(`Quitando oferta de la sucursal ${sucursal.id_direccion_local} (ID: ${sucursal.id_producto_sucursal})`);
+          try {
+            await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, {
+              preciooferta: null
+            });
+            console.log(`Oferta eliminada correctamente de la sucursal ${sucursal.id_direccion_local}`);
+          } catch (error) {
+            console.error(`Error al quitar oferta de la sucursal ${sucursal.id_direccion_local}:`, error.response?.data || error);
+            // No lanzamos error aquí para permitir que continúe con las demás sucursales
+          }
+        }
+      }
+
+      // Recargar productos para ver los cambios
       await loadProducts();
     } else {
+      // Modo demo
       await new Promise(resolve => setTimeout(resolve, 500));
       const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
+
       if (index !== -1) {
+        // En modo demo, simplemente actualizamos el precio de oferta del producto principal
         products.value[index].preciooferta = offerPrice;
       }
     }

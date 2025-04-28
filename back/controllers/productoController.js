@@ -1,6 +1,8 @@
 const Producto = require("../models/Producto");
+const Config = require("../models/Config");
+const { cloudinary } = require("../config/cloudinary");
 
-// Obtener todos los productos
+// Función para obtener todos los productos
 const getProductos = async (req, res) => {
   try {
     const productos = await Producto.findAll();
@@ -62,29 +64,66 @@ const createProducto = async (req, res) => {
       return res.status(400).json({ message: "El nombre del producto ya está en uso" });
     }
 
+    // Obtener la configuración para el porcentaje de comisión
+    let comisionPorcentaje = 15; // Valor por defecto
+    try {
+      const config = await Config.findOne();
+      if (config && config.comision_productos) {
+        comisionPorcentaje = parseFloat(config.comision_productos);
+      }
+      console.log('Configuración encontrada, comisión:', comisionPorcentaje + '%');
+    } catch (error) {
+      console.warn('Error al obtener configuración, usando valor por defecto:', error.message);
+    }
+    const comisionDecimal = comisionPorcentaje / 100;
+
+    console.log('Porcentaje de comisión aplicado:', comisionPorcentaje + '%');
+
+    // Calcular precios finales con la comisión
+    const precioNumerico = parseFloat(precio) || 0;
+    const precioFinal = precioNumerico * (1 + comisionDecimal);
+
+    // Calcular precio de oferta final si existe
+    let precioOfertaFinal = null;
+    let precioOfertaNumerico = null;
+    if (preciooferta) {
+      precioOfertaNumerico = parseFloat(preciooferta);
+      precioOfertaFinal = precioOfertaNumerico * (1 + comisionDecimal);
+    }
+
+    // Mostrar todos los precios en la consola para depuración
+    console.log('PRECIOS AL CREAR PRODUCTO:');
+    console.log('precio (original):', precioNumerico);
+    console.log('preciooferta (original):', precioOfertaNumerico);
+    console.log('preciofinal (con comisión):', precioFinal);
+    console.log('precioofertafinal (con comisión):', precioOfertaFinal);
+
     // Datos para crear el producto
     const productoData = {
       id_local,
       id_subcategoria,
       nombre_producto,
       descripcion_producto,
-      precio,
-      preciooferta: preciooferta || null,
-      precioofertafinal: precioofertafinal || null,
-      preciofinal: preciofinal,
+      precio: precioNumerico,
+      preciooferta: preciooferta ? parseFloat(preciooferta) : null,
+      precioofertafinal: precioOfertaFinal,
+      preciofinal: precioFinal,
       activo: activo !== undefined ? activo : true,
     };
 
-    // Si se subió una imagen, guardar la URL y el public_id
+    // Si el middleware 'upload' subió una imagen, usar su información
     if (req.file) {
-      productoData.imagen_url = req.file.path; // Cloudinary URL
-      productoData.imagen_public_id = req.file.filename; // Cloudinary public_id
+      productoData.imagen_url = req.file.path; // URL segura proporcionada por multer-storage-cloudinary
+      productoData.imagen_public_id = req.file.filename; // public_id proporcionado por multer-storage-cloudinary
+      console.log('Middleware subió la imagen con éxito:', req.file.filename);
+    } else {
+      console.log('No se proporcionó ninguna imagen en la solicitud');
     }
 
     // Crear el nuevo producto
     const producto = await Producto.create(productoData);
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: "Producto creado exitosamente",
       producto
     });
@@ -131,23 +170,113 @@ const updateProducto = async (req, res) => {
     if (id_subcategoria !== undefined) updateData.id_subcategoria = id_subcategoria;
     if (nombre_producto !== undefined) updateData.nombre_producto = nombre_producto;
     if (descripcion_producto !== undefined) updateData.descripcion_producto = descripcion_producto;
-    if (precio !== undefined) updateData.precio = precio;
-    if (preciooferta !== undefined) updateData.preciooferta = preciooferta;
-    if (precioofertafinal !== undefined) updateData.precioofertafinal = precioofertafinal;    
-    if (preciofinal !== undefined) updateData.preciofinal = preciofinal;    
-    if (activo !== undefined) updateData.activo = activo;
+    // Obtener la configuración para el porcentaje de comisión
+    let comisionPorcentaje = 15; // Valor por defecto
+    try {
+      const config = await Config.findOne();
+      if (config && config.comision_productos) {
+        comisionPorcentaje = parseFloat(config.comision_productos);
+      }
+      console.log('Configuración encontrada, comisión:', comisionPorcentaje + '%');
+    } catch (error) {
+      console.warn('Error al obtener configuración, usando valor por defecto:', error.message);
+    }
+    const comisionDecimal = comisionPorcentaje / 100;
 
-    // Si se subió una nueva imagen
+    console.log('Porcentaje de comisión aplicado:', comisionPorcentaje + '%');
+
+    // Mostrar los valores recibidos del cliente
+    console.log('VALORES RECIBIDOS DEL CLIENTE:');
+    console.log('precio:', precio);
+    console.log('preciooferta:', preciooferta);
+    console.log('preciofinal:', preciofinal);
+    console.log('precioofertafinal:', precioofertafinal);
+
+    // Convertir el precio a número decimal si está definido
+    if (precio !== undefined) {
+      // Asegurarse de que sea un número válido
+      const precioNumerico = parseFloat(precio);
+      if (!isNaN(precioNumerico)) {
+        updateData.precio = precioNumerico;
+        // Calcular y actualizar el precio final con la comisión
+        updateData.preciofinal = precioNumerico * (1 + comisionDecimal);
+        console.log('Precio actualizado a:', precioNumerico);
+        console.log('Precio final calculado:', updateData.preciofinal);
+      } else {
+        console.error('Error: El precio no es un número válido:', precio);
+        return res.status(400).json({ message: "El precio debe ser un número válido" });
+      }
+    }
+
+    // Manejar el precio de oferta correctamente
+    if (preciooferta !== undefined) {
+      // Si es un string vacío o null, establecer como null
+      if (preciooferta === '' || preciooferta === null) {
+        updateData.preciooferta = null;
+        updateData.precioofertafinal = null;
+        console.log('Precio de oferta eliminado');
+      } else {
+        const precioOfertaNumerico = parseFloat(preciooferta);
+        if (!isNaN(precioOfertaNumerico)) {
+          updateData.preciooferta = precioOfertaNumerico;
+          // Calcular y actualizar el precio de oferta final con la comisión
+          updateData.precioofertafinal = precioOfertaNumerico * (1 + comisionDecimal);
+          console.log('Precio de oferta actualizado a:', precioOfertaNumerico);
+          console.log('Precio de oferta final calculado:', updateData.precioofertafinal);
+        } else {
+          console.error('Error: El precio de oferta no es un número válido:', preciooferta);
+          return res.status(400).json({ message: "El precio de oferta debe ser un número válido" });
+        }
+      }
+    }
+
+    // Ignoramos los valores de precioofertafinal y preciofinal que vienen del cliente
+    // ya que los calculamos automáticamente basados en precio y preciooferta
+
+    // Mostrar los valores finales que se guardarán en la base de datos
+    console.log('VALORES FINALES QUE SE GUARDARÁN:');
+    console.log('precio:', updateData.precio);
+    console.log('preciooferta:', updateData.preciooferta);
+    console.log('preciofinal:', updateData.preciofinal);
+    console.log('precioofertafinal:', updateData.precioofertafinal);
+
+    // Convertir el valor de activo a booleano
+    if (activo !== undefined) {
+      if (activo === 'true' || activo === '1' || activo === 1) {
+        updateData.activo = true;
+      } else if (activo === 'false' || activo === '0' || activo === 0) {
+        updateData.activo = false;
+      } else {
+        updateData.activo = Boolean(activo);
+      }
+    }
+
+    // Manejar eliminación de imagen antigua si hay una nueva imagen
     if (req.file) {
+      if (producto.imagen_public_id) {
+        try {
+          // Usar cloudinary.uploader.destroy para eliminar la imagen
+          const result = await cloudinary.uploader.destroy(producto.imagen_public_id);
+          console.log('Resultado de eliminación de imagen antigua:', result);
+          if (result.result === 'ok' || result.result === 'not found') {
+             console.log('Imagen antigua eliminada con éxito o no encontrada en Cloudinary');
+          } else {
+             console.warn('No se pudo eliminar la imagen antigua de Cloudinary:', result);
+          }
+        } catch (error) {
+          console.error('Error al intentar eliminar imagen antigua de Cloudinary:', error);
+          // Considerar si se debe detener la actualización o continuar sin eliminar la imagen antigua
+        }
+      }
+      // Usar la información de req.file proporcionada por el middleware
       updateData.imagen_url = req.file.path;
       updateData.imagen_public_id = req.file.filename;
-
-      // Aquí se debería implementar la eliminación de la imagen anterior en Cloudinary si es necesario
+      console.log('Middleware subió nueva imagen con éxito:', req.file.filename);
     }
 
     await producto.update(updateData);
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Producto actualizado correctamente",
       producto: await Producto.findByPk(id)
     });
@@ -173,7 +302,20 @@ const deleteProducto = async (req, res) => {
     }
 
     // Si el producto tiene una imagen, eliminarla de Cloudinary
-    // Aquí se debería implementar la lógica de eliminación de la imagen
+    if (producto.imagen_public_id) {
+      try {
+        const result = await cloudinary.uploader.destroy(producto.imagen_public_id);
+        console.log('Resultado de eliminación de imagen:', result);
+        if (result.result === 'ok' || result.result === 'not found') {
+          console.log('Imagen eliminada con éxito o no encontrada en Cloudinary');
+        } else {
+          console.warn('No se pudo eliminar la imagen de Cloudinary:', result);
+        }
+      } catch (cloudinaryError) {
+        console.error('Error al eliminar imagen de Cloudinary:', cloudinaryError);
+        // Continuamos con la eliminación del producto aunque falle la eliminación de la imagen
+      }
+    }
 
     await producto.destroy();
     res.status(200).json({ message: "Producto eliminado correctamente" });

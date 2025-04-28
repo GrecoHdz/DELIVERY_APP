@@ -1,12 +1,13 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
+const { uploadStore } = require("../config/cloudinary");
 const {
   getLocales,
   getLocalById,
   createLocal,
   updateLocal,
   deleteLocal,
-} = require("../controllers/localesController"); 
+} = require("../controllers/localesController");
 const router = express.Router();
 
 // Middleware para validar errores
@@ -32,6 +33,7 @@ router.get(
 // Crear un nuevo local
 router.post(
   "/:id_cliente",
+  uploadStore.single("imagen"), // Middleware de subida de imagen optimizado para tiendas
   [
     param("id_cliente").isInt().withMessage("El ID debe ser un número entero"),
     body("nombre_local")
@@ -43,16 +45,12 @@ router.post(
       .notEmpty()
       .withMessage("La hora de apertura es obligatoria"),
     body("cierre")
-    .optional().notEmpty()
+      .optional().notEmpty()
       .withMessage("La hora de cierre es obligatoria"),
     body("rtn")
-    .optional()
+      .optional()
       .isLength({ max: 255 })
       .withMessage("El RTN no puede exceder los 255 caracteres"),
-    body("imagen_url")
-      .optional()
-      .isURL()
-      .withMessage("La URL de la imagen debe ser válida"), 
   ],
   validarErrores,
   createLocal
@@ -61,6 +59,7 @@ router.post(
 // Actualizar un local
 router.put(
   "/:id",
+  uploadStore.single("imagen"), // Middleware de subida de imagen optimizado para tiendas
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("id_cliente")
@@ -87,10 +86,6 @@ router.put(
       .optional()
       .isLength({ max: 255 })
       .withMessage("El RTN no puede exceder los 255 caracteres"),
-    body("imagen_url")
-      .optional()
-      .isURL()
-      .withMessage("La URL de la imagen debe ser válida"),
     body("activo")
       .optional()
       .isBoolean()

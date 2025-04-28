@@ -25,6 +25,10 @@ const BannerPublicitario = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    imagen_public_id: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
     url_destino: {
       type: DataTypes.TEXT,
       allowNull: true, // Enlace de destino opcional
