@@ -201,7 +201,7 @@
         <div
           v-for="product in paginatedProducts"
           :key="product.id_producto"
-          class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all border border-indigo-100 relative transform hover:-translate-y-1 flex flex-col"
+          class="group bg-white rounded-xl overflow-hidden shadow-md border border-indigo-100 relative flex flex-col"
         >
           <!-- Badges y Estado -->
           <div class="absolute top-0 left-0 right-0 p-3 flex justify-between z-10">
@@ -234,7 +234,7 @@
           <!-- Imagen del producto -->
           <div class="relative h-56 overflow-hidden bg-indigo-50">
             <div
-              v-if="!product.activo"
+              v-if="!product.activo || (product.sucursales && product.sucursales.length > 0 && !isBranchActive(product, product.sucursales[0]))"
               class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center"
             >
               <span class="bg-white bg-opacity-80 text-gray-800 font-bold text-lg py-1 px-4 rounded-lg">Deshabilitado</span>
@@ -244,7 +244,7 @@
               v-if="product.imagen_url"
               :src="product.imagen_url"
               :alt="product.nombre_producto"
-              class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+              class="w-full h-full object-cover"
             />
             <div v-else class="flex items-center justify-center h-full p-6">
               <div class="bg-white p-4 rounded-xl shadow-sm">
@@ -325,14 +325,37 @@
                 <span
                   v-for="(sucursalId, idx) in product.sucursales.slice(0, 2)"
                   :key="idx"
-                  class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded flex items-center"
+                  class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md flex items-center shadow-sm"
                 >
-                  <MapPinIcon :size="11" class="mr-1" />
+                  <MapPinIcon :size="14" class="mr-1.5" />
                   {{ getBranchColony(sucursalId) }}
+                  <span class="flex items-center ml-1.5 gap-1">
+                    <!-- Indicador de oferta (rojo) -->
+                    <TagIcon
+                      v-if="product.sucursalesPreciosOferta && product.sucursalesPreciosOferta[sucursalId]"
+                      :size="14"
+                      class="text-red-500"
+                      title="En oferta"
+                    />
+                    <!-- Indicador de desactivado (gris) - Verificar si la sucursal está desactivada -->
+                    <EyeOffIcon
+                      v-if="!isBranchActive(product, sucursalId)"
+                      :size="14"
+                      class="text-gray-500"
+                      title="Desactivado"
+                    />
+                    <!-- Indicador de recomendado (naranja) -->
+                    <StarIcon
+                      v-if="isRecommended(product)"
+                      :size="14"
+                      class="text-orange-500"
+                      title="Recomendado"
+                    />
+                  </span>
                 </span>
                 <span
                   v-if="product.sucursales.length > 2"
-                  class="bg-green-50 text-green-600 text-xs px-2 py-1 rounded"
+                  class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md shadow-sm"
                 >
                   +{{ product.sucursales.length - 2 }} más
                 </span>
@@ -352,11 +375,11 @@
                 </button>
 
                 <button
-                  @click="toggleProductStatus(product)"
+                  @click="openModal('status', product)"
                   class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
-                  <component :is="product.activo ? EyeOffIcon : EyeIcon" :size="16" class="mb-1" />
-                  {{ product.activo ? 'Desactivar' : 'Activar' }}
+                  <EyeOffIcon :size="16" class="mb-1" />
+                  Deshabilitar
                 </button>
 
                 <button
@@ -660,43 +683,10 @@
                           <ImageOffIcon :size="24" class="text-gray-300" />
                         </div>
                       </div>
-                      <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Precios</label>
-                    <div class="flex items-center space-x-4">
-                      <!-- Precio original (no editable) -->
-                      <div class="flex-1">
-                        <label class="block text-xs text-gray-500 mb-1">Precio original</label>
-                        <div class="relative">
-                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-indigo-500">L.</span>
-                          <input
-                            type="text"
-                            :value="formatPrice(getFirstBranchPrice(selectedProduct))"
-                            disabled
-                            class="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-indigo-500"
-                          >
-                        </div>
-                      </div>
-
-                      <!-- Precio de oferta (editable) -->
-                      <div class="flex-1">
-                        <label class="block text-xs text-gray-500 mb-1">Precio de oferta*</label>
-                        <div class="relative">
-                          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">L.</span>
-                          <input
-                            v-model="offerForm.precio_oferta"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            :max="getFirstBranchPrice(selectedProduct) - 0.01"
-                            required
-                            class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Precio oferta"
-                            @change="validateOfferPrice"
-                          >
+                      <div class="flex flex-col">
+                        <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                        <div class="flex items-center text-sm text-indigo-600">
+                          <span>Precio: L. {{ formatPrice(getFirstBranchPrice(selectedProduct)) }}</span>
                         </div>
                       </div>
                     </div>
@@ -711,7 +701,7 @@
                         <div
                           v-for="branch in filteredBranches"
                           :key="branch.id_direccion_local"
-                          class="flex items-center border-b border-gray-100 pb-3 pt-2"
+                          class="flex items-center justify-between border-b border-gray-100 pb-3 pt-2"
                         >
                           <div class="flex items-center">
                             <input
@@ -721,35 +711,33 @@
                               v-model="offerForm.selectedBranches"
                               class="w-4 h-4 text-indigo-600 rounded-sm focus:ring-indigo-500"
                             >
-                            <label :for="`offer-branch-${branch.id_direccion_local}`" class="ml-2 text-sm font-medium text-gray-700">
+                            <label :for="`offer-branch-${branch.id_direccion_local}`" class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                              <MapPinIcon :size="14" class="mr-1 text-indigo-500" />
                               {{ branch.colonia }}
                             </label>
+                          </div>
+
+                          <!-- Precio de oferta por sucursal -->
+                          <div class="relative w-32" v-if="offerForm.selectedBranches.includes(branch.id_direccion_local)">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">L.</span>
+                            <input
+                              :value="getBranchOfferPrice(branch.id_direccion_local)"
+                              @input="updateBranchOfferPrice(branch.id_direccion_local, $event.target.value)"
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              :max="getBranchPrice(selectedProduct, branch.id_direccion_local) - 0.01"
+                              required
+                              class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                              placeholder="Precio oferta"
+                            >
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div v-if="offerForm.precio_oferta && selectedProduct?.precio" class="bg-green-50 p-3 rounded-lg">
-                    <div class="flex items-start gap-2">
-                      <div class="bg-green-100 p-1 rounded-full text-green-600 mt-0.5">
-                        <TagIcon :size="16" />
-                      </div>
-                      <div>
-                        <div class="text-green-800 font-medium">Descuento calculado</div>
-                        <div class="mt-1 text-sm text-green-700">
-                          <div class="flex justify-between items-center">
-                            <span>Descuento:</span>
-                            <span class="font-medium">{{ calculateDiscount(offerForm.precio_oferta, getFirstBranchPrice(selectedProduct)) }}%</span>
-                          </div>
-                          <div class="flex justify-between items-center mt-1">
-                            <span>Ahorro:</span>
-                            <span class="font-medium">L. {{ formatPrice(getFirstBranchPrice(selectedProduct) - offerForm.precio_oferta) }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
@@ -1072,6 +1060,110 @@
       </div>
     </transition>
 
+    <!-- Modal para Activar/Desactivar Producto -->
+    <transition name="modal">
+      <div v-if="currentModal === 'status'" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="flex items-center justify-center min-h-screen p-4">
+          <div class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+          <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto z-10 overflow-hidden">
+            <!-- Modal Header con gradiente -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 flex justify-between items-center">
+              <h2 class="text-xl font-bold text-white">
+                🔄 Activar/Desactivar producto por sucursal
+              </h2>
+              <button @click="closeModal" class="text-white hover:text-indigo-100">
+                <XIcon :size="24" />
+              </button>
+            </div>
+
+            <div class="p-6">
+              <form @submit.prevent="toggleProductStatus">
+                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
+                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                    <img
+                      v-if="selectedProduct?.imagen_url"
+                      :src="selectedProduct.imagen_url"
+                      :alt="selectedProduct.nombre_producto"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center">
+                      <ImageOffIcon :size="24" class="text-gray-300" />
+                    </div>
+                  </div>
+                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                </div>
+
+                <div class="bg-indigo-50 p-4 rounded-lg mb-6">
+                  <div class="flex items-start gap-3">
+                    <div class="text-indigo-500 mt-0.5">
+                      <EyeOffIcon :size="24" />
+                    </div>
+                    <div>
+                      <p class="font-medium text-indigo-800">
+                        Deshabilitar producto
+                      </p>
+                      <p class="text-sm text-indigo-700 mt-1">
+                        Marque las sucursales que desea deshabilitar. Desmarque para habilitar.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Selección de sucursales -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Gestionar estado de sucursales:</label>
+                  <div class="space-y-2 max-h-52 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    <!-- Lista de sucursales -->
+                    <div class="space-y-3">
+                      <div
+                        v-for="branch in filteredBranches"
+                        :key="branch.id_direccion_local"
+                        class="flex items-center border-b border-gray-100 pb-3 pt-2"
+                      >
+                        <div class="flex items-center">
+                          <input
+                            :id="`status-branch-${branch.id_direccion_local}`"
+                            type="checkbox"
+                            :value="branch.id_direccion_local"
+                            v-model="statusForm.selectedBranches"
+                            class="w-4 h-4 text-indigo-600 rounded-sm focus:ring-indigo-500"
+                          >
+                          <label :for="`status-branch-${branch.id_direccion_local}`" class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                            <MapPinIcon :size="14" class="mr-1 text-indigo-500" />
+                            {{ branch.colonia }}
+                            <span v-if="isBranchAlreadyDisabled(selectedProduct, branch.id_direccion_local)" class="text-gray-500 italic ml-1 flex items-center">
+                              <EyeOffIcon :size="12" class="mr-0.5" />
+                              (deshabilitado)
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    @click="closeModal"
+                    class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2.5 text-white rounded-lg transition-colors font-medium bg-indigo-500 hover:bg-indigo-600"
+                  >
+                    Guardar cambios
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Toast de notificación mejorado -->
     <transition name="toast">
       <div
@@ -1213,6 +1305,11 @@
   precio_adicional: ''
   });
 
+  const statusForm = ref({
+  selectedBranches: [],
+  newStatus: false
+  });
+
   // Datos
   const products = ref([]);
   const subcategories = ref([]);
@@ -1264,7 +1361,7 @@
   result = result.filter(p => !p.activo);
   break;
   case 'offer':
-  result = result.filter(p => p.preciooferta);
+  result = result.filter(p => hasAnyBranchOffer(p));
   break;
   }
   }
@@ -1323,13 +1420,13 @@
   // Métodos de utilidad
   const getFirstBranchPrice = (product) => {
     if (!product || !product.sucursales || product.sucursales.length === 0) {
-      return product?.precio || 0;
+      return 0;
     }
 
     const firstBranchId = product.sucursales[0];
     return product.sucursalesPrecios && product.sucursalesPrecios[firstBranchId]
       ? product.sucursalesPrecios[firstBranchId]
-      : product.precio || 0;
+      : 0;
   };
 
   const getBranchPrice = (product, branchId) => {
@@ -1339,12 +1436,12 @@
 
     return product.sucursalesPrecios && product.sucursalesPrecios[branchId]
       ? product.sucursalesPrecios[branchId]
-      : product.precio || 0;
+      : 0;
   };
 
   const getFirstBranchOfferPrice = (product) => {
     if (!product || !product.sucursales || product.sucursales.length === 0) {
-      return product?.preciooferta || null;
+      return null;
     }
 
     const firstBranchId = product.sucursales[0];
@@ -1354,16 +1451,12 @@
       return product.sucursalesPreciosOferta[firstBranchId];
     }
 
-    // Si no hay precio de oferta específico, usar el precio de oferta general
-    return product?.preciooferta || null;
+    return null;
   };
 
   // Verificar si hay ofertas en cualquier sucursal
   const hasAnyBranchOffer = (product) => {
     if (!product) return false;
-
-    // Si hay precio de oferta general
-    if (product.preciooferta) return true;
 
     // Si hay precios de oferta específicos por sucursal
     if (product.sucursalesPreciosOferta && Object.keys(product.sucursalesPreciosOferta).length > 0) {
@@ -1392,6 +1485,38 @@
   const isRecommended = (product) => {
   if (!product) return false;
   return recommendations.value.some(r => r.id_producto === product.id_producto && r.activo);
+  };
+
+  // Verificar si una sucursal específica está activa
+  const isBranchActive = (product, branchId) => {
+    if (!product) return false;
+
+    // Si el producto está completamente desactivado
+    if (!product.activo) return false;
+
+    // Verificar si hay información específica de activación por sucursal
+    if (product.sucursalesActivas && branchId in product.sucursalesActivas) {
+      return product.sucursalesActivas[branchId] === true;
+    }
+
+    // Por defecto, si el producto está activo y no hay información específica, la sucursal está activa
+    return true;
+  };
+
+  // Verificar si una sucursal ya está desactivada (para mostrar en el modal)
+  const isBranchAlreadyDisabled = (product, branchId) => {
+    if (!product) return false;
+
+    // Verificar si hay información específica de activación por sucursal
+    if (product.sucursalesActivas && branchId in product.sucursalesActivas) {
+      return product.sucursalesActivas[branchId] === false;
+    }
+
+    // Si el producto está completamente desactivado, todas las sucursales están desactivadas
+    if (!product.activo) return true;
+
+    // Por defecto, si no hay información específica, la sucursal no está desactivada
+    return false;
   };
 
   const getCategoryName = (id) => {
@@ -1443,26 +1568,23 @@
 
   const isValidOffer = () => {
     try {
-      // Verificar que el precio de oferta sea válido
-      if (!offerForm.value.precio_oferta) {
-        return false;
-      }
-
-      // Si es una cadena, verificar que no esté vacía
-      if (typeof offerForm.value.precio_oferta === 'string' && offerForm.value.precio_oferta.trim() === '') {
-        return false;
-      }
-
-      const offerPrice = parseFloat(offerForm.value.precio_oferta);
-      const originalPrice = getFirstBranchPrice(selectedProduct.value);
-
-      if (isNaN(offerPrice) || offerPrice <= 0 || offerPrice >= originalPrice) {
-        return false;
-      }
-
       // Verificar que al menos una sucursal esté seleccionada
       if (!Array.isArray(offerForm.value.selectedBranches) || offerForm.value.selectedBranches.length === 0) {
         return false;
+      }
+
+      // Verificar que cada sucursal seleccionada tenga un precio de oferta válido
+      for (const sucursalId of offerForm.value.selectedBranches) {
+        const offerPrice = offerForm.value.branchOfferPrices[sucursalId];
+        const originalPrice = getBranchPrice(selectedProduct.value, sucursalId);
+
+        if (!offerPrice || isNaN(parseFloat(offerPrice)) || parseFloat(offerPrice) <= 0) {
+          return false;
+        }
+
+        if (parseFloat(offerPrice) >= originalPrice) {
+          return false;
+        }
       }
 
       return true;
@@ -1472,26 +1594,15 @@
     }
   };
 
-  // Validar el precio de oferta mientras el usuario escribe
-  const validateOfferPrice = (event) => {
-    const input = event.target;
-    const value = parseFloat(input.value);
-    const originalPrice = getFirstBranchPrice(selectedProduct.value);
-
-    if (isNaN(value)) {
-      input.setCustomValidity('El precio debe ser un número válido');
-    } else if (value <= 0) {
-      input.setCustomValidity('El precio debe ser mayor que cero');
-    } else if (originalPrice && value >= originalPrice) {
-      input.setCustomValidity('El precio de oferta debe ser menor al precio original');
-    } else {
-      input.setCustomValidity('');
+  // Obtener el precio de oferta para una sucursal específica
+  const getBranchOfferPrice = (branchId) => {
+    if (!offerForm.value.branchOfferPrices) {
+      return '';
     }
-
-    // No llamar a reportValidity() para evitar que se muestre el mensaje de error
-    // mientras el usuario está escribiendo
-    // input.reportValidity();
+    return offerForm.value.branchOfferPrices[branchId] || '';
   };
+
+
 
   const toggleAppMode = () => {
   appMode.value = appMode.value === 'production' ? 'demo' : 'production';
@@ -1520,10 +1631,29 @@
 
     console.log('Formulario cargado:', productForm.value);
     console.log('Precio en el formulario:', productForm.value.precio);
+  } else if (type === 'status') {
+    // Inicializar el formulario de estado con las sucursales que ya están desactivadas
+    const sucursalesDesactivadas = [];
+
+    // Recorrer todas las sucursales del producto
+    if (product.sucursales && Array.isArray(product.sucursales)) {
+      product.sucursales.forEach(sucursalId => {
+        // Si la sucursal está desactivada, agregarla a la lista
+        if (product.sucursalesActivas &&
+            sucursalId in product.sucursalesActivas &&
+            product.sucursalesActivas[sucursalId] === false) {
+          sucursalesDesactivadas.push(sucursalId);
+        }
+      });
+    }
+
+    statusForm.value = {
+      selectedBranches: sucursalesDesactivadas,
+      newStatus: false // Siempre desactivar
+    };
   } else if (type === 'offer') {
     // Inicializar el formulario de oferta
     offerForm.value = {
-      precio_oferta: product.preciooferta || '',
       selectedBranches: [],
       branchOfferPrices: {}
     };
@@ -1539,22 +1669,29 @@
           const sucursalesConOferta = sucursales.filter(s => s.preciooferta !== null);
 
           if (sucursalesConOferta.length > 0) {
-            // Si hay sucursales con oferta, cambiar el modo a 'specific'
-            offerForm.value.applyTo = 'specific';
+            // Si hay sucursales con oferta, seleccionarlas
             offerForm.value.selectedBranches = sucursalesConOferta.map(s => s.id_direccion_local);
 
-            // Si todas las sucursales tienen el mismo precio de oferta, usarlo como precio de oferta general
-            const primerPrecioOferta = parseFloat(sucursalesConOferta[0].preciooferta);
-            const todosIguales = sucursalesConOferta.every(s => parseFloat(s.preciooferta) === primerPrecioOferta);
-
-            if (todosIguales) {
-              offerForm.value.precio_oferta = primerPrecioOferta;
-            }
+            // Guardar los precios de oferta específicos por sucursal
+            sucursalesConOferta.forEach(s => {
+              offerForm.value.branchOfferPrices[s.id_direccion_local] = parseFloat(s.preciooferta);
+            });
           }
         })
         .catch(error => {
           console.error('Error al cargar sucursales para oferta:', error);
         });
+    } else {
+      // En modo demo, usar los datos del producto
+      if (product.sucursalesPreciosOferta) {
+        // Seleccionar las sucursales que tienen precio de oferta
+        offerForm.value.selectedBranches = Object.keys(product.sucursalesPreciosOferta).map(id => parseInt(id));
+
+        // Guardar los precios de oferta
+        for (const sucursalId in product.sucursalesPreciosOferta) {
+          offerForm.value.branchOfferPrices[sucursalId] = product.sucursalesPreciosOferta[sucursalId];
+        }
+      }
     }
   }
   } else {
@@ -1813,6 +1950,11 @@
     product.sucursalesPreciosOferta = {};
   }
 
+  // Inicializar el objeto de activación por sucursal
+  if (!product.sucursalesActivas) {
+    product.sucursalesActivas = {};
+  }
+
   // Guardar los precios específicos por sucursal
   sucursalesResponse.data.forEach(s => {
     if (s.precio) {
@@ -1823,6 +1965,9 @@
     if (s.preciooferta) {
       product.sucursalesPreciosOferta[s.id_direccion_local] = parseFloat(s.preciooferta);
     }
+
+    // Guardar el estado de activación por sucursal
+    product.sucursalesActivas[s.id_direccion_local] = s.activo === 1 || s.activo === true;
   });
 
   console.log(`Sucursales cargadas para producto ${product.id_producto}:`, product.sucursales);
@@ -1870,11 +2015,14 @@
   id_producto: 1,
   nombre_producto: 'Hamburguesa Clásica Gourmet',
   descripcion_producto: 'Deliciosa hamburguesa con carne premium, lechuga fresca, tomate, cebolla caramelizada y nuestra salsa especial',
-  precio: 129.99,
   id_subcategoria: 1,
   imagen_url: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: true,
   sucursales: [1, 2],
+  sucursalesPrecios: {
+    1: 129.99,
+    2: 139.99
+  },
   extras: [
   { id: 101, nombre: 'Queso cheddar', precio: 15.00 },
   { id: 102, nombre: 'Tocino crujiente', precio: 20.00 }
@@ -1887,52 +2035,72 @@
   id_producto: 2,
   nombre_producto: 'Pizza Pepperoni Suprema',
   descripcion_producto: 'Pizza artesanal con pepperoni premium, queso mozzarella y nuestra salsa especial de tomate casera',
-  precio: 199.99,
-  preciooferta: 169.99,
   id_subcategoria: 2,
   imagen_url: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: true,
-  sucursales: [1, 3]
+  sucursales: [1, 3],
+  sucursalesPrecios: {
+    1: 199.99,
+    3: 209.99
+  },
+  sucursalesPreciosOferta: {
+    1: 169.99
+  }
   },
   {
   id_producto: 3,
   nombre_producto: 'Refresco Cola Premium',
   descripcion_producto: 'Refresco de cola refrescante, 355ml',
-  precio: 35.00,
   id_subcategoria: 3,
   imagen_url: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: true,
-  sucursales: [1, 2, 3, 4]
+  sucursales: [1, 2, 3, 4],
+  sucursalesPrecios: {
+    1: 35.00,
+    2: 35.00,
+    3: 35.00,
+    4: 35.00
+  }
   },
   {
   id_producto: 4,
   nombre_producto: 'Pastel de Chocolate Belga',
   descripcion_producto: 'Exquisito pastel de chocolate belga con ganache cremoso y frutos rojos frescos',
-  precio: 85.00,
   id_subcategoria: 4,
   imagen_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: false,
-  sucursales: [1]
+  sucursales: [1],
+  sucursalesPrecios: {
+    1: 85.00
+  }
   },
   {
   id_producto: 5,
   nombre_producto: 'Ensalada César Deluxe',
   descripcion_producto: 'Ensalada fresca con lechuga romana crujiente, crutones caseros, pollo a la parrilla y aderezo César premium',
-  precio: 110.00,
   id_subcategoria: 5,
   imagen_url: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: true,
-  sucursales: [2, 3]
+  sucursales: [2, 3],
+  sucursalesPrecios: {
+    2: 110.00,
+    3: 110.00
+  }
   },
   {
   id_producto: 6,
   nombre_producto: 'Café Americano',
   descripcion_producto: 'Café americano preparado con granos seleccionados',
-  precio: 45.00,
   id_subcategoria: 3,
   imagen_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
   activo: true,
-  sucursales: [1, 2, 3, 4]
+  sucursales: [1, 2, 3, 4],
+  sucursalesPrecios: {
+    1: 45.00,
+    2: 45.00,
+    3: 45.00,
+    4: 45.00
+  }
   }
   ];
 
@@ -1997,17 +2165,8 @@
     data.append('nombre_producto', productForm.value.nombre_producto);
     data.append('descripcion_producto', productForm.value.descripcion_producto || '');
 
-    // Ya no enviamos un precio general, se usará el precio de la primera sucursal
-    // o se calculará en base a los precios de las sucursales
-
-    // Ya no enviamos preciofinal, se calculará automáticamente en el backend
-
-    // Manejar el precio de oferta
-    if (productForm.value.preciooferta) {
-      data.append('preciooferta', parseFloat(productForm.value.preciooferta));
-    } else {
-      data.append('preciooferta', ''); // Enviar string vacío para que el backend lo maneje como null
-    }
+    // Ya no enviamos precios en el producto principal
+    // Los precios se manejan exclusivamente en las sucursales
 
     data.append('id_subcategoria', productForm.value.id_subcategoria);
 
@@ -2058,12 +2217,12 @@
         id_local: localId.value,
         nombre_producto: productForm.value.nombre_producto,
         descripcion_producto: productForm.value.descripcion_producto,
-        precio: parseFloat(productForm.value.precio) || 0,
-        preciooferta: productForm.value.preciooferta ? parseFloat(productForm.value.preciooferta) : null,
         id_subcategoria: productForm.value.id_subcategoria,
         activo: productForm.value.activo,
         imagen_url: productForm.value.imagen_url,
         sucursales: [...productForm.value.sucursales],
+        sucursalesPrecios: {...productForm.value.sucursalesPrecios},
+        sucursalesPreciosOferta: {},
         extras: [],
         atributos: []
       };
@@ -2088,16 +2247,11 @@
     loading.value = true;
 
     if (appMode.value === 'production') {
-      // 1. Quitar la oferta del producto principal
-      await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, {
-        preciooferta: null
-      });
-
-      // 2. Obtener las sucursales actuales del producto
+      // 1. Obtener las sucursales actuales del producto
       const currentSucursalesResponse = await axios.get(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`);
       const currentSucursales = currentSucursalesResponse.data;
 
-      // 3. Quitar la oferta de todas las sucursales
+      // 2. Quitar la oferta de todas las sucursales
       for (const sucursal of currentSucursales) {
         console.log(`Quitando oferta de la sucursal ${sucursal.id_direccion_local}`);
         await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, {
@@ -2115,9 +2269,6 @@
       const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
 
       if (index !== -1) {
-        // Eliminar precio de oferta general
-        products.value[index].preciooferta = null;
-
         // Eliminar precios de oferta por sucursal
         if (products.value[index].sucursalesPreciosOferta) {
           products.value[index].sucursalesPreciosOferta = {};
@@ -2425,28 +2576,136 @@
   }
 };
 
-const toggleProductStatus = async (product) => {
+const toggleProductStatus = async () => {
   try {
     loading.value = true;
-    const newStatus = !product.activo;
 
-    console.log('Cambiando estado del prducto:', product.id_producto, 'Nuevo estado:', newStatus); // <- Añadir esto
+    // Las sucursales actualmente seleccionadas (a desactivar)
+    const sucursalesADesactivar = statusForm.value.selectedBranches;
+
+    // Las sucursales que estaban desactivadas antes
+    const sucursalesDesactivadasAntes = [];
+
+    // Identificar las sucursales que estaban desactivadas antes
+    if (selectedProduct.value.sucursales && Array.isArray(selectedProduct.value.sucursales)) {
+      selectedProduct.value.sucursales.forEach(sucursalId => {
+        if (selectedProduct.value.sucursalesActivas &&
+            sucursalId in selectedProduct.value.sucursalesActivas &&
+            selectedProduct.value.sucursalesActivas[sucursalId] === false) {
+          sucursalesDesactivadasAntes.push(sucursalId);
+        }
+      });
+    }
+
+    // Identificar sucursales a activar (las que estaban desactivadas pero ya no están seleccionadas)
+    const sucursalesAActivar = sucursalesDesactivadasAntes.filter(
+      id => !sucursalesADesactivar.includes(id)
+    );
+
+    console.log('Sucursales a desactivar:', sucursalesADesactivar);
+    console.log('Sucursales a activar:', sucursalesAActivar);
 
     if (appMode.value === 'production') {
-      await axios.put(`${API_URL}/productos/${product.id_producto}`, { activo: newStatus });
+      // Obtener todas las relaciones producto-sucursal
+      const sucursalResponse = await axios.get(`${API_URL}/productoSucursal/${selectedProduct.value.id_producto}`);
+      const sucursales = sucursalResponse.data;
+
+      // Si se seleccionaron todas las sucursales, desactivar el producto completo
+      const todasSeleccionadas = selectedProduct.value.sucursales.length === sucursalesADesactivar.length &&
+        selectedProduct.value.sucursales.every(id => sucursalesADesactivar.includes(id));
+
+      if (todasSeleccionadas) {
+        // Desactivar el producto completo
+        await axios.put(`${API_URL}/productos/${selectedProduct.value.id_producto}`, { activo: false });
+
+        // También desactivar todas las sucursales individualmente para mantener consistencia
+        for (const sucursal of sucursales) {
+          await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, { activo: false });
+        }
+      } else {
+        // Desactivar las sucursales seleccionadas
+        for (const sucursalId of sucursalesADesactivar) {
+          const sucursal = sucursales.find(s => s.id_direccion_local == sucursalId);
+
+          if (sucursal) {
+            // Desactivar la sucursal
+            await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, { activo: false });
+          }
+        }
+
+        // Activar las sucursales que se desmarcaron
+        for (const sucursalId of sucursalesAActivar) {
+          const sucursal = sucursales.find(s => s.id_direccion_local == sucursalId);
+
+          if (sucursal) {
+            // Activar la sucursal
+            await axios.put(`${API_URL}/productoSucursal/${sucursal.id_producto_sucursal}`, { activo: true });
+          }
+        }
+      }
+
+      // Recargar productos para ver los cambios
       await loadProducts();
     } else {
+      // Modo demo
       await new Promise(resolve => setTimeout(resolve, 500));
-      const index = products.value.findIndex(p => p.id_producto === product.id_producto);
+      const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
+
       if (index !== -1) {
-        products.value[index].activo = newStatus;
+        // Si se seleccionaron todas las sucursales, desactivar el producto completo
+        const todasSeleccionadas = selectedProduct.value.sucursales.length === sucursalesADesactivar.length &&
+          selectedProduct.value.sucursales.every(id => sucursalesADesactivar.includes(id));
+
+        // Inicializar el objeto de activación por sucursal si no existe
+        if (!products.value[index].sucursalesActivas) {
+          products.value[index].sucursalesActivas = {};
+        }
+
+        if (todasSeleccionadas) {
+          // Desactivar el producto completo
+          products.value[index].activo = false;
+
+          // También desactivar todas las sucursales individualmente para mantener consistencia
+          for (const sucursalId of selectedProduct.value.sucursales) {
+            products.value[index].sucursalesActivas[sucursalId] = false;
+          }
+        } else {
+          // Si el producto estaba completamente desactivado pero ahora solo algunas sucursales
+          // están seleccionadas, activar el producto principal
+          if (!products.value[index].activo) {
+            products.value[index].activo = true;
+          }
+
+          // Desactivar las sucursales seleccionadas
+          for (const sucursalId of sucursalesADesactivar) {
+            products.value[index].sucursalesActivas[sucursalId] = false;
+          }
+
+          // Activar las sucursales que se desmarcaron
+          for (const sucursalId of sucursalesAActivar) {
+            products.value[index].sucursalesActivas[sucursalId] = true;
+          }
+        }
       }
     }
 
-    showToast(`Producto ${newStatus ? 'habilitado' : 'deshabilitado'} correctamente`, 'success');
+    // Construir mensaje según las acciones realizadas
+    let mensaje = '';
+    if (sucursalesADesactivar.length > 0 && sucursalesAActivar.length > 0) {
+      mensaje = `Producto desactivado en ${sucursalesADesactivar.length} sucursal(es) y activado en ${sucursalesAActivar.length} sucursal(es)`;
+    } else if (sucursalesADesactivar.length > 0) {
+      mensaje = `Producto desactivado correctamente en ${sucursalesADesactivar.length} sucursal(es)`;
+    } else if (sucursalesAActivar.length > 0) {
+      mensaje = `Producto activado correctamente en ${sucursalesAActivar.length} sucursal(es)`;
+    } else {
+      mensaje = 'No se realizaron cambios';
+    }
+
+    showToast(mensaje, 'success');
+    closeModal();
   } catch (error) {
     console.error('Error al cambiar estado del producto:', error);
-    showToast('Error al cambiar el estado del producto', 'error');
+    showToast(error.message || 'Error al cambiar el estado del producto', 'error');
   } finally {
     loading.value = false;
   }
@@ -2456,33 +2715,31 @@ const createOffer = async () => {
   try {
     loading.value = true;
 
-    // Validar que el precio de oferta sea un número válido
-    if (!offerForm.value.precio_oferta ||
-        (typeof offerForm.value.precio_oferta === 'string' && offerForm.value.precio_oferta.trim() === '')) {
-      throw new Error('Debe ingresar un precio de oferta');
-    }
-
-    const offerPrice = parseFloat(offerForm.value.precio_oferta);
-
-    if (isNaN(offerPrice)) {
-      throw new Error(`El precio de oferta "${offerForm.value.precio_oferta}" no es un número válido`);
-    }
-
-    console.log('Creando oferta para el producto:', selectedProduct.value.id_producto, 'Con precio:', offerPrice);
-    console.log('Sucursales seleccionadas:', offerForm.value.selectedBranches);
-
-    if (offerPrice <= 0) {
-      throw new Error('El precio de oferta debe ser mayor que cero');
-    }
-
-    const originalPrice = getFirstBranchPrice(selectedProduct.value);
-    if (offerPrice >= originalPrice) {
-      throw new Error('El precio de oferta debe ser menor al precio original');
-    }
-
+    // Validar que al menos una sucursal esté seleccionada
     if (!offerForm.value.selectedBranches || offerForm.value.selectedBranches.length === 0) {
       throw new Error('Debe seleccionar al menos una sucursal');
     }
+
+    // Validar que cada sucursal seleccionada tenga un precio de oferta válido
+    const sucursalesConPrecioInvalido = [];
+    for (const sucursalId of offerForm.value.selectedBranches) {
+      const offerPrice = offerForm.value.branchOfferPrices[sucursalId];
+      const originalPrice = getBranchPrice(selectedProduct.value, sucursalId);
+
+      if (!offerPrice || isNaN(parseFloat(offerPrice)) || parseFloat(offerPrice) <= 0) {
+        sucursalesConPrecioInvalido.push(getBranchColony(sucursalId));
+      } else if (parseFloat(offerPrice) >= originalPrice) {
+        sucursalesConPrecioInvalido.push(`${getBranchColony(sucursalId)} (precio de oferta debe ser menor al original)`);
+      }
+    }
+
+    if (sucursalesConPrecioInvalido.length > 0) {
+      throw new Error(`Precios de oferta inválidos para: ${sucursalesConPrecioInvalido.join(', ')}`);
+    }
+
+    console.log('Creando oferta para el producto:', selectedProduct.value.id_producto);
+    console.log('Sucursales seleccionadas:', offerForm.value.selectedBranches);
+    console.log('Precios de oferta por sucursal:', offerForm.value.branchOfferPrices);
 
     if (appMode.value === 'production') {
       // Aplicar oferta a sucursales específicas
@@ -2497,31 +2754,26 @@ const createOffer = async () => {
 
       console.log('Sucursales actuales del producto:', currentSucursales);
 
-      // 3. Actualizar cada sucursal seleccionada
+      // 3. Actualizar cada sucursal seleccionada con su precio de oferta específico
       for (const sucursalId of offerForm.value.selectedBranches) {
         // Convertir a número para asegurar una comparación correcta
         const sucursalIdNum = parseInt(sucursalId);
+        const offerPrice = parseFloat(offerForm.value.branchOfferPrices[sucursalId]);
+
         console.log(`Buscando sucursal con ID ${sucursalIdNum} (tipo: ${typeof sucursalIdNum})`);
 
         const existingSucursal = currentSucursales.find(s => {
           const direccionId = parseInt(s.id_direccion_local);
-          console.log(`Comparando con sucursal ${direccionId} (tipo: ${typeof direccionId})`);
           return direccionId === sucursalIdNum;
         });
 
         if (existingSucursal) {
           console.log(`Actualizando oferta para sucursal ${sucursalId} (ID: ${existingSucursal.id_producto_sucursal})`);
           try {
-            // Usar el precio de oferta general para todas las sucursales
-            const offerPriceNumeric = parseFloat(offerPrice);
-            if (isNaN(offerPriceNumeric)) {
-              throw new Error(`El precio de oferta "${offerPrice}" no es un número válido`);
-            }
-
-            console.log(`Enviando precio de oferta para sucursal ${sucursalId}: ${offerPriceNumeric} (tipo: ${typeof offerPriceNumeric})`);
+            console.log(`Enviando precio de oferta para sucursal ${sucursalId}: ${offerPrice} (tipo: ${typeof offerPrice})`);
 
             await axios.put(`${API_URL}/productoSucursal/${existingSucursal.id_producto_sucursal}`, {
-              preciooferta: offerPriceNumeric
+              preciooferta: offerPrice
             });
             console.log(`Oferta actualizada correctamente para sucursal ${sucursalId}`);
           } catch (error) {
@@ -2561,8 +2813,22 @@ const createOffer = async () => {
       const index = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
 
       if (index !== -1) {
-        // En modo demo, simplemente actualizamos el precio de oferta del producto principal
-        products.value[index].preciooferta = offerPrice;
+        // En modo demo, actualizamos los precios de oferta por sucursal
+        if (!products.value[index].sucursalesPreciosOferta) {
+          products.value[index].sucursalesPreciosOferta = {};
+        }
+
+        // Actualizar precios de oferta para las sucursales seleccionadas
+        for (const sucursalId of offerForm.value.selectedBranches) {
+          products.value[index].sucursalesPreciosOferta[sucursalId] = parseFloat(offerForm.value.branchOfferPrices[sucursalId]);
+        }
+
+        // Quitar precios de oferta para las sucursales no seleccionadas
+        for (const sucursalId in products.value[index].sucursalesPreciosOferta) {
+          if (!offerForm.value.selectedBranches.includes(parseInt(sucursalId))) {
+            delete products.value[index].sucursalesPreciosOferta[sucursalId];
+          }
+        }
       }
     }
 

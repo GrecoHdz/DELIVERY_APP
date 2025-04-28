@@ -9,6 +9,9 @@ const Local = require("./Local");
 const Driver = require("./Driver");
 const DireccionCliente = require("./DireccionCliente");
 const DireccionLocal = require("./DireccionLocal");
+const Producto = require("./Producto");
+const ProductoSucursal = require("./ProductoSucursal");
+const Subcategoria = require("./Subcategoria");
 
 // Definir las asociaciones
 const setupAssociations = () => {
@@ -50,6 +53,34 @@ const setupAssociations = () => {
     as: "DireccionLocal",
     onDelete: "CASCADE"
   });
+
+  // Asociaciones de Producto
+  Producto.belongsTo(Local, {
+    foreignKey: "id_local",
+    onDelete: "CASCADE"
+  });
+
+  Producto.belongsTo(Subcategoria, {
+    foreignKey: "id_subcategoria",
+    onDelete: "SET NULL"
+  });
+
+  Producto.hasMany(ProductoSucursal, {
+    foreignKey: "id_producto",
+    as: "ProductoSucursales",
+    onDelete: "CASCADE"
+  });
+
+  // Asociaciones de ProductoSucursal
+  ProductoSucursal.belongsTo(Producto, {
+    foreignKey: "id_producto",
+    onDelete: "CASCADE"
+  });
+
+  ProductoSucursal.belongsTo(DireccionLocal, {
+    foreignKey: "id_direccion_local",
+    onDelete: "CASCADE"
+  });
 };
 
 // Ejecutar las asociaciones
@@ -64,5 +95,8 @@ module.exports = {
   Local,
   Driver,
   DireccionCliente,
-  DireccionLocal
+  DireccionLocal,
+  Producto,
+  ProductoSucursal,
+  Subcategoria
 };

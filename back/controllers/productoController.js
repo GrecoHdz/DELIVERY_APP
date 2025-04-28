@@ -5,10 +5,53 @@ const { cloudinary } = require("../config/cloudinary");
 // Función para obtener todos los productos
 const getProductos = async (req, res) => {
   try {
-    const productos = await Producto.findAll();
-    res.json(productos);
+    const productos = await Producto.findAll({
+      include: [
+        {
+          association: 'ProductoSucursales',
+          attributes: ['id_producto_sucursal', 'id_direccion_local', 'precio', 'preciooferta', 'preciofinal', 'precioofertafinal', 'activo']
+        }
+      ]
+    });
+
+    // Transformar los datos para mantener compatibilidad con el frontend
+    const productosTransformados = productos.map(producto => {
+      const productoJson = producto.toJSON();
+
+      // Crear objetos para almacenar precios por sucursal
+      productoJson.sucursales = [];
+      productoJson.sucursalesPrecios = {};
+      productoJson.sucursalesPreciosOferta = {};
+      productoJson.sucursalesActivo = {};
+
+      // Procesar cada sucursal
+      if (productoJson.ProductoSucursales && productoJson.ProductoSucursales.length > 0) {
+        productoJson.ProductoSucursales.forEach(sucursal => {
+          productoJson.sucursales.push(sucursal.id_direccion_local);
+          productoJson.sucursalesPrecios[sucursal.id_direccion_local] = sucursal.precio;
+          productoJson.sucursalesActivo[sucursal.id_direccion_local] = sucursal.activo;
+
+          if (sucursal.preciooferta) {
+            productoJson.sucursalesPreciosOferta[sucursal.id_direccion_local] = sucursal.preciooferta;
+          }
+        });
+      }
+
+      // Determinar si el producto está activo en al menos una sucursal
+      productoJson.activo = productoJson.sucursales.some(
+        sucursalId => productoJson.sucursalesActivo[sucursalId]
+      );
+
+      // Eliminar el array original de ProductoSucursales para no duplicar datos
+      delete productoJson.ProductoSucursales;
+
+      return productoJson;
+    });
+
+    res.json(productosTransformados);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener los productos", error });
+    console.error("Error al obtener los productos:", error);
+    res.status(500).json({ message: "Error al obtener los productos", error: error.message });
   }
 };
 
@@ -19,24 +62,105 @@ const getProductosByLocal = async (req, res) => {
   try {
     const productos = await Producto.findAll({
       where: { id_local },
+      include: [
+        {
+          association: 'ProductoSucursales',
+          attributes: ['id_producto_sucursal', 'id_direccion_local', 'precio', 'preciooferta', 'preciofinal', 'precioofertafinal', 'activo']
+        }
+      ]
     });
 
-    res.json(productos);
+    // Transformar los datos para mantener compatibilidad con el frontend
+    const productosTransformados = productos.map(producto => {
+      const productoJson = producto.toJSON();
+
+      // Crear objetos para almacenar precios por sucursal
+      productoJson.sucursales = [];
+      productoJson.sucursalesPrecios = {};
+      productoJson.sucursalesPreciosOferta = {};
+      productoJson.sucursalesActivo = {};
+
+      // Procesar cada sucursal
+      if (productoJson.ProductoSucursales && productoJson.ProductoSucursales.length > 0) {
+        productoJson.ProductoSucursales.forEach(sucursal => {
+          productoJson.sucursales.push(sucursal.id_direccion_local);
+          productoJson.sucursalesPrecios[sucursal.id_direccion_local] = sucursal.precio;
+          productoJson.sucursalesActivo[sucursal.id_direccion_local] = sucursal.activo;
+
+          if (sucursal.preciooferta) {
+            productoJson.sucursalesPreciosOferta[sucursal.id_direccion_local] = sucursal.preciooferta;
+          }
+        });
+      }
+
+      // Determinar si el producto está activo en al menos una sucursal
+      productoJson.activo = productoJson.sucursales.some(
+        sucursalId => productoJson.sucursalesActivo[sucursalId]
+      );
+
+      // Eliminar el array original de ProductoSucursales para no duplicar datos
+      delete productoJson.ProductoSucursales;
+
+      return productoJson;
+    });
+
+    res.json(productosTransformados);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener los productos", error });
+    console.error("Error al obtener los productos:", error);
+    res.status(500).json({ message: "Error al obtener los productos", error: error.message });
   }
 };
 
 // Obtener un producto por su ID
 const getProductoById = async (req, res) => {
   try {
-    const producto = await Producto.findByPk(req.params.id);
+    const producto = await Producto.findByPk(req.params.id, {
+      include: [
+        {
+          association: 'ProductoSucursales',
+          attributes: ['id_producto_sucursal', 'id_direccion_local', 'precio', 'preciooferta', 'preciofinal', 'precioofertafinal', 'activo']
+        }
+      ]
+    });
+
     if (!producto) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
-    res.json(producto);
+
+    // Transformar los datos para mantener compatibilidad con el frontend
+    const productoJson = producto.toJSON();
+
+    // Crear objetos para almacenar precios por sucursal
+    productoJson.sucursales = [];
+    productoJson.sucursalesPrecios = {};
+    productoJson.sucursalesPreciosOferta = {};
+    productoJson.sucursalesActivo = {};
+
+    // Procesar cada sucursal
+    if (productoJson.ProductoSucursales && productoJson.ProductoSucursales.length > 0) {
+      productoJson.ProductoSucursales.forEach(sucursal => {
+        productoJson.sucursales.push(sucursal.id_direccion_local);
+        productoJson.sucursalesPrecios[sucursal.id_direccion_local] = sucursal.precio;
+        productoJson.sucursalesActivo[sucursal.id_direccion_local] = sucursal.activo;
+
+        if (sucursal.preciooferta) {
+          productoJson.sucursalesPreciosOferta[sucursal.id_direccion_local] = sucursal.preciooferta;
+        }
+      });
+    }
+
+    // Determinar si el producto está activo en al menos una sucursal
+    productoJson.activo = productoJson.sucursales.some(
+      sucursalId => productoJson.sucursalesActivo[sucursalId]
+    );
+
+    // Eliminar el array original de ProductoSucursales para no duplicar datos
+    delete productoJson.ProductoSucursales;
+
+    res.json(productoJson);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener el producto", error });
+    console.error("Error al obtener el producto:", error);
+    res.status(500).json({ message: "Error al obtener el producto", error: error.message });
   }
 };
 
@@ -47,11 +171,6 @@ const createProducto = async (req, res) => {
     id_subcategoria,
     nombre_producto,
     descripcion_producto,
-    precio,
-    preciooferta,
-    precioofertafinal,
-    preciofinal,
-    activo,
   } = req.body;
 
   try {
@@ -75,28 +194,9 @@ const createProducto = async (req, res) => {
     } catch (error) {
       console.warn('Error al obtener configuración, usando valor por defecto:', error.message);
     }
-    const comisionDecimal = comisionPorcentaje / 100;
 
-    console.log('Porcentaje de comisión aplicado:', comisionPorcentaje + '%');
-
-    // Calcular precios finales con la comisión
-    const precioNumerico = parseFloat(precio) || 0;
-    const precioFinal = precioNumerico * (1 + comisionDecimal);
-
-    // Calcular precio de oferta final si existe
-    let precioOfertaFinal = null;
-    let precioOfertaNumerico = null;
-    if (preciooferta) {
-      precioOfertaNumerico = parseFloat(preciooferta);
-      precioOfertaFinal = precioOfertaNumerico * (1 + comisionDecimal);
-    }
-
-    // Mostrar todos los precios en la consola para depuración
-    console.log('PRECIOS AL CREAR PRODUCTO:');
-    console.log('precio (original):', precioNumerico);
-    console.log('preciooferta (original):', precioOfertaNumerico);
-    console.log('preciofinal (con comisión):', precioFinal);
-    console.log('precioofertafinal (con comisión):', precioOfertaFinal);
+    // Nota: Ya no guardamos los precios en la tabla Productos
+    // Los precios ahora se manejan exclusivamente en la tabla Productos_Sucursales
 
     // Datos para crear el producto
     const productoData = {
@@ -104,11 +204,6 @@ const createProducto = async (req, res) => {
       id_subcategoria,
       nombre_producto,
       descripcion_producto,
-      precio: precioNumerico,
-      preciooferta: preciooferta ? parseFloat(preciooferta) : null,
-      precioofertafinal: precioOfertaFinal,
-      preciofinal: precioFinal,
-      activo: activo !== undefined ? activo : true,
     };
 
     // Si el middleware 'upload' subió una imagen, usar su información
@@ -151,11 +246,6 @@ const updateProducto = async (req, res) => {
     id_subcategoria,
     nombre_producto,
     descripcion_producto,
-    precio,
-    preciooferta,
-    precioofertafinal,
-    preciofinal,
-    activo,
   } = req.body;
 
   try {
@@ -170,86 +260,12 @@ const updateProducto = async (req, res) => {
     if (id_subcategoria !== undefined) updateData.id_subcategoria = id_subcategoria;
     if (nombre_producto !== undefined) updateData.nombre_producto = nombre_producto;
     if (descripcion_producto !== undefined) updateData.descripcion_producto = descripcion_producto;
-    // Obtener la configuración para el porcentaje de comisión
-    let comisionPorcentaje = 15; // Valor por defecto
-    try {
-      const config = await Config.findOne();
-      if (config && config.comision_productos) {
-        comisionPorcentaje = parseFloat(config.comision_productos);
-      }
-      console.log('Configuración encontrada, comisión:', comisionPorcentaje + '%');
-    } catch (error) {
-      console.warn('Error al obtener configuración, usando valor por defecto:', error.message);
-    }
-    const comisionDecimal = comisionPorcentaje / 100;
 
-    console.log('Porcentaje de comisión aplicado:', comisionPorcentaje + '%');
+    // Nota: Ya no manejamos los precios en la tabla Productos
+    // Los precios ahora se manejan exclusivamente en la tabla Productos_Sucursales
 
-    // Mostrar los valores recibidos del cliente
-    console.log('VALORES RECIBIDOS DEL CLIENTE:');
-    console.log('precio:', precio);
-    console.log('preciooferta:', preciooferta);
-    console.log('preciofinal:', preciofinal);
-    console.log('precioofertafinal:', precioofertafinal);
-
-    // Convertir el precio a número decimal si está definido
-    if (precio !== undefined) {
-      // Asegurarse de que sea un número válido
-      const precioNumerico = parseFloat(precio);
-      if (!isNaN(precioNumerico)) {
-        updateData.precio = precioNumerico;
-        // Calcular y actualizar el precio final con la comisión
-        updateData.preciofinal = precioNumerico * (1 + comisionDecimal);
-        console.log('Precio actualizado a:', precioNumerico);
-        console.log('Precio final calculado:', updateData.preciofinal);
-      } else {
-        console.error('Error: El precio no es un número válido:', precio);
-        return res.status(400).json({ message: "El precio debe ser un número válido" });
-      }
-    }
-
-    // Manejar el precio de oferta correctamente
-    if (preciooferta !== undefined) {
-      // Si es un string vacío o null, establecer como null
-      if (preciooferta === '' || preciooferta === null) {
-        updateData.preciooferta = null;
-        updateData.precioofertafinal = null;
-        console.log('Precio de oferta eliminado');
-      } else {
-        const precioOfertaNumerico = parseFloat(preciooferta);
-        if (!isNaN(precioOfertaNumerico)) {
-          updateData.preciooferta = precioOfertaNumerico;
-          // Calcular y actualizar el precio de oferta final con la comisión
-          updateData.precioofertafinal = precioOfertaNumerico * (1 + comisionDecimal);
-          console.log('Precio de oferta actualizado a:', precioOfertaNumerico);
-          console.log('Precio de oferta final calculado:', updateData.precioofertafinal);
-        } else {
-          console.error('Error: El precio de oferta no es un número válido:', preciooferta);
-          return res.status(400).json({ message: "El precio de oferta debe ser un número válido" });
-        }
-      }
-    }
-
-    // Ignoramos los valores de precioofertafinal y preciofinal que vienen del cliente
-    // ya que los calculamos automáticamente basados en precio y preciooferta
-
-    // Mostrar los valores finales que se guardarán en la base de datos
-    console.log('VALORES FINALES QUE SE GUARDARÁN:');
-    console.log('precio:', updateData.precio);
-    console.log('preciooferta:', updateData.preciooferta);
-    console.log('preciofinal:', updateData.preciofinal);
-    console.log('precioofertafinal:', updateData.precioofertafinal);
-
-    // Convertir el valor de activo a booleano
-    if (activo !== undefined) {
-      if (activo === 'true' || activo === '1' || activo === 1) {
-        updateData.activo = true;
-      } else if (activo === 'false' || activo === '0' || activo === 0) {
-        updateData.activo = false;
-      } else {
-        updateData.activo = Boolean(activo);
-      }
-    }
+    // Nota: El campo activo ahora se maneja en la tabla producto_sucursales
+    // No necesitamos actualizar el campo activo en la tabla productos
 
     // Manejar eliminación de imagen antigua si hay una nueva imagen
     if (req.file) {

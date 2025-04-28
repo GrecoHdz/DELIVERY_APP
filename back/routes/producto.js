@@ -47,10 +47,6 @@ router.post(
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
     body("descripcion_producto").optional(),
-    body("precio").isDecimal().withMessage("El precio debe ser un número decimal válido"),
-    body("preciooferta").optional().isDecimal().withMessage("El precio de oferta debe ser un número decimal válido"),
-    body("precioofertafinal").optional().isDecimal().withMessage("El precio final debe ser un número decimal válido"),
-    body("preciofinal").isDecimal().withMessage("El precio final debe ser un número decimal"),
     body("imagen_url")
       .optional()
       .isURL()
@@ -98,42 +94,6 @@ router.put(
       .isLength({ max: 255 })
       .withMessage("El nombre del producto no puede exceder los 255 caracteres"),
     body("descripcion_producto").optional(),
-    body("precio")
-      .optional()
-      .isDecimal()
-      .withMessage("El precio debe ser un número decimal válido"),
-    body("preciooferta")
-    .optional({ nullable: true })
-    .custom(value => {
-      // Permitir valores vacíos, null o números decimales
-      if (value === '' || value === null || value === undefined) {
-        return true;
-      }
-      // Verificar si es un número decimal válido
-      const num = parseFloat(value);
-      if (!isNaN(num)) {
-        return true;
-      }
-      throw new Error('El precio oferta debe ser un número decimal válido o vacío');
-    }),
-    body("precioofertafinal")
-    .optional({ nullable: true })
-    .custom(value => {
-      // Permitir valores vacíos, null o números decimales
-      if (value === '' || value === null || value === undefined) {
-        return true;
-      }
-      // Verificar si es un número decimal válido
-      const num = parseFloat(value);
-      if (!isNaN(num)) {
-        return true;
-      }
-      throw new Error('El precio de oferta final debe ser un número decimal válido o vacío');
-    }),
-    body("preciofinal")
-    .optional()
-    .isDecimal()
-    .withMessage("El precio final debe ser un número decimal"),
     body("imagen_url")
       .optional()
       .isURL()

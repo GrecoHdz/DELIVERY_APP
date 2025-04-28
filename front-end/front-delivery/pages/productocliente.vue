@@ -44,8 +44,8 @@
             <span class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm py-1 px-3 rounded-full shadow-sm">
               {{ useApiData ? 'Datos API' : 'Datos Locales' }}
             </span>
-            <button 
-              @click="toggleDataSource" 
+            <button
+              @click="toggleDataSource"
               class="text-gray-500 hover:text-indigo-600 p-1"
               title="Cambiar fuente de datos"
             >
@@ -54,28 +54,28 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Panel de control y búsqueda -->
       <div class="mb-8 bg-white rounded-xl shadow-md p-6 border border-indigo-100">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <!-- Búsqueda -->
           <div class="relative">
             <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Buscar</label>
-            <input 
-              v-model="searchQuery" 
-              type="text" 
-              placeholder="Buscar productos..." 
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Buscar productos..."
               class="w-full pl-12 pr-4 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 text-base"
             >
             <SearchIcon class="absolute left-4 top-9 text-indigo-400" :size="20" />
           </div>
-          
+
           <!-- Sucursal -->
           <div class="lg:col-span-2 order-2 lg:order-2">
             <label class="block text-xs font-medium text-indigo-600 mb-1 ml-1">Sucursal</label>
             <div class="relative">
-              <select 
-  v-model="selectedBranch" 
+              <select
+  v-model="selectedBranch"
   class="w-full appearance-none bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 text-gray-700"
   @change="branchChanged"
 >
@@ -88,7 +88,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Estado de carga -->
       <div v-if="loading" class="flex justify-center items-center py-20">
         <div class="relative w-20 h-20">
@@ -96,20 +96,20 @@
           <div class="absolute top-0 left-0 w-full h-full rounded-full border-8 border-transparent border-t-indigo-600 animate-spin"></div>
         </div>
       </div>
-      
+
       <!-- Mensaje de error -->
       <div v-else-if="error" class="bg-red-50 p-6 rounded-xl shadow-md text-center my-10">
         <AlertTriangleIcon :size="50" class="text-red-500 mx-auto mb-4" />
         <h3 class="text-xl font-bold text-red-700 mb-2">Error al cargar los productos</h3>
         <p class="text-red-600 mb-4">{{ error }}</p>
-        <button 
-          @click="fetchData" 
+        <button
+          @click="fetchData"
           class="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
         >
           Reintentar
         </button>
       </div>
-      
+
       <!-- Mensaje sin resultados -->
       <div v-else-if="filteredProducts.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
         <div class="bg-indigo-50 p-6 rounded-full mb-6">
@@ -120,12 +120,12 @@
           Intenta con otra búsqueda o selecciona otra sucursal
         </p>
       </div>
-      
+
       <!-- Grid de Productos Mejorado -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div 
-          v-for="product in filteredProducts" 
-          :key="product.id" 
+        <div
+          v-for="product in filteredProducts"
+          :key="product.id"
           class="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all border border-indigo-100 relative transform hover:-translate-y-1 flex flex-col"
         >
           <!-- Badges (ofertas) -->
@@ -135,7 +135,7 @@
               Oferta
             </div>
           </div>
-          
+
           <!-- Imagen del producto -->
           <div class="relative h-56 overflow-hidden bg-indigo-50">
             <img
@@ -144,7 +144,7 @@
               class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
             />
           </div>
-          
+
           <!-- Información del producto -->
           <div class="p-5 pt-4 flex-grow flex flex-col">
             <!-- Nombre y precio -->
@@ -162,15 +162,15 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Descripción -->
             <p class="text-gray-600 text-sm mb-4 line-clamp-3">
               {{ product.description || 'Sin descripción disponible' }}
             </p>
-            
+
             <!-- Botón de agregar al carrito -->
-            <button 
-              @click="openModal(product)" 
+            <button
+              @click="openModal(product)"
               class="mt-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-2.5 px-5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
             >
               <ShoppingCartIcon :size="18" />
@@ -196,7 +196,7 @@
                 <XIcon :size="24" />
               </button>
             </div>
-            
+
             <div class="p-6">
               <!-- Imagen del producto -->
               <div class="rounded-xl overflow-hidden h-56 mb-6">
@@ -206,7 +206,7 @@
                   class="w-full h-full object-cover"
                 />
               </div>
-              
+
               <!-- Nombre y precio -->
               <div class="flex justify-between items-start mb-4">
                 <h3 class="font-bold text-gray-800 text-xl">
@@ -222,18 +222,18 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Descripción -->
               <p class="text-gray-600 mb-6">
                 {{ selectedProduct.description || 'Sin descripción disponible' }}
               </p>
-              
+
               <!-- Cantidad -->
               <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
                 <div class="flex items-center max-w-xs mx-auto">
-                  <button 
-                    @click="decrementQuantity" 
+                  <button
+                    @click="decrementQuantity"
                     class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-10 h-10 rounded-l-lg flex items-center justify-center transition-colors"
                   >
                     <MinusIcon :size="18" />
@@ -241,24 +241,24 @@
                   <div class="flex-1 bg-indigo-50 h-10 flex items-center justify-center text-xl font-bold text-indigo-700">
                     {{ quantity }}
                   </div>
-                  <button 
-                    @click="incrementQuantity" 
+                  <button
+                    @click="incrementQuantity"
                     class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold w-10 h-10 rounded-r-lg flex items-center justify-center transition-colors"
                   >
                     <PlusIcon :size="18" />
                   </button>
                 </div>
               </div>
-              
+
               <!-- Atributos (Sabor, Tamaño) -->
               <div v-if="selectedProduct.attributes && selectedProduct.attributes.length > 0" class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Atributos</label>
                 <div class="grid grid-cols-3 gap-2">
-                  <div v-for="attribute in selectedProduct.attributes" :key="attribute.id" 
-                      :class="['flex items-center justify-center p-3 rounded-lg cursor-pointer border transition-colors', 
-                                selectedAttribute === attribute.id 
-                                  ? 'bg-indigo-600 text-white border-indigo-600' 
-                                  : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']" 
+                  <div v-for="attribute in selectedProduct.attributes" :key="attribute.id"
+                      :class="['flex items-center justify-center p-3 rounded-lg cursor-pointer border transition-colors',
+                                selectedAttribute === attribute.id
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300']"
                       @click="selectedAttribute = attribute.id">
                     <div class="text-center">
                       <div class="font-medium">{{ attribute.name }}: {{ attribute.value }}</div>
@@ -269,20 +269,20 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Extras -->
               <div v-if="selectedProduct.extras && selectedProduct.extras.length > 0" class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Extras</label>
                 <div class="grid grid-cols-2 gap-2">
-                  <div v-for="extra in selectedProduct.extras" :key="extra.id" 
-                      :class="['flex items-center p-3 rounded-lg cursor-pointer border transition-colors', 
-                                extra.selected 
-                                  ? 'bg-indigo-50 border-indigo-300' 
-                                  : 'bg-white border-gray-200 hover:border-indigo-200']" 
+                  <div v-for="extra in selectedProduct.extras" :key="extra.id"
+                      :class="['flex items-center p-3 rounded-lg cursor-pointer border transition-colors',
+                                extra.selected
+                                  ? 'bg-indigo-50 border-indigo-300'
+                                  : 'bg-white border-gray-200 hover:border-indigo-200']"
                       @click="extra.selected = !extra.selected">
-                    <input 
-                      type="checkbox" 
-                      :checked="extra.selected" 
+                    <input
+                      type="checkbox"
+                      :checked="extra.selected"
                       class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                       @click.stop
                     >
@@ -293,10 +293,10 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Botón de agregar al carrito -->
-              <button 
-                @click="addToCart(selectedProduct)" 
+              <button
+                @click="addToCart(selectedProduct)"
                 class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
               >
                 <ShoppingCartIcon :size="18" />
@@ -310,8 +310,8 @@
 
     <!-- Toast de notificación -->
     <transition name="toast">
-      <div 
-        v-if="toast.show" 
+      <div
+        v-if="toast.show"
         class="fixed bottom-8 right-8 p-4 rounded-xl shadow-xl z-50 max-w-sm flex items-center gap-3"
         :class="toastClasses"
       >
@@ -325,10 +325,10 @@
       </div>
     </transition>
 
-    
+
     <!-- Footer -->
     <FooterComponent />
-    
+
   </div>
 </template>
 
@@ -336,8 +336,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import { 
-  Truck as TruckIcon, 
+import {
+  Truck as TruckIcon,
   Bell as BellIcon,
   Home as HomeIcon,
   Heart as HeartIcon,
@@ -357,20 +357,20 @@ import {
   Info as InfoIcon,
   RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next';
- 
+
 const selectedProfile = ref("Cliente");
-const router = useRouter(); 
- 
+const router = useRouter();
+
 const redirectToProfile = () => {
   switch (selectedProfile.value) {
     case 'Cliente':
-      router.push('/Dashboard_Cliente');  
+      router.push('/Dashboard_Cliente');
       break;
     case 'Local':
-      router.push('/Dashboard_Local');  
+      router.push('/Dashboard_Local');
       break;
     case 'Delivery':
-      router.push('/Dashboard_Driver');  
+      router.push('/Dashboard_Driver');
       break;
     default:
       break;
@@ -383,13 +383,13 @@ const error = ref(null);
 
 // API URL
 const API_URL = 'http://localhost:4000';
- 
+
 // Variables Globales
 const localId = ref(10); // ID fijo del local para este ejemplo
 const id_cliente = 18; // Reemplazar con el ID del cliente real
 const id_direccion_cliente = 3; // Reemplazar con el ID de la dirección del cliente real
 const idPedido = ref(null);
-const carritoIndicador = ref(false);  
+const carritoIndicador = ref(false);
 
 // Variables para almacenar datos
 const localName = ref("Mini Sper Diprocon");
@@ -523,7 +523,7 @@ const showToast = (message, type = 'success') => {
     type,
     message
   };
-  
+
   setTimeout(() => {
     toast.value.show = false;
   }, 3000);
@@ -537,10 +537,10 @@ const fetchBranches = async () => {
   if (!useApiData.value) return;
   loading.value = true;
   error.value = null;
-  
+
   try {
     const response = await axios.get(`${API_URL}/direccionesLocales/${localId.value}`);
-    
+
     if (response.data) {
       if (response.data.length > 0) {
         branches.value = response.data;
@@ -574,10 +574,10 @@ const fetchProducts = async () => {
     loading.value = false;
     return;
   }
-  
+
   loading.value = true;
   error.value = null;
-  
+
   try {
     // 1. Primero obtener productos por sucursal
     const productoSucursalResponse = await axios.get(`${API_URL}/productosucursal/sucursal/${selectedBranch.value}`);
@@ -591,33 +591,34 @@ const fetchProducts = async () => {
     // 2. Obtener todos los productos del local
     const allProductsResponse = await axios.get(`${API_URL}/productos/${localId.value}`);
     const allProducts = allProductsResponse.data || [];
-    
+
     // 3. Combinar datos de productos con sus relaciones de sucursal
     const productsList = [];
-    
+
     for (const productoSucursal of productoSucursalResponse.data) {
       // Buscar información completa del producto
       const productData = allProducts.find(p => p.id_producto === productoSucursal.id_producto);
-      
+
       if (productData) {
         // Inicializar el producto con datos básicos
         const product = {
           id: productData.id_producto,
           name: productData.nombre_producto,
           description: productData.descripcion_producto,
-          // Usar el precio de la sucursal o el precio final del producto
-          price: parseFloat(productoSucursal.precio || productData.preciofinal || productData.precio || 0),
-          // Si existe precioofertafinal, usarlo como precio con descuento
-          discountedPrice: productData.precioofertafinal ? parseFloat(productData.precioofertafinal) : null,
+          // Usar el precio de la sucursal
+          price: parseFloat(productoSucursal.precio || 0),
+          // Si existe precioofertafinal en la sucursal, usarlo como precio con descuento
+          discountedPrice: productoSucursal.precioofertafinal ? parseFloat(productoSucursal.precioofertafinal) :
+                          (productoSucursal.preciooferta ? parseFloat(productoSucursal.preciooferta) : null),
           image: productData.imagen_url,
           attributes: [],
           extras: []
         };
-        
+
         try {
           // 4. Cargar atributos del producto
           const atributosResponse = await axios.get(`${API_URL}/atributos/${productData.id_producto}`);
-          
+
           if (atributosResponse.data && Array.isArray(atributosResponse.data)) {
             // Mapear atributos al formato esperado
             product.attributes = atributosResponse.data.map(attr => ({
@@ -630,11 +631,11 @@ const fetchProducts = async () => {
         } catch (err) {
           console.error(`Error al cargar atributos del producto ${productData.id_producto}:`, err);
         }
-        
+
         try {
           // 5. Cargar extras del producto
           const extrasResponse = await axios.get(`${API_URL}/extra/${productData.id_producto}`);
-          
+
           if (extrasResponse.data && Array.isArray(extrasResponse.data)) {
             // Mapear extras al formato esperado
             product.extras = extrasResponse.data
@@ -649,13 +650,13 @@ const fetchProducts = async () => {
         } catch (err) {
           console.error(`Error al cargar extras del producto ${productData.id_producto}:`, err);
         }
-        
+
         productsList.push(product);
       }
     }
-    
+
     products.value = productsList;
-    
+
   } catch (err) {
     console.error("Error al cargar productos:", err);
     error.value = `Error al cargar los productos: ${err.message}`;
@@ -677,8 +678,8 @@ const fetchData = async () => {
 const toggleDataSource = () => {
   useApiData.value = !useApiData.value;
   showToast(`Usando ${useApiData.value ? 'datos de la API' : 'datos locales'}`, 'info');
-  fetchData();  
-  checkCartStatus(); 
+  fetchData();
+  checkCartStatus();
 };
 
 // Observar cambios en el modo de datos para recargar
@@ -697,7 +698,7 @@ const branchChanged = () => {
 // Filtrar productos por búsqueda
 const filteredProducts = computed(() => {
   if (!products.value) return [];
-  return products.value.filter(product => 
+  return products.value.filter(product =>
     product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     (product.description && product.description.toLowerCase().includes(searchQuery.value.toLowerCase()))
   );
@@ -709,7 +710,7 @@ const openModal = (product) => {
   if (product.extras) {
     product.extras.forEach(extra => extra.selected = false);
   }
-  
+
   selectedProduct.value = product;
   selectedAttribute.value = product.attributes && product.attributes.length > 0 ? product.attributes[0].id : null;
   quantity.value = 1;
@@ -733,22 +734,22 @@ const decrementQuantity = () => {
 // Calcular precio total
 const totalPrice = computed(() => {
   if (!selectedProduct.value) return 0;
-  
+
   // Precio base (normal o con descuento)
   let basePrice = selectedProduct.value.discountedPrice || selectedProduct.value.price;
-  
+
   // Precio del atributo seleccionado
   const attribute = selectedProduct.value.attributes?.find(attr => attr.id === selectedAttribute.value);
   const attributePrice = attribute ? attribute.price : 0;
-  
+
   // Precio de los extras seleccionados
   const extrasPrice = selectedProduct.value.extras?.filter(extra => extra.selected)
     .reduce((sum, extra) => sum + extra.price, 0) || 0;
-  
+
   return (basePrice + attributePrice + extrasPrice) * quantity.value;
 });
 
-// Agregar al carrito  
+// Agregar al carrito
 const addToCart = async (product) => {
   try {
     // Validar que se haya seleccionado una sucursal
@@ -768,7 +769,7 @@ const addToCart = async (product) => {
 
     // Obtener el atributo seleccionado si existe
     const selectedAttributeDetails = product.attributes?.find(attr => attr.id === selectedAttribute.value);
-    
+
     // Obtener los extras seleccionados
     const selectedExtras = product.extras?.filter(extra => extra.selected) || [];
 
@@ -792,7 +793,7 @@ const addToCart = async (product) => {
 
     if (useApiData.value) {
       // MODO API: Realizar llamadas reales a la API
-      
+
       // 1. Crear el pedido
       const pedidoResponse = await axios.post(`${API_URL}/pedidos/${id_cliente}`, {
         id_local: localId.value,
@@ -820,7 +821,7 @@ const addToCart = async (product) => {
 
       try {
         await axios.post(`${API_URL}/carrito/${idPedido.value}`, detalleData);
-        
+
         // Emitir evento de nuevo pedido a través del socket
         socket.emit('nuevo_pedido', {
           id_pedido: idPedido.value,
@@ -839,9 +840,9 @@ const addToCart = async (product) => {
             extras: extrasData
           }]
         });
-        
-        // Actualizar el contador del carrito 
-        await checkCartStatus();   
+
+        // Actualizar el contador del carrito
+        await checkCartStatus();
 
         // Mostrar notificación de éxito
         showToast(`${quantity.value} ${product.name} agregado al carrito`, 'success');
@@ -853,7 +854,7 @@ const addToCart = async (product) => {
       // MODO SIMULACIÓN
       await new Promise(resolve => setTimeout(resolve, 800));
       idPedido.value = Math.floor(Math.random() * 1000) + 1; // Generar ID aleatorio para demo
-      
+
       console.log('Item agregado al carrito:', {
         id_pedido: idPedido.value,
         producto: product.name,
@@ -875,7 +876,7 @@ const addToCart = async (product) => {
 
   } catch (error) {
     console.error('Error al agregar al carrito:', error);
-    
+
     // Manejar diferentes tipos de errores
     if (error.response) {
       // Error de respuesta del servidor
@@ -906,11 +907,11 @@ const checkCartStatus = async () => {
     console.error('Error al obtener el indicador del carrito:', error);
   }
 }
-}; 
+};
 
 // Inicialización
 onMounted(() => {
-  fetchBranches().then(() => {}); 
+  fetchBranches().then(() => {});
 });
 </script>
 

@@ -26,22 +26,6 @@ const Producto = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true, // Descripción opcional
     },
-    precio: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-    preciooferta: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true, // Puede ser opcional si no todos los productos tienen un precio de oferta
-    },
-    precioofertafinal: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true, // Puede ser opcional si no todos los productos tienen un precio de oferta
-    },
-    preciofinal: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
     imagen_url: {
       type: DataTypes.TEXT,
       allowNull: true, // URL de la imagen (opcional)
@@ -49,10 +33,6 @@ const Producto = sequelize.define(
     imagen_public_id: {
       type: DataTypes.STRING,
       allowNull: true, // ID público de Cloudinary (necesario para eliminar imágenes)
-    },
-    activo: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
     },
   },
   {
@@ -70,6 +50,11 @@ Producto.associate = (models) => {
   Producto.belongsTo(models.Subcategoria, {
     foreignKey: "id_subcategoria",
     onDelete: "SET NULL", // Si se elimina la subcategoría, el campo se establece como NULL
+  });
+  Producto.hasMany(models.ProductoSucursal, {
+    foreignKey: "id_producto",
+    as: "ProductoSucursales",
+    onDelete: "CASCADE", // Si se elimina el producto, también se eliminan sus registros en producto_sucursales
   });
 };
 
