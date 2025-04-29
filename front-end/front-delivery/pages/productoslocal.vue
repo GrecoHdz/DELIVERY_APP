@@ -315,17 +315,10 @@
               <div v-if="product.extras && product.extras.length > 0" class="flex flex-wrap gap-1 mb-1">
                 <span
                   v-for="(extra, idx) in product.extras"
-                  :key="idx"
+                  :key="extra.id || extra.id_extra || idx"
                   class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded flex items-center"
                 >
-                  +{{ extra.nombre }}
-                  <button
-                    @click.stop="removeExtra(product, extra)"
-                    class="ml-1 text-blue-400 hover:text-blue-600"
-                    title="Eliminar extra"
-                  >
-                    <XIcon :size="12" />
-                  </button>
+                  + {{ extra.nombre }}
                 </span>
               </div>
               <div v-if="product.atributos && product.atributos.length > 0" class="flex flex-wrap gap-1">
@@ -817,19 +810,27 @@
 
             <div class="p-6">
               <form @submit.prevent="toggleRecommendation">
-                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
-                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
-                    <img
-                      v-if="selectedProduct?.imagen_url"
-                      :src="selectedProduct.imagen_url"
-                      :alt="selectedProduct.nombre_producto"
-                      class="w-full h-full object-cover"
-                    />
-                    <div v-else class="w-full h-full flex items-center justify-center">
-                      <ImageOffIcon :size="24" class="text-gray-300" />
+                <div class="mb-6">
+                  <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
+                  <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
+                    <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                      <img
+                        v-if="selectedProduct?.imagen_url"
+                        :src="selectedProduct.imagen_url"
+                        :alt="selectedProduct.nombre_producto"
+                        class="w-full h-full object-cover"
+                      />
+                      <div v-else class="w-full h-full flex items-center justify-center">
+                        <ImageOffIcon :size="24" class="text-gray-300" />
+                      </div>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                      <span class="text-xs text-indigo-600 font-medium mt-1">
+                         Producto con {{ recommendForm.selectedBranches.length || 0 }} recomendaciones
+                      </span>
                     </div>
                   </div>
-                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
 
                 <div class="bg-amber-50 p-4 rounded-lg mb-6">
@@ -839,11 +840,10 @@
                     </div>
                     <div>
                       <p class="font-medium text-amber-800">
-                        Recomendaciones por sucursal
+                        Promocione sus mejores productos
                       </p>
-                      <p class="text-sm text-amber-700 mt-1">
-                        Marque las casillas para recomendar este producto.
-                        Desmarque para quitar la recomendación.
+                      <p class="text-sm text-amber-700 mt-1"> 
+                        Los productos recomendados aparecerán en posiciones destacadas en el dashboard de clientes para aumentar sus ventas.
                       </p>
                     </div>
                   </div>
@@ -851,7 +851,7 @@
 
                 <!-- Selección de sucursales para recomendar -->
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Sucursales disponibles:</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Recomendar en Sucursal:</label>
                   <div class="space-y-2 max-h-52 overflow-y-auto border border-gray-300 rounded-lg p-3">
                     <!-- Lista de sucursales -->
                     <div class="space-y-3">
@@ -885,12 +885,6 @@
                       </div>
                     </div>
                   </div>
-                  <p v-if="!isRecommended(selectedProduct) && recommendForm.selectedBranches.length === 0" class="text-red-500 text-xs mt-1">
-                    Para recomendar este producto, debe seleccionar al menos una sucursal
-                  </p>
-                  <p v-else-if="isRecommended(selectedProduct) && recommendForm.selectedBranches.length === 0" class="text-amber-500 text-xs mt-1">
-                    Al desmarcar todas las sucursales, el producto dejará de estar recomendado
-                  </p>
 
                   <div :class="remainingRecommendations <= 0 ? 'bg-red-50' : 'bg-indigo-50'" class="p-3 rounded-lg mt-3">
                     <div class="flex items-start gap-2">
@@ -900,9 +894,6 @@
                       <div>
                         <p :class="remainingRecommendations <= 0 ? 'text-sm text-red-700' : 'text-sm text-indigo-700'">
                           Recomendaciones disponibles: <span class="font-semibold">{{ remainingRecommendations }}</span> de <span class="font-semibold">{{ localMembresiaInfo ? localMembresiaInfo.limite_recomendaciones : recommendationLimits[localPlan] }}</span>
-                        </p>
-                        <p class="text-sm text-indigo-700 mt-1">
-                          Cada sucursal donde recomiendas un producto cuenta como 1 recomendación.
                         </p>
                         <p v-if="remainingRecommendations < recommendForm.selectedBranches.length && !isRecommended(selectedProduct)" class="text-sm text-red-700 mt-1">
                           Has seleccionado {{ recommendForm.selectedBranches.length }} sucursales, pero solo tienes {{ remainingRecommendations }} recomendaciones disponibles.
@@ -957,8 +948,9 @@
             </div>
 
             <div class="p-6">
-              <form @submit.prevent="addExtra">
-                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
+              <div class="mb-6">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
+                <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
                   <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
                     <img
                       v-if="selectedProduct?.imagen_url"
@@ -970,54 +962,101 @@
                       <ImageOffIcon :size="24" class="text-gray-300" />
                     </div>
                   </div>
-                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
-                </div>
-
-                <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del extra*</label>
-                    <input
-                      v-model="extraForm.nombre"
-                      type="text"
-                      required
-                      placeholder="Ej: Queso extra, Bacon, Guacamole"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
+                  <div class="flex flex-col">
+                    <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                    <span class="text-xs text-indigo-600 font-medium mt-1">
+                     Extras Disponibles: {{ selectedProduct?.extras?.length || 0 }}
+                    </span>
                   </div>
+                </div>
+              </div>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional*</label>
-                    <div class="relative">
-                      <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
+              <!-- Sección de agregar nuevo extra -->
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Agregar nuevo extra</h3>
+              <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                <form @submit.prevent="addExtraToProduct">
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del extra*</label>
                       <input
-                        v-model="extraForm.precio"
-                        type="number"
-                        step="0.01"
-                        min="0"
+                        v-model="extraForm.nombre"
+                        type="text"
                         required
-                        placeholder="0.00"
-                        class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Ej: Queso extra, Bacon, Guacamole"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
                     </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional*</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">L.</span>
+                        <input
+                          v-model="extraForm.precio"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          required
+                          placeholder="0.00"
+                          class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <button
+                      type="submit"
+                      class="w-full px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors font-medium"
+                    >
+                      Agregar extra
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Lista de extras existentes -->
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Extras existentes:</h3>
+                <div class="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                  <div v-if="selectedProduct?.extras && selectedProduct.extras.length > 0" class="divide-y divide-gray-200">
+                    <div
+                      v-for="(extra, idx) in selectedProduct.extras"
+                      :key="idx"
+                      class="flex items-center justify-between py-3 px-4 hover:bg-gray-100"
+                    >
+                      <div class="flex items-center">
+                        <PlusCircleIcon :size="16" class="text-blue-500 mr-2 flex-shrink-0" />
+                        <span class="text-gray-700">{{ extra.nombre }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <span class="text-gray-600 mr-3">L. {{ formatPrice(extra.precio) }}</span>
+                        <button
+                          type="button"
+                          @click="deleteExtra(selectedProduct, extra, idx)"
+                          class="text-red-400 hover:text-red-600 p-1.5 rounded-full hover:bg-red-50"
+                          title="Eliminar extra"
+                        >
+                          <XIcon :size="16" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="py-4 px-4 text-center text-gray-500 italic">
+                    No hay extras para este producto
                   </div>
                 </div>
+              </div>
 
-                <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    type="button"
-                    @click="closeModal"
-                    class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    class="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors font-medium"
-                  >
-                    Agregar extra
-                  </button>
-                </div>
-              </form>
+              <div class="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  @click="closeModal"
+                  class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1042,19 +1081,27 @@
 
             <div class="p-6">
               <form @submit.prevent="addAttribute">
-                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
-                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
-                    <img
-                      v-if="selectedProduct?.imagen_url"
-                      :src="selectedProduct.imagen_url"
-                      :alt="selectedProduct.nombre_producto"
-                      class="w-full h-full object-cover"
-                    />
-                    <div v-else class="w-full h-full flex items-center justify-center">
-                      <ImageOffIcon :size="24" class="text-gray-300" />
+                <div class="mb-6">
+                  <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
+                  <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
+                    <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                      <img
+                        v-if="selectedProduct?.imagen_url"
+                        :src="selectedProduct.imagen_url"
+                        :alt="selectedProduct.nombre_producto"
+                        class="w-full h-full object-cover"
+                      />
+                      <div v-else class="w-full h-full flex items-center justify-center">
+                        <ImageOffIcon :size="24" class="text-gray-300" />
+                      </div>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                      <span class="text-xs text-indigo-600 font-medium mt-1">
+                        {{ selectedProduct?.atributos?.length || 0 }} atributos disponibles
+                      </span>
                     </div>
                   </div>
-                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
 
                 <div class="space-y-4">
@@ -1064,7 +1111,7 @@
                       v-model="attributeForm.nombre_atributo"
                       type="text"
                       required
-                      placeholder="Ej: Tamaño, Color, Término"
+                      placeholder="Ej: Tamaño, Color, Sabor"
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                   </div>
@@ -1075,7 +1122,7 @@
                       v-model="attributeForm.valor"
                       type="text"
                       required
-                      placeholder="Ej: Grande, Rojo, Medio"
+                      placeholder="Ej: Grande, Rojo, Fresa"
                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                   </div>
@@ -1127,7 +1174,7 @@
             <!-- Modal Header con gradiente -->
             <div class="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 flex justify-between items-center">
               <h2 class="text-xl font-bold text-white">
-                🔄 Activar/Desactivar producto por sucursal
+                🔄 Deshabilitar Producto
               </h2>
               <button @click="closeModal" class="text-white hover:text-indigo-100">
                 <XIcon :size="24" />
@@ -1136,19 +1183,27 @@
 
             <div class="p-6">
               <form @submit.prevent="toggleProductStatus">
-                <div class="flex gap-3 items-center mb-6 bg-indigo-50 p-3 rounded-lg">
-                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
-                    <img
-                      v-if="selectedProduct?.imagen_url"
-                      :src="selectedProduct.imagen_url"
-                      :alt="selectedProduct.nombre_producto"
-                      class="w-full h-full object-cover"
-                    />
-                    <div v-else class="w-full h-full flex items-center justify-center">
-                      <ImageOffIcon :size="24" class="text-gray-300" />
+                <div class="mb-6">
+                  <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
+                  <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
+                    <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                      <img
+                        v-if="selectedProduct?.imagen_url"
+                        :src="selectedProduct.imagen_url"
+                        :alt="selectedProduct.nombre_producto"
+                        class="w-full h-full object-cover"
+                      />
+                      <div v-else class="w-full h-full flex items-center justify-center">
+                        <ImageOffIcon :size="24" class="text-gray-300" />
+                      </div>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                      <span class="text-xs text-indigo-600 font-medium mt-1">
+                        Productos con {{ statusForm.selectedBranches.length || 0 }} deshabilitaciones.
+                      </span>
                     </div>
                   </div>
-                  <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
                 </div>
 
                 <div class="bg-indigo-50 p-4 rounded-lg mb-6">
@@ -1161,7 +1216,8 @@
                         Deshabilitar producto
                       </p>
                       <p class="text-sm text-indigo-700 mt-1">
-                        Marque las sucursales que desea deshabilitar. Desmarque para habilitar.
+                        Marque las sucursales en donde desea desahabilitar el producto. 
+                        Desmarque para habilitar.
                       </p>
                     </div>
                   </div>
@@ -1250,21 +1306,12 @@
 
   // Importación de iconos
   import {
-  Truck as TruckIcon,
-  Bell as BellIcon,
-  Home as HomeIcon,
-  Heart as HeartIcon,
-  ShoppingCart as ShoppingCartIcon,
-  ShoppingBag as ShoppingBagIcon,
-  Settings as SettingsIcon,
   Search as SearchIcon,
   Plus as PlusIcon,
   ChevronDown as ChevronDownIcon,
   PackageX as PackageXIcon,
   Star as StarIcon,
-  MoreVertical as MoreVerticalIcon,
   Pencil as PencilIcon,
-  Eye as EyeIcon,
   EyeOff as EyeOffIcon,
   Tag as TagIcon,
   PlusCircle as PlusCircleIcon,
@@ -1280,7 +1327,6 @@
   AlertTriangle as AlertTriangleIcon,
   Info as InfoIcon,
   RefreshCw as RefreshCwIcon,
-  Copy as CopyIcon,
   MapPin as MapPinIcon
   } from 'lucide-vue-next';
 
@@ -1639,24 +1685,7 @@
   }
   };
 
-  const calculateDiscount = (offerPrice, originalPrice) => {
-    try {
-      // Convertir a números
-      const offerPriceNum = parseFloat(offerPrice);
-      const originalPriceNum = parseFloat(originalPrice);
 
-      // Validar que sean números válidos y mayores que cero
-      if (isNaN(offerPriceNum) || isNaN(originalPriceNum) || offerPriceNum <= 0 || originalPriceNum <= 0) {
-        return 0;
-      }
-
-      // Calcular el descuento
-      return Math.round((1 - (offerPriceNum / originalPriceNum)) * 100);
-    } catch (error) {
-      console.error('Error al calcular descuento:', error);
-      return 0;
-    }
-  };
 
   const isValidOffer = () => {
     try {
@@ -1812,21 +1841,47 @@
       // Si no está recomendado, no seleccionar ninguna sucursal por defecto
       recommendForm.value.selectedBranches = [];
     }
+  } else if (type === 'extra') {
+    // Limpiar el formulario de extras
+    extraForm.value = {
+      nombre: '',
+      precio: ''
+    };
+  } else if (type === 'attribute') {
+    // Limpiar el formulario de atributos
+    attributeForm.value = {
+      nombre_atributo: '',
+      valor: '',
+      precio_adicional: ''
+    };
   }
   } else {
   // Resetear formularios
   if (type === 'add') {
-  productForm.value = {
-  nombre_producto: '',
-  descripcion_producto: '',
-  preciooferta: '',
-  id_subcategoria: '',
-  imagen_url: null,
-  sucursales: [],
-  sucursalesPrecios: {},
-  sucursalesPreciosOferta: {},
-  activo: 1
-  };
+    productForm.value = {
+      nombre_producto: '',
+      descripcion_producto: '',
+      preciooferta: '',
+      id_subcategoria: '',
+      imagen_url: null,
+      sucursales: [],
+      sucursalesPrecios: {},
+      sucursalesPreciosOferta: {},
+      activo: 1
+    };
+  } else if (type === 'extra') {
+    // Limpiar el formulario de extras cuando se abre sin producto seleccionado
+    extraForm.value = {
+      nombre: '',
+      precio: ''
+    };
+  } else if (type === 'attribute') {
+    // Limpiar el formulario de atributos cuando se abre sin producto seleccionado
+    attributeForm.value = {
+      nombre_atributo: '',
+      valor: '',
+      precio_adicional: ''
+    };
   }
   }
 
@@ -1839,13 +1894,7 @@
   selectedProduct.value = null;
   };
 
-  const toggleDropdown = (id) => {
-  if (openDropdownId.value === id) {
-  openDropdownId.value = null;
-  } else {
-  openDropdownId.value = id;
-  }
-  };
+
 
   // Métodos para manejo de imágenes
   const handleImageUpload = (event) => {
@@ -1928,45 +1977,113 @@
   }, 3000);
   };
 
-  // Eliminar extra y atributo
-  const removeExtra = async (product, extra) => {
-  try {
-  loading.value = true;
+  // Función para eliminar un extra directamente desde el índice
+  const deleteExtra = async (product, extra, index) => {
+    try {
+      loading.value = true;
+      console.log('Eliminando extra:', extra.nombre, 'del producto:', product.nombre_producto);
+      console.log('Datos del extra:', JSON.stringify(extra, null, 2));
 
-  if (appMode.value === 'production') {
-  // Implementación real de eliminación de extra
-  await axios.delete(`${API_URL}/extra/${extra.id}`);
+      if (appMode.value === 'production') {
+        // Eliminar el extra de la UI primero para una experiencia más fluida
+        if (selectedProduct.value && selectedProduct.value.extras) {
+          selectedProduct.value.extras.splice(index, 1);
+        }
 
-  // Recargar datos del producto para actualizar la UI
-  const productData = await axios.get(`${API_URL}/productos/${product.id_producto}`);
+        // Intentar eliminar el extra del servidor
+        try {
+          // Primero, obtener todos los extras del producto para verificar la estructura
+          console.log(`Obteniendo extras para el producto ID: ${product.id_producto}`);
+          const extrasResponse = await axios.get(`${API_URL}/extra/${product.id_producto}`);
+          const serverExtras = extrasResponse.data;
+          console.log('Extras del servidor:', JSON.stringify(serverExtras, null, 2));
 
-  // Actualizar el producto en la lista
-  const index = products.value.findIndex(p => p.id_producto === product.id_producto);
-  if (index !== -1) {
-  products.value[index] = productData.data;
-  }
+          // Buscar el extra por nombre
+          const serverExtra = serverExtras.find(e => e.nombre === extra.nombre);
+          console.log('Extra encontrado en el servidor:', serverExtra ? JSON.stringify(serverExtra, null, 2) : 'No encontrado');
 
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 500));
+          if (serverExtra) {
+            // Intentar eliminar el extra
+            let success = false;
 
-  // Simular eliminación del extra
-  const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
-  if (productIndex !== -1 && products.value[productIndex].extras) {
-  const extraIndex = products.value[productIndex].extras.findIndex(e => e.nombre === extra.nombre);
-  if (extraIndex !== -1) {
-  products.value[productIndex].extras.splice(extraIndex, 1);
-  }
-  }
-  }
+            // Usar DELETE directamente con el ID del producto
+            try {
+              console.log('Intentando eliminar con DELETE: ID del producto y nombre');
+              await axios.delete(`${API_URL}/extra/${product.id_producto}/${extra.nombre}`);
+              console.log('Eliminación exitosa');
+              success = true;
+            } catch (error2) {
+              console.warn('Error al eliminar extra:', error2);
 
-  showToast('Extra eliminado correctamente', 'success');
-  } catch (error) {
-  console.error('Error al eliminar extra:', error);
-  showToast('Error al eliminar el extra', 'error');
-  } finally {
-  loading.value = false;
-  }
+              // Enfoque alternativo: Usar POST con un endpoint específico
+              try {
+                console.log('Intentando enfoque alternativo: POST con endpoint específico');
+                await axios.post(`${API_URL}/extra/delete`, {
+                  id_producto: product.id_producto,
+                  nombre: extra.nombre
+                });
+                console.log('Enfoque alternativo exitoso');
+                success = true;
+              } catch (error3) {
+                console.warn('Enfoque alternativo falló:', error3);
+
+                // Último intento: Usar DELETE con ID del producto y nombre como parte de la URL
+                try {
+                  console.log('Intentando último enfoque: DELETE con ID del producto y nombre en URL');
+                  const encodedNombre = encodeURIComponent(extra.nombre);
+                  await axios.delete(`${API_URL}/extra/${product.id_producto}?nombre=${encodedNombre}`);
+                  console.log('Último enfoque exitoso');
+                  success = true;
+                } catch (error4) {
+                  console.warn('Último enfoque falló:', error4);
+                }
+              }
+            }
+
+            if (success) {
+              console.log('Extra eliminado correctamente del servidor');
+              showToast('Extra eliminado correctamente', 'success');
+            } else {
+              console.warn('No se pudo eliminar el extra del servidor después de múltiples intentos');
+              showToast('El extra se eliminó de la interfaz, pero puede que persista en el servidor', 'warning');
+            }
+          } else {
+            console.warn('No se encontró el extra en el servidor');
+            showToast('El extra se eliminó de la interfaz, pero no se encontró en el servidor', 'info');
+          }
+        } catch (error) {
+          console.error('Error al eliminar extra del servidor:', error);
+          showToast('El extra se eliminó de la interfaz, pero puede que persista en el servidor', 'warning');
+        } finally {
+          // Recargar productos para asegurar que la UI esté sincronizada
+          await loadProducts();
+        }
+      } else {
+        // Modo demo
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Eliminar el extra del producto seleccionado
+        if (selectedProduct.value && selectedProduct.value.extras) {
+          selectedProduct.value.extras.splice(index, 1);
+        }
+
+        // Eliminar el extra de la lista de productos
+        const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
+        if (productIndex !== -1 && products.value[productIndex].extras) {
+          const extraIndex = products.value[productIndex].extras.findIndex(e => e.nombre === extra.nombre);
+          if (extraIndex !== -1) {
+            products.value[productIndex].extras.splice(extraIndex, 1);
+          }
+        }
+
+        showToast('Extra eliminado correctamente', 'success');
+      }
+    } catch (error) {
+      console.error('Error al eliminar extra:', error);
+      showToast('Error al eliminar el extra', 'error');
+    } finally {
+      loading.value = false;
+    }
   };
 
   const removeAttribute = async (product, attribute) => {
@@ -2983,7 +3100,8 @@ const createOffer = async () => {
   }
 };
 
-const addExtra = async () => {
+// Función para agregar un extra al producto
+const addExtraToProduct = async () => {
   try {
     loading.value = true;
 
@@ -2991,6 +3109,7 @@ const addExtra = async () => {
     const extraData = {
       nombre: extraForm.value.nombre,
       precio: parseFloat(extraForm.value.precio),
+      id_producto: selectedProduct.value.id_producto
     };
 
     console.log('Agregando extra al producto:', selectedProduct.value.id_producto, 'Datos del extra:', extraData);
@@ -3004,29 +3123,77 @@ const addExtra = async () => {
       throw new Error('El precio debe ser un número válido mayor o igual a cero');
     }
 
-    // Modo producción: enviar datos al servidor
-    if (appMode.value === 'production') {
-      const response = await axios.post(`${API_URL}/extra/${selectedProduct.value.id_producto}`, extraData);
-      console.log('Respuesta del servidor:', response.data); // <- Ver la respuesta del servidor
-      await loadProducts();
-    } else {
-      // Modo desarrollo: simular la adición del extra
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const index = products.value.findIndex((p) => p.id_producto === selectedProduct.value.id_producto);
-      if (index !== -1) {
-        if (!products.value[index].extras) {
-          products.value[index].extras = [];
-        }
-        const newId = Math.max(...(products.value[index].extras.map((e) => e.id || 0)), 0) + 1;
-        products.value[index].extras.push({ id: newId, ...extraData });
-      }
+    // Verificar si ya existe un extra con el mismo nombre
+    if (selectedProduct.value.extras && selectedProduct.value.extras.some(e => e.nombre === extraData.nombre)) {
+      throw new Error('Ya existe un extra con este nombre');
     }
 
-    showToast('Extra agregado correctamente', 'success');
-    closeModal();
+    if (appMode.value === 'production') {
+      // Agregar el extra temporalmente a la UI para una experiencia más fluida
+      if (!selectedProduct.value.extras) {
+        selectedProduct.value.extras = [];
+      }
+      selectedProduct.value.extras.push({
+        nombre: extraData.nombre,
+        precio: extraData.precio,
+        id_producto: extraData.id_producto
+      });
+
+      try {
+        // Enviar datos al servidor
+        await axios.post(`${API_URL}/extra/${selectedProduct.value.id_producto}`, extraData);
+        console.log('Extra agregado correctamente al servidor');
+
+        // Recargar productos para actualizar la UI con datos del servidor
+        await loadProducts();
+
+        showToast('Extra agregado correctamente', 'success');
+      } catch (error) {
+        console.error('Error al agregar extra al servidor:', error);
+
+        // Recargar productos para sincronizar con el servidor
+        await loadProducts();
+
+        showToast('Error al agregar el extra al servidor', 'error');
+      }
+    } else {
+      // Modo demo
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Agregar el extra al producto seleccionado
+      if (!selectedProduct.value.extras) {
+        selectedProduct.value.extras = [];
+      }
+      selectedProduct.value.extras.push({
+        nombre: extraData.nombre,
+        precio: extraData.precio,
+        id_producto: extraData.id_producto
+      });
+
+      // Agregar el extra a la lista de productos
+      const productIndex = products.value.findIndex(p => p.id_producto === selectedProduct.value.id_producto);
+      if (productIndex !== -1) {
+        if (!products.value[productIndex].extras) {
+          products.value[productIndex].extras = [];
+        }
+        products.value[productIndex].extras.push({
+          nombre: extraData.nombre,
+          precio: extraData.precio,
+          id_producto: extraData.id_producto
+        });
+      }
+
+      showToast('Extra agregado correctamente', 'success');
+    }
+
+    // Limpiar el formulario después de agregar el extra
+    extraForm.value = {
+      nombre: '',
+      precio: ''
+    };
   } catch (error) {
-    console.error('Error al agregar extra:', error.response?.data || error.message);
-    showToast(error.response?.data?.message || error.message || 'Error al agregar el extra', 'error');
+    console.error('Error al agregar extra:', error);
+    showToast(error.message || 'Error al agregar el extra', 'error');
   } finally {
     loading.value = false;
   }
