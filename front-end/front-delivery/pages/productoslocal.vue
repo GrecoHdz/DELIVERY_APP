@@ -242,29 +242,34 @@
               </div>
 
               <div
-                v-if="product.preciooferta"
+                v-if="hasAnyBranchOffer(product)"
                 class="bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
               >
                 <TagIcon :size="12" class="mr-1" />
                 Oferta
               </div>
             </div>
-
-            <div
-              v-if="!product.activo"
-              class="bg-gray-800 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm"
-            >
-              Inactivo
-            </div>
           </div>
 
           <!-- Imagen del producto -->
           <div class="relative h-56 overflow-hidden bg-indigo-50">
+            <!-- Efecto de deshabilitado para la primera sucursal -->
             <div
               v-if="!product.activo || (product.sucursales && product.sucursales.length > 0 && !isBranchActive(product, product.sucursales[0]))"
               class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center"
             >
               <span class="bg-white bg-opacity-80 text-gray-800 font-bold text-lg py-1 px-4 rounded-lg">Deshabilitado</span>
+            </div>
+
+            <!-- Etiqueta de deshabilitado en otra sucursal -->
+            <div
+              v-if="!product.activo || hasAnyBranchInactive(product)"
+              class="absolute bottom-0 right-0 p-3 z-20"
+            >
+              <div class="bg-gray-800 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center">
+                <EyeOffIcon :size="12" class="mr-1" />
+                Deshabilitado en otra sucursal
+              </div>
             </div>
 
             <img
@@ -842,7 +847,7 @@
                       <p class="font-medium text-amber-800">
                         Promocione sus mejores productos
                       </p>
-                      <p class="text-sm text-amber-700 mt-1"> 
+                      <p class="text-sm text-amber-700 mt-1">
                         Los productos recomendados aparecerán en posiciones destacadas en el dashboard de clientes para aumentar sus ventas.
                       </p>
                     </div>
@@ -1216,7 +1221,7 @@
                         Deshabilitar producto
                       </p>
                       <p class="text-sm text-indigo-700 mt-1">
-                        Marque las sucursales en donde desea desahabilitar el producto. 
+                        Marque las sucursales en donde desea desahabilitar el producto.
                         Desmarque para habilitar.
                       </p>
                     </div>
@@ -1588,6 +1593,25 @@
       // Verificar si al menos una sucursal tiene un precio de oferta
       for (const branchId in product.sucursalesPreciosOferta) {
         if (product.sucursalesPreciosOferta[branchId]) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  // Verificar si alguna sucursal está deshabilitada
+  const hasAnyBranchInactive = (product) => {
+    if (!product) return false;
+
+    // Si el producto está completamente desactivado
+    if (!product.activo) return true;
+
+    // Verificar si hay sucursales desactivadas
+    if (product.sucursalesActivas) {
+      for (const branchId in product.sucursalesActivas) {
+        if (product.sucursalesActivas[branchId] === false) {
           return true;
         }
       }
