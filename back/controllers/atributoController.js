@@ -35,11 +35,12 @@ const createAtributo = async (req, res) => {
     res.status(201).json({ message: "Atributo creado exitosamente" });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(400).json({ message: "El nombre del atributo ya existe" });
+      return res.status(400).json({ message: "Ya existe un atributo con este nombre para este producto" });
     }
     if (error.name === "SequelizeForeignKeyConstraintError") {
       return res.status(400).json({ message: "El producto no existe" });
     }
+    console.error("Error al crear atributo:", error);
     res.status(500).json({ message: "Error al crear el atributo", error });
   }
 };

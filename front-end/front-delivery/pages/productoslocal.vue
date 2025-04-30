@@ -228,43 +228,42 @@
         <div
           v-for="product in paginatedProducts"
           :key="product.id_producto"
-          class="group bg-white rounded-xl overflow-hidden shadow-md border border-indigo-100 relative flex flex-col"
+          class="group bg-white rounded-xl overflow-hidden shadow-md border border-indigo-100 relative flex flex-col isolate"
         >
-          <!-- Badges y Estado -->
-          <div class="absolute top-0 left-0 right-0 p-3 flex justify-between z-10">
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-if="isRecommended(product)"
-                class="bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
-              >
-                <StarIcon :size="12" class="mr-1" />
-                Recomendado
-              </div>
-
-              <div
-                v-if="hasAnyBranchOffer(product)"
-                class="bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
-              >
-                <TagIcon :size="12" class="mr-1" />
-                Oferta
-              </div>
-            </div>
-          </div>
-
           <!-- Imagen del producto -->
           <div class="relative h-56 overflow-hidden bg-indigo-50">
+            <!-- Badges y Estado -->
+            <div class="absolute top-0 left-0 right-0 p-3 flex justify-between z-5">
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-if="isRecommended(product)"
+                  class="bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
+                >
+                  <StarIcon :size="12" class="mr-1" />
+                  Recomendado
+                </div>
+
+                <div
+                  v-if="hasAnyBranchOffer(product)"
+                  class="bg-gradient-to-r from-rose-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center"
+                >
+                  <TagIcon :size="12" class="mr-1" />
+                  Oferta
+                </div>
+              </div>
+            </div>
             <!-- Efecto de deshabilitado para la primera sucursal -->
             <div
               v-if="!product.activo || (product.sucursales && product.sucursales.length > 0 && !isBranchActive(product, product.sucursales[0]))"
-              class="absolute inset-0 bg-black bg-opacity-50 z-10 flex items-center justify-center"
+              class="absolute inset-0 bg-black bg-opacity-50 z-2 flex items-center justify-center pointer-events-none"
             >
               <span class="bg-white bg-opacity-80 text-gray-800 font-bold text-lg py-1 px-4 rounded-lg">Deshabilitado</span>
             </div>
 
             <!-- Etiqueta de deshabilitado en otra sucursal -->
             <div
-              v-if="!product.activo || hasAnyBranchInactive(product)"
-              class="absolute bottom-0 right-0 p-3 z-20"
+              v-if="(!product.activo || hasAnyBranchInactive(product)) && (product.sucursales && product.sucursales.length > 0 && isBranchActive(product, product.sucursales[0]))"
+              class="absolute bottom-0 right-0 p-3 z-2"
             >
               <div class="bg-gray-800 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center">
                 <EyeOffIcon :size="12" class="mr-1" />
@@ -315,75 +314,81 @@
               {{ product.descripcion_producto || 'Sin descripción disponible' }}
             </p>
 
-            <!-- Extras y atributos -->
-            <div v-if="hasExtrasOrAttributes(product)" class="mb-4">
-              <div v-if="product.extras && product.extras.length > 0" class="flex flex-wrap gap-1 mb-1">
-                <span
-                  v-for="(extra, idx) in product.extras"
-                  :key="extra.id || extra.id_extra || idx"
-                  class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded flex items-center"
-                >
-                  + {{ extra.nombre }}
-                </span>
-              </div>
-              <div v-if="product.atributos && product.atributos.length > 0" class="flex flex-wrap gap-1">
-                <span
-                  v-for="(attr, idx) in product.atributos"
-                  :key="idx"
-                  class="bg-purple-50 text-purple-600 text-xs px-2 py-1 rounded flex items-center"
-                >
-                  {{ attr.nombre_atributo }}: {{ attr.valor }}
-                  <button
-                    @click.stop="removeAttribute(product, attr)"
-                    class="ml-1 text-purple-400 hover:text-purple-600"
-                    title="Eliminar atributo"
+            <!-- Disponibilidad en sucursales -->
+            <div v-if="product.sucursales && product.sucursales.length > 0" class="mb-4 mt-auto">
+              <div class="flex items-center gap-2">
+                <div class="text-xs font-medium text-gray-600 whitespace-nowrap">Sucursales:</div>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="(sucursalId, idx) in product.sucursales.slice(0, 3)"
+                    :key="idx"
+                    class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md flex items-center shadow-sm"
                   >
-                    <XIcon :size="12" />
-                  </button>
-                </span>
+                    <MapPinIcon :size="14" class="mr-1.5" />
+                    {{ getBranchColony(sucursalId) }}
+                    <span class="flex items-center ml-1.5 gap-1">
+                      <!-- Indicador de oferta (rojo) -->
+                      <TagIcon
+                        v-if="product.sucursalesPreciosOferta && product.sucursalesPreciosOferta[sucursalId]"
+                        :size="14"
+                        class="text-red-500"
+                        title="En oferta"
+                      />
+                      <!-- Indicador de desactivado (gris) - Verificar si la sucursal está desactivada -->
+                      <EyeOffIcon
+                        v-if="!isBranchActive(product, sucursalId)"
+                        :size="14"
+                        class="text-gray-500"
+                        title="Desactivado"
+                      />
+                      <!-- Indicador de recomendado (naranja) -->
+                      <StarIcon
+                        v-if="isBranchRecommended(product, sucursalId)"
+                        :size="14"
+                        class="text-orange-500"
+                        title="Recomendado"
+                      />
+                    </span>
+                  </span>
+                  <span
+                    v-if="product.sucursales.length > 2"
+                    class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md shadow-sm"
+                  >
+                    +{{ product.sucursales.length - 2 }} más
+                  </span>
+                </div>
               </div>
             </div>
 
-            <!-- Disponibilidad en sucursales -->
-            <div v-if="product.sucursales && product.sucursales.length > 0" class="mb-4 mt-auto">
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="(sucursalId, idx) in product.sucursales.slice(0, 2)"
-                  :key="idx"
-                  class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md flex items-center shadow-sm"
-                >
-                  <MapPinIcon :size="14" class="mr-1.5" />
-                  {{ getBranchColony(sucursalId) }}
-                  <span class="flex items-center ml-1.5 gap-1">
-                    <!-- Indicador de oferta (rojo) -->
-                    <TagIcon
-                      v-if="product.sucursalesPreciosOferta && product.sucursalesPreciosOferta[sucursalId]"
-                      :size="14"
-                      class="text-red-500"
-                      title="En oferta"
-                    />
-                    <!-- Indicador de desactivado (gris) - Verificar si la sucursal está desactivada -->
-                    <EyeOffIcon
-                      v-if="!isBranchActive(product, sucursalId)"
-                      :size="14"
-                      class="text-gray-500"
-                      title="Desactivado"
-                    />
-                    <!-- Indicador de recomendado (naranja) -->
-                    <StarIcon
-                      v-if="isBranchRecommended(product, sucursalId)"
-                      :size="14"
-                      class="text-orange-500"
-                      title="Recomendado"
-                    />
+            <!-- Atributos -->
+            <div v-if="product.atributos && product.atributos.length > 0" class="mb-4">
+              <div class="flex items-center gap-2">
+                <div class="text-xs font-medium text-gray-600 whitespace-nowrap">Atributos:</div>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="(attr, idx) in product.atributos"
+                    :key="idx"
+                    class="bg-purple-50 text-purple-600 text-xs px-2 py-1 rounded flex items-center"
+                  >
+                    {{ attr.nombre_atributo }}: {{ attr.valor }}
                   </span>
-                </span>
-                <span
-                  v-if="product.sucursales.length > 2"
-                  class="bg-green-50 text-green-600 text-sm px-3 py-1.5 rounded-md shadow-sm"
-                >
-                  +{{ product.sucursales.length - 2 }} más
-                </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Extras -->
+            <div v-if="product.extras && product.extras.length > 0" class="mb-4">
+              <div class="flex items-center gap-2">
+                <div class="text-xs font-medium text-gray-600 whitespace-nowrap">Extras:</div>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="(extra, idx) in product.extras"
+                    :key="extra.id || extra.id_extra || idx"
+                    class="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded flex items-center"
+                  >
+                    + {{ extra.nombre }}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -428,7 +433,7 @@
                   @click="openModal('extra', product)"
                   class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 ><PlusCircleIcon :size="16" class="mb-1" />
-                  Añadir extra
+                  Extras
                 </button>
 
                 <button
@@ -436,7 +441,7 @@
                   class="bg-indigo-50 text-indigo-600 rounded-lg p-2 flex flex-col items-center text-xs transition-colors hover:bg-indigo-100"
                 >
                   <ListPlusIcon :size="16" class="mb-1" />
-                  Añadir atr.
+                  Atributos
                 </button>
               </div>
             </div>
@@ -1085,85 +1090,125 @@
             </div>
 
             <div class="p-6">
-              <form @submit.prevent="addAttribute">
-                <div class="mb-6">
-                  <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
-                  <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
-                    <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
-                      <img
-                        v-if="selectedProduct?.imagen_url"
-                        :src="selectedProduct.imagen_url"
-                        :alt="selectedProduct.nombre_producto"
-                        class="w-full h-full object-cover"
-                      />
-                      <div v-else class="w-full h-full flex items-center justify-center">
-                        <ImageOffIcon :size="24" class="text-gray-300" />
-                      </div>
+              <div class="mb-6">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Producto</h3>
+                <div class="flex gap-3 items-center bg-indigo-50 p-3 rounded-lg">
+                  <div class="w-12 h-12 flex-shrink-0 bg-white rounded-lg overflow-hidden">
+                    <img
+                      v-if="selectedProduct?.imagen_url"
+                      :src="selectedProduct.imagen_url"
+                      :alt="selectedProduct.nombre_producto"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center">
+                      <ImageOffIcon :size="24" class="text-gray-300" />
                     </div>
-                    <div class="flex flex-col">
-                      <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
-                      <span class="text-xs text-indigo-600 font-medium mt-1">
-                        {{ selectedProduct?.atributos?.length || 0 }} atributos disponibles
-                      </span>
-                    </div>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-gray-800 font-medium line-clamp-2">{{ selectedProduct?.nombre_producto }}</span>
+                    <span class="text-xs text-indigo-600 font-medium mt-1">
+                     Atributos Disponibles: {{ selectedProduct?.atributos?.length || 0 }}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                <div class="space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del atributo*</label>
-                    <input
-                      v-model="attributeForm.nombre_atributo"
-                      type="text"
-                      required
-                      placeholder="Ej: Tamaño, Color, Sabor"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor*</label>
-                    <input
-                      v-model="attributeForm.valor"
-                      type="text"
-                      required
-                      placeholder="Ej: Grande, Rojo, Fresa"
-                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional</label>
-                    <div class="relative">
-                      <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
+              <!-- Sección de agregar nuevo atributo -->
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Agregar nuevo atributo</h3>
+              <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                <form @submit.prevent="addAttribute">
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del atributo*</label>
                       <input
-                        v-model="attributeForm.precio_adicional"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        v-model="attributeForm.nombre_atributo"
+                        type="text"
+                        required
+                        placeholder="Ej: Tamaño, Color, Sabor"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                       >
                     </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Valor*</label>
+                      <input
+                        v-model="attributeForm.valor"
+                        type="text"
+                        required
+                        placeholder="Ej: Grande, Rojo, Fresa"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                    </div>
+
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Precio adicional*</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">L.</span>
+                        <input
+                          v-model="attributeForm.precio_adicional"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <button
+                      type="submit"
+                      class="w-full px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors font-medium"
+                    >
+                      Agregar atributo
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Lista de atributos existentes -->
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Atributos existentes:</h3>
+                <div class="bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                  <div v-if="selectedProduct?.atributos && selectedProduct.atributos.length > 0" class="divide-y divide-gray-200">
+                    <div
+                      v-for="(attr, idx) in selectedProduct.atributos"
+                      :key="idx"
+                      class="flex items-center justify-between py-3 px-4 hover:bg-gray-100"
+                    >
+                      <div class="flex items-center">
+                        <ListPlusIcon :size="16" class="text-purple-500 mr-2 flex-shrink-0" />
+                        <span class="text-gray-700">{{ attr.nombre_atributo }}: {{ attr.valor }}</span>
+                      </div>
+                      <div class="flex items-center">
+                        <span v-if="attr.precio_adicional > 0" class="text-gray-600 mr-3">L. {{ formatPrice(attr.precio_adicional) }}</span>
+                        <button
+                          type="button"
+                          @click="removeAttribute(selectedProduct, attr, idx)"
+                          class="text-red-400 hover:text-red-600 p-1.5 rounded-full hover:bg-red-50"
+                          title="Eliminar atributo"
+                        >
+                          <XIcon :size="16" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="py-4 px-4 text-center text-gray-500 italic">
+                    No hay atributos para este producto
                   </div>
                 </div>
+              </div>
 
-                <div class="flex justify-end gap-3 mt-6">
-                  <button
-                    type="button"
-                    @click="closeModal"
-                    class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    class="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors font-medium"
-                  >
-                    Agregar atributo
-                  </button>
-                </div>
-              </form>
+              <div class="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  @click="closeModal"
+                  class="px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1627,9 +1672,10 @@
     return parseFloat(price).toFixed(2);
   };
 
-  const hasExtrasOrAttributes = (product) => {
-  return (product.extras && product.extras.length > 0) || (product.atributos && product.atributos.length > 0);
-  };
+  // This function is kept for potential future use
+  // const hasExtrasOrAttributes = (product) => {
+  //   return (product.extras && product.extras.length > 0) || (product.atributos && product.atributos.length > 0);
+  // };
 
   const isRecommended = (product) => {
   if (!product) return false;
@@ -2110,46 +2156,105 @@
     }
   };
 
-  const removeAttribute = async (product, attribute) => {
-  try {
-  loading.value = true;
+  // Función para eliminar un atributo directamente desde el índice
+  const removeAttribute = async (product, attribute, index) => {
+    try {
+      loading.value = true;
+      console.log('Eliminando atributo:', attribute.nombre_atributo, 'del producto:', product.nombre_producto);
+      console.log('Datos del atributo:', JSON.stringify(attribute, null, 2));
 
-  if (appMode.value === 'production') {
-  // Implementación real de eliminación de atributo
-  await axios.delete(`${API_URL}/atributos/${attribute.id_atributo}`);
+      if (appMode.value === 'production') {
+        // Eliminar el atributo de la UI primero para una experiencia más fluida
+        if (selectedProduct.value && selectedProduct.value.atributos) {
+          selectedProduct.value.atributos.splice(index, 1);
+        }
 
-  // Recargar datos del producto para actualizar la UI
-  const productData = await axios.get(`${API_URL}/productos/${product.id_producto}`);
+        // Intentar eliminar el atributo del servidor
+        try {
+          // Primero, obtener todos los atributos del producto para verificar la estructura
+          console.log(`Obteniendo atributos para el producto ID: ${product.id_producto}`);
+          const atributosResponse = await axios.get(`${API_URL}/atributos/${product.id_producto}`);
+          const serverAtributos = atributosResponse.data;
+          console.log('Atributos del servidor:', JSON.stringify(serverAtributos, null, 2));
 
-  // Actualizar el producto en la lista
-  const index = products.value.findIndex(p => p.id_producto === product.id_producto);
-  if (index !== -1) {
-  products.value[index] = productData.data;
-  }
+          // Buscar el atributo por nombre y valor
+          const serverAtributo = serverAtributos.find(a =>
+            a.nombre_atributo === attribute.nombre_atributo && a.valor === attribute.valor);
+          console.log('Atributo encontrado en el servidor:', serverAtributo ? JSON.stringify(serverAtributo, null, 2) : 'No encontrado');
 
-  } else {
-  // Modo demo
-  await new Promise(resolve => setTimeout(resolve, 500));
+          if (serverAtributo) {
+            // Intentar eliminar el atributo
+            let success = false;
 
-  // Simular eliminación del atributo
-  const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
-  if (productIndex !== -1 && products.value[productIndex].atributos) {
-  const attrIndex = products.value[productIndex].atributos.findIndex(a =>
-  a.nombre_atributo === attribute.nombre_atributo && a.valor === attribute.valor
-  );
-  if (attrIndex !== -1) {
-  products.value[productIndex].atributos.splice(attrIndex, 1);
-  }
-  }
-  }
+            // Usar DELETE directamente con el ID del atributo
+            try {
+              console.log('Intentando eliminar con DELETE: ID del atributo');
+              await axios.delete(`${API_URL}/atributos/${serverAtributo.id_atributo}`);
+              console.log('Eliminación exitosa');
+              success = true;
+            } catch (error2) {
+              console.warn('Error al eliminar atributo:', error2);
 
-  showToast('Atributo eliminado correctamente', 'success');
-  } catch (error) {
-  console.error('Error al eliminar atributo:', error);
-  showToast('Error al eliminar el atributo', 'error');
-  } finally {
-  loading.value = false;
-  }
+              // Enfoque alternativo: Usar POST con un endpoint específico
+              try {
+                console.log('Intentando enfoque alternativo: POST con endpoint específico');
+                await axios.post(`${API_URL}/atributos/delete`, {
+                  id_producto: product.id_producto,
+                  nombre_atributo: attribute.nombre_atributo,
+                  valor: attribute.valor
+                });
+                console.log('Enfoque alternativo exitoso');
+                success = true;
+              } catch (error3) {
+                console.warn('Enfoque alternativo falló:', error3);
+              }
+            }
+
+            if (success) {
+              console.log('Atributo eliminado correctamente del servidor');
+              showToast('Atributo eliminado correctamente', 'success');
+            } else {
+              console.warn('No se pudo eliminar el atributo del servidor después de múltiples intentos');
+              showToast('El atributo se eliminó de la interfaz, pero puede que persista en el servidor', 'warning');
+            }
+          } else {
+            console.warn('No se encontró el atributo en el servidor');
+            showToast('El atributo se eliminó de la interfaz, pero no se encontró en el servidor', 'info');
+          }
+        } catch (error) {
+          console.error('Error al eliminar atributo del servidor:', error);
+          showToast('El atributo se eliminó de la interfaz, pero puede que persista en el servidor', 'warning');
+        } finally {
+          // Recargar productos para asegurar que la UI esté sincronizada
+          await loadProducts();
+        }
+      } else {
+        // Modo demo
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Eliminar el atributo del producto seleccionado
+        if (selectedProduct.value && selectedProduct.value.atributos) {
+          selectedProduct.value.atributos.splice(index, 1);
+        }
+
+        // Eliminar el atributo de la lista de productos
+        const productIndex = products.value.findIndex(p => p.id_producto === product.id_producto);
+        if (productIndex !== -1 && products.value[productIndex].atributos) {
+          const attrIndex = products.value[productIndex].atributos.findIndex(a =>
+            a.nombre_atributo === attribute.nombre_atributo && a.valor === attribute.valor);
+          if (attrIndex !== -1) {
+            products.value[productIndex].atributos.splice(attrIndex, 1);
+          }
+        }
+
+        showToast('Atributo eliminado correctamente', 'success');
+      }
+    } catch (error) {
+      console.error('Error al eliminar atributo:', error);
+      showToast('Error al eliminar el atributo', 'error');
+    } finally {
+      loading.value = false;
+    }
   };
 
   // Métodos para la gestión de productos
@@ -3380,5 +3485,15 @@ body {
 
 .modal-enter-to, .modal-leave-from {
   opacity: 1;
+}
+
+/* Estilos para el efecto de deshabilitado */
+.isolate {
+  isolation: isolate;
+}
+
+/* Asegurarse de que el efecto de deshabilitado no interfiera con otros elementos */
+.pointer-events-none {
+  pointer-events: none;
 }
 </style>

@@ -16,7 +16,7 @@ const Atributo = sequelize.define(
     nombre_atributo: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true, // El nombre del atributo debe ser único
+      // Quitamos la restricción unique: true para permitir el mismo nombre en diferentes productos
     },
     valor: {
       type: DataTypes.STRING(255),
@@ -30,6 +30,16 @@ const Atributo = sequelize.define(
   {
     timestamps: false, // Desactiva los timestamps automáticos de Sequelize
     tableName: "Atributos", // Nombre de la tabla en la base de datos
+    indexes: [
+      {
+        // Creamos un índice único compuesto por id_producto y nombre_atributo
+        // Esto permite tener el mismo nombre de atributo en diferentes productos
+        // pero no permite duplicados dentro del mismo producto
+        unique: true,
+        fields: ['id_producto', 'nombre_atributo'],
+        name: 'atributo_producto_nombre_unique'
+      }
+    ]
   }
 );
 
