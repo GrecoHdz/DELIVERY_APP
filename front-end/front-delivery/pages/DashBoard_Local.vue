@@ -6,127 +6,18 @@
     <!-- Contenido Principal -->
     <div class="container mx-auto px-4 pb-20 pt-6">
       <!-- Información del local y toggle de datos -->
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-800">{{ local.nombre_local }}</h1>
-          <p class="text-gray-600">{{ formatearFecha(new Date()) }}</p>
-        </div>
-        <div class="flex items-center">
-          <span class="text-sm text-gray-600 mr-2">Fuente:</span>
-          <div class="bg-white shadow border border-gray-200 rounded-lg flex items-center p-1">
-            <button 
-              @click="fuenteDatos = 'mock'" 
-              class="px-3 py-1 text-sm rounded-md transition-colors"
-              :class="fuenteDatos === 'mock' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
-            >
-              Demo
-            </button>
-            <button 
-              @click="fuenteDatos = 'api'" 
-              class="px-3 py-1 text-sm rounded-md transition-colors"
-              :class="fuenteDatos === 'api' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
-            >
-              API
-            </button>
-          </div>
-        </div>
-      </div>
+      <LocalInfoHeader
+        :localInfo="local"
+        :dataSource="fuenteDatos"
+        @update:dataSource="fuenteDatos = $event; cargarDatos()"
+      />
 
       <!-- Tarjetas de estado principales -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Tarjeta de Pedidos Semanales -->
-        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <p class="text-gray-600 text-sm">Pedidos Semanales</p>
-              <h3 class="text-2xl font-bold text-gray-800 mt-1">38</h3>
-            </div>
-            <div class="p-3 bg-blue-100 rounded-full">
-              <BoxIcon class="text-blue-600" :size="20" />
-            </div>
-          </div>
-          <div class="flex items-center text-sm">
-            <span class="text-green-500 flex items-center">
-              <ArrowUpIcon :size="16" class="mr-1" />
-              14%
-            </span>
-            <span class="text-gray-600 ml-1">vs. semana pasada</span>
-          </div>
-        </div>
-
-        <!-- Tarjeta de Ingresos Semanales -->
-        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <p class="text-gray-600 text-sm">Ingresos Semanales</p>
-              <h3 class="text-2xl font-bold text-gray-800 mt-1">L. 4,560.75</h3>
-            </div>
-            <div class="p-3 bg-green-100 rounded-full">
-              <DollarSignIcon class="text-green-600" :size="20" />
-            </div>
-          </div>
-          <div class="flex items-center text-sm">
-            <span class="text-green-500 flex items-center">
-              <ArrowUpIcon :size="16" class="mr-1" />
-              8%
-            </span>
-            <span class="text-gray-600 ml-1">vs. semana pasada</span>
-          </div>
-        </div>
-
-        <!-- Tarjeta de Pedidos Restantes -->
-        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
-          <div class="flex justify-between items-start mb-3">
-            <div>
-              <p class="text-gray-600 text-sm">Pedidos Restantes</p>
-              <h3 class="text-2xl font-bold text-gray-800 mt-1">
-                {{ local.pedidos_restantes }}/{{ getPedidosMaximos() }}
-              </h3>
-            </div>
-            <div class="p-3 bg-amber-100 rounded-full">
-              <ShoppingBagIcon class="text-amber-600" :size="20" />
-            </div>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              class="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out" 
-              :style="{width: `${(local.pedidos_restantes / getPedidosMaximos()) * 100}%`}"
-            ></div>
-          </div>
-          <p class="text-xs text-gray-600 mt-2">
-            {{ membresia.id_membresia === 3 ? 'Pedidos ilimitados' : `Costo por pedido extra: L. ${membresia.id_membresia === 1 ? '25' : '15'}` }}
-          </p>
-        </div>
-
-        <!-- Tarjeta de Membresía -->
-        <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <p class="text-gray-600 text-sm">Membresía Actual</p>
-              <h3 class="text-2xl font-bold mt-1" :class="{
-                'text-gray-800': membresia.id_membresia === 1,
-                'text-blue-700': membresia.id_membresia === 2,
-                'text-purple-700': membresia.id_membresia === 3
-              }">{{ getTipoMembresiaNombre(membresia.id_membresia) }}</h3>
-            </div>
-            <div class="p-3 rounded-full" :class="{
-              'bg-gray-100': membresia.id_membresia === 1,
-              'bg-blue-100': membresia.id_membresia === 2,
-              'bg-purple-100': membresia.id_membresia === 3
-            }">
-              <CrownIcon :class="{
-                'text-gray-600': membresia.id_membresia === 1,
-                'text-blue-600': membresia.id_membresia === 2,
-                'text-purple-600': membresia.id_membresia === 3
-              }" :size="20" />
-            </div>
-          </div>
-          <p class="text-amber-600 text-sm flex items-center">
-            <ClockIcon :size="16" class="mr-1" />
-            Vence: Domingo 11:59 PM
-          </p>
-        </div>
-      </div>
+      <StatusCards
+        :localInfo="local"
+        :membresia="membresia"
+        :estadisticas="estadisticas"
+      />
 
       <!-- Cobro semanal con lista de productos vendidos -->
       <div class="bg-white rounded-xl shadow mb-8 border border-gray-100">
@@ -139,7 +30,7 @@
       </div>
       <div>
         <h2 class="text-lg sm:text-xl font-bold text-gray-800">Cobro Semanal</h2>
-        <p class="text-gray-600 text-sm sm:text-base">El cobro se realiza automáticamente cada domingo a las 11:59 PM</p> 
+        <p class="text-gray-600 text-sm sm:text-base">El cobro se realiza automáticamente cada domingo a las 11:59 PM</p>
       </div>
     </div>
 
@@ -154,7 +45,7 @@
     </div>
   </div>
 </div>
-        
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
           <!-- Productos vendidos esta semana -->
           <div class="lg:col-span-2 p-6 border-r border-gray-100">
@@ -170,7 +61,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(producto, index) in productosVendidosSemana" :key="index" 
+                  <tr v-for="(producto, index) in productosVendidosSemana" :key="index"
                       :class="{'bg-gray-50': index % 2 === 0}">
                     <td class="py-3 px-4 text-gray-800">{{ producto.nombre }}</td>
                     <td class="py-3 px-4 text-gray-800">{{ producto.cantidad }}</td>
@@ -188,7 +79,7 @@
               </table>
             </div>
           </div>
-          
+
           <!-- Resumen del cobro -->
           <div class="p-6 bg-gray-50">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen del Cobro</h3>
@@ -205,14 +96,14 @@
                 <span class="font-bold text-gray-800">Total a pagar:</span>
                 <span class="font-bold text-gray-800">L. {{ calcularTotalPago() }}</span>
               </div>
-              
+
               <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-amber-800">
                 <p class="flex items-center text-sm">
                   <InfoIcon :size="16" class="mr-2 text-amber-500 flex-shrink-0" />
                   El cobro del {{ formatearFecha(fechaProximoCobro) }} incluirá todos los pedidos y comisiones hasta el domingo a las 11:59 PM
                 </p>
               </div>
-              
+
               <button @click="openHistorialCobros" class="w-full mt-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center">
                 <FileTextIcon :size="16" class="mr-2" />
                 Ver historial de cobros
@@ -227,11 +118,11 @@
         <div class="border-b border-gray-200">
           <ul class="flex flex-wrap -mb-px">
             <li v-for="tab in tabs" :key="tab.id" class="mr-2">
-              <button 
-                @click="currentTab = tab.id" 
+              <button
+                @click="currentTab = tab.id"
                 class="py-2 px-4 text-sm font-medium border-b-2 transition-colors"
-                :class="currentTab === tab.id 
-                  ? 'text-blue-600 border-blue-600' 
+                :class="currentTab === tab.id
+                  ? 'text-blue-600 border-blue-600'
                   : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'"
               >
                 <component :is="tab.icon" :size="16" class="inline-block mr-1" />
@@ -250,10 +141,10 @@
             <CrownIcon :size="20" class="mr-2 text-amber-500" />
             Planes de Membresía
           </h2>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Plan Gratuito -->
-            <div 
+            <div
               class="bg-white rounded-xl shadow overflow-hidden transition-all"
               :class="membresia.id_membresia === 1 ? 'ring-2 ring-blue-500' : ''"
             >
@@ -289,9 +180,9 @@
                     <span>Estadísticas avanzadas</span>
                   </li>
                 </ul>
-                
-                <button 
-                  @click="openMembresiaComprobanteModal(1)" 
+
+                <button
+                  @click="openMembresiaComprobanteModal(1)"
                   class="w-full mt-6 px-4 py-2 rounded-lg text-center"
                   :class="membresia.id_membresia === 1 ? 'bg-gray-100 text-gray-800 cursor-default' : 'bg-blue-600 text-white hover:bg-blue-700 transition-colors'"
                 >
@@ -299,9 +190,9 @@
                 </button>
               </div>
             </div>
-            
+
             <!-- Plan Básico -->
-            <div 
+            <div
               class="bg-white rounded-xl shadow overflow-hidden transition-all"
               :class="membresia.id_membresia === 2 ? 'ring-2 ring-blue-500' : ''"
             >
@@ -337,9 +228,9 @@
                     <span>Banners publicitarios</span>
                   </li>
                 </ul>
-                
-                <button 
-                  @click="openMembresiaComprobanteModal(2)" 
+
+                <button
+                  @click="openMembresiaComprobanteModal(2)"
                   class="w-full mt-6 px-4 py-2 rounded-lg text-center"
                   :class="membresia.id_membresia === 2 ? 'bg-gray-100 text-gray-800 cursor-default' : 'bg-blue-600 text-white hover:bg-blue-700 transition-colors'"
                 >
@@ -347,9 +238,9 @@
                 </button>
               </div>
             </div>
-            
+
             <!-- Plan Premium -->
-            <div 
+            <div
               class="bg-white rounded-xl shadow overflow-hidden transition-all relative"
               :class="membresia.id_membresia === 3 ? 'ring-2 ring-purple-500' : ''"
             >
@@ -357,7 +248,7 @@
               <div class="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-4 py-1 transform rotate-45 translate-x-8 translate-y-2">
                 <span class="text-xs font-bold">RECOMENDADO</span>
               </div>
-              
+
               <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 text-center border-b">
                 <h3 class="text-xl font-bold text-white">Premium</h3>
                 <p class="text-3xl font-bold text-white mt-2">L. 250</p>
@@ -390,9 +281,9 @@
                     <span class="text-gray-700">Todas las estadísticas</span>
                   </li>
                 </ul>
-                
-                <button 
-                  @click="openMembresiaComprobanteModal(3)" 
+
+                <button
+                  @click="openMembresiaComprobanteModal(3)"
                   class="w-full mt-6 px-4 py-2 rounded-lg text-center"
                   :class="membresia.id_membresia === 3 ? 'bg-gray-100 text-gray-800 cursor-default' : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 transition-opacity'"
                 >
@@ -410,15 +301,15 @@
               <TicketIcon :size="20" class="mr-2 text-green-500" />
               Cupones de Descuento
             </h2>
-            <button 
-              @click="openCuponModal()" 
+            <button
+              @click="openCuponModal()"
               class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
             >
               <PlusIcon :size="16" class="mr-1" />
               Crear Cupón
             </button>
           </div>
-          
+
           <div class="overflow-x-auto bg-white shadow rounded-xl border border-gray-100">
             <table class="w-full border-collapse">
               <thead>
@@ -433,7 +324,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(cupon, index) in cupones" :key="index" 
+                <tr v-for="(cupon, index) in cupones" :key="index"
                     class="border-b border-gray-100 hover:bg-gray-50">
                   <td class="p-4 font-medium text-gray-800">{{ cupon.codigo_cupon }}</td>
                   <td class="p-4 text-gray-700">{{ cupon.tipo_descuento === 'porcentaje' ? 'Porcentaje' : 'Monto Fijo' }}</td>
@@ -443,8 +334,8 @@
                   <td class="p-4 text-gray-700">{{ cupon.limite_uso }}</td>
                   <td class="p-4 text-gray-700">{{ formatearFecha(cupon.fecha_vencimiento) }}</td>
                   <td class="p-4">
-                    <span 
-                      :class="cupon.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" 
+                    <span
+                      :class="cupon.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
                       class="px-2 py-1 rounded-full text-xs"
                     >
                       {{ cupon.activo ? 'Activo' : 'Inactivo' }}
@@ -482,26 +373,26 @@
               <StoreIcon :size="20" class="mr-2 text-indigo-500" />
               Sucursales
             </h2>
-            <button 
-              @click="openSucursalModal()" 
+            <button
+              @click="openSucursalModal()"
               class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
             >
               <PlusIcon :size="16" class="mr-1" />
               Agregar Sucursal
             </button>
           </div>
-          
+
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div 
-              v-for="(sucursal, index) in sucursales" 
-              :key="index" 
+            <div
+              v-for="(sucursal, index) in sucursales"
+              :key="index"
               class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border border-gray-100"
             >
               <div class="p-4 border-b border-gray-100">
                 <div class="flex justify-between items-start">
                   <h3 class="font-bold text-gray-800">{{ sucursal.nombre }}</h3>
-                  <span 
-                    :class="sucursal.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" 
+                  <span
+                    :class="sucursal.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
                     class="text-xs px-2 py-1 rounded-full"
                   >
                     {{ sucursal.activo ? 'Activa' : 'Inactiva' }}
@@ -509,7 +400,7 @@
                 </div>
                 <p class="text-gray-600 text-sm mt-1">{{ sucursal.ciudad }} - {{ sucursal.colonia }}</p>
               </div>
-              
+
               <div class="p-4">
                 <p class="text-gray-700 text-sm mb-3 flex items-start">
                   <MapPinIcon :size="16" class="text-gray-500 mr-2 flex-shrink-0 mt-0.5" />
@@ -519,10 +410,10 @@
                   <ClockIcon :size="16" class="text-gray-500 mr-2 flex-shrink-0 mt-0.5" />
                   <span>{{ formatearHora(sucursal.apertura) }} - {{ formatearHora(sucursal.cierre) }}</span>
                 </p>
-                
+
                 <div class="flex justify-between items-center mt-4">
-                  <button 
-                    @click="viewSucursalOnMap(sucursal)" 
+                  <button
+                    @click="viewSucursalOnMap(sucursal)"
                     class="text-blue-600 text-sm flex items-center hover:text-blue-700 transition-colors"
                   >
                     <MapIcon :size="16" class="mr-1" />
@@ -543,12 +434,12 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-if="sucursales.length === 0" class="col-span-full p-6 text-center text-gray-500 bg-gray-50 rounded-xl">
               <StoreIcon :size="48" class="text-gray-400 mx-auto mb-2" />
               <p>No hay sucursales registradas</p>
-              <button 
-                @click="openSucursalModal()" 
+              <button
+                @click="openSucursalModal()"
                 class="mt-2 text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Agregar primera sucursal
@@ -569,8 +460,8 @@
                 Premium
               </div>
             </div>
-            <button 
-              @click="openBannerModal" 
+            <button
+              @click="openBannerModal"
               class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
               :class="{'opacity-50 cursor-not-allowed': membresia.id_membresia < 3}"
               :disabled="membresia.id_membresia < 3"
@@ -579,7 +470,7 @@
               Agregar Banner
             </button>
           </div>
-          
+
           <!-- Mensaje Premium -->
           <div v-if="membresia.id_membresia < 3" class="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
             <div class="flex items-start">
@@ -587,8 +478,8 @@
               <div>
                 <p class="font-medium text-amber-800">Función disponible solo en plan Premium</p>
                 <p class="text-amber-700 text-sm mt-1">Los banners publicitarios te permiten mostrar promociones especiales a tus clientes directamente en la aplicación.</p>
-                <button 
-                  @click="openMembresiaComprobanteModal(3)" 
+                <button
+                  @click="openMembresiaComprobanteModal(3)"
                   class="mt-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Mejorar a Premium
@@ -596,28 +487,28 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Listado de banners -->
-          <div 
+          <div
             class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
             :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}"
           >
-            <div 
-              v-for="banner in banners" 
-              :key="banner.id_banner" 
+            <div
+              v-for="banner in banners"
+              :key="banner.id_banner"
               class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border border-gray-100"
             >
               <div class="relative h-40">
                 <img :src="banner.imagen_url" alt="Banner" class="w-full h-full object-cover">
                 <div class="absolute top-0 right-0 m-2">
-                  <span 
-                    :class="banner.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'" 
+                  <span
+                    :class="banner.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
                     class="text-xs px-2 py-1 rounded-full"
                   >
                     {{ banner.activo ? 'Activo' : 'Inactivo' }}
                   </span>
                 </div>
-                <div 
+                <div
                   class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end"
                 >
                   <div class="p-3 text-white w-full">
@@ -630,9 +521,9 @@
                 <h3 class="font-bold text-gray-800 truncate mb-1">{{ banner.titulo }}</h3>
                 <p class="text-gray-600 text-sm line-clamp-2 h-10 mb-3">{{ banner.descripcion }}</p>
                 <div class="flex justify-between items-center">
-                  <a 
-                    :href="banner.url_destino" 
-                    target="_blank" 
+                  <a
+                    :href="banner.url_destino"
+                    target="_blank"
                     class="text-blue-600 text-sm hover:text-blue-700 transition-colors"
                   >
                     Ver destino
@@ -652,12 +543,12 @@
                 </div>
               </div>
             </div>
-            
+
             <div v-if="banners.length === 0 && membresia.id_membresia >= 3" class="col-span-full p-6 text-center text-gray-500 bg-gray-50 rounded-xl">
               <ImageIcon :size="48" class="text-gray-400 mx-auto mb-2" />
               <p>No hay banners publicitarios</p>
-              <button 
-                @click="openBannerModal" 
+              <button
+                @click="openBannerModal"
                 class="mt-2 text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Crear tu primer banner publicitario
@@ -672,7 +563,7 @@
     <BarChartIcon :size="20" class="mr-2 text-blue-500" />
     Estadísticas
   </h2>
-  
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Estadística de Producto Más Vendido (disponible para Básica y Premium) -->
     <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
@@ -689,12 +580,12 @@
           </span>
         </div>
       </div>
-      
+
       <!-- Contenido para usuarios Básica/Premium -->
       <div v-if="membresia.id_membresia >= 2" class="p-4 h-64">
         <canvas id="productosChart" ref="productosChart"></canvas>
       </div>
-      
+
       <!-- Overlay para membresía insuficiente -->
       <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
         <LockIcon :size="32" class="text-gray-400 mb-2" />
@@ -704,7 +595,7 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Estadística de Ingresos por Día (solo Premium) -->
     <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
       <div class="p-4 border-b border-gray-100">
@@ -720,12 +611,12 @@
           </span>
         </div>
       </div>
-      
+
       <!-- Contenido para usuarios Premium -->
       <div v-if="membresia.id_membresia >= 3" class="p-4 h-64">
         <canvas id="ventasChart" ref="ventasChart"></canvas>
       </div>
-      
+
       <!-- Overlay para membresía insuficiente -->
       <div v-else class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
         <LockIcon :size="32" class="text-gray-400 mb-2" />
@@ -735,7 +626,7 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Cliente más frecuente (solo Premium) - modificado a top 3 sin fotos -->
     <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
       <div class="p-4 border-b border-gray-100">
@@ -751,20 +642,20 @@
           </span>
         </div>
       </div>
-      
+
       <!-- Contenido para usuarios Premium -->
       <div v-if="membresia.id_membresia >= 3 && clientesFrecuentes && clientesFrecuentes.length > 0" class="p-4">
         <p class="text-sm text-gray-600 mb-3">Periodo: Últimos 7 días</p>
-        
+
         <div class="space-y-3">
-          <div v-for="(cliente, index) in clientesFrecuentes" :key="cliente.id_cliente" 
+          <div v-for="(cliente, index) in clientesFrecuentes" :key="cliente.id_cliente"
               class="bg-gray-50 p-3 rounded-lg flex items-center justify-between">
             <div class="flex items-center">
               <div class="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-3">
                 <span class="font-bold">#{{ index + 1 }}</span>
               </div>
               <div>
-                <h4 class="font-bold text-gray-800">{{ cliente.nombre }}</h4> 
+                <h4 class="font-bold text-gray-800">{{ cliente.nombre }}</h4>
               </div>
             </div>
             <div class="text-right">
@@ -774,7 +665,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Overlay para membresía insuficiente -->
       <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
         <LockIcon :size="32" class="text-gray-400 mb-2" />
@@ -784,7 +675,7 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Ranking en ventas por categoría (solo Premium) - modificado para ocultar información sensible -->
     <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
       <div class="p-4 border-b border-gray-100">
@@ -800,7 +691,7 @@
           </span>
         </div>
       </div>
-      
+
       <!-- Contenido para usuarios Premium -->
       <div v-if="membresia.id_membresia >= 3" class="p-4">
         <div class="bg-gray-50 p-3 rounded-lg mb-4 flex items-center">
@@ -833,7 +724,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Overlay para membresía insuficiente -->
       <div v-if="membresia.id_membresia < 3" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
         <LockIcon :size="32" class="text-gray-400 mb-2" />
@@ -858,8 +749,8 @@
                 Premium
               </div>
             </div>
-            <button 
-              @click="openNotificacionModal" 
+            <button
+              @click="openNotificacionModal"
               class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
               :class="{'opacity-50 cursor-not-allowed': membresia.id_membresia < 3}"
               :disabled="membresia.id_membresia < 3"
@@ -868,7 +759,7 @@
               Nueva Notificación
             </button>
           </div>
-          
+
           <!-- Mensaje Premium -->
           <div v-if="membresia.id_membresia < 3" class="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
             <div class="flex items-start">
@@ -876,8 +767,8 @@
               <div>
                 <p class="font-medium text-amber-800">Función disponible solo en plan Premium</p>
                 <p class="text-amber-700 text-sm mt-1">Las notificaciones personalizadas te permiten comunicarte directamente con tus clientes para informarles sobre promociones especiales y novedades.</p>
-                <button 
-                  @click="openMembresiaComprobanteModal(3)" 
+                <button
+                  @click="openMembresiaComprobanteModal(3)"
                   class="mt-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Mejorar a Premium
@@ -885,9 +776,9 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Histórico de notificaciones -->
-          <div 
+          <div
             class="bg-white rounded-xl shadow overflow-hidden border border-gray-100"
             :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}"
           >
@@ -915,7 +806,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Nueva pestaña: Reportería -->
         <div v-if="currentTab === 'reporteria'" class="space-y-6">
           <div class="flex justify-between items-center mb-6">
@@ -929,7 +820,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Mensaje Premium -->
           <div v-if="membresia.id_membresia < 3" class="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
             <div class="flex items-start">
@@ -937,8 +828,8 @@
               <div>
                 <p class="font-medium text-amber-800">Función disponible solo en plan Premium</p>
                 <p class="text-amber-700 text-sm mt-1">La sección de reportería te permite generar informes detallados sobre tu negocio y exportarlos en diferentes formatos.</p>
-                <button 
-                  @click="openMembresiaComprobanteModal(3)" 
+                <button
+                  @click="openMembresiaComprobanteModal(3)"
                   class="mt-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Mejorar a Premium
@@ -946,23 +837,23 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Contenido de Reportería -->
-          <div 
+          <div
             class="bg-white rounded-xl shadow overflow-hidden border border-gray-100"
             :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}"
           >
             <div class="p-4 border-b border-gray-100">
               <h3 class="font-medium text-gray-800">Generar reportes</h3>
             </div>
-            
+
             <div class="p-6">
               <!-- Filtros de reportes -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de reporte</label>
-                  <select 
-                    v-model="reporteActual.tipo" 
+                  <select
+                    v-model="reporteActual.tipo"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                     <option value="ventas">Reporte de ventas</option>
@@ -971,38 +862,38 @@
                     <option value="pedidos">Reporte de pedidos</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Fecha inicial</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     v-model="reporteActual.fechaInicio"
                     class="w-full px-3 py-2 border border-white-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                 </div>
-                
+
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Fecha final</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     v-model="reporteActual.fechaFin"
                     class="w-full px-3 py-2 border border-white-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white-800"
                   >
                 </div>
               </div>
-              
+
               <div class="flex justify-between mb-6">
-                <button 
-                  @click="generarReporte" 
+                <button
+                  @click="generarReporte"
                   class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
                 >
                   <BarChartIcon :size="16" class="mr-2" />
                   Generar reporte
                 </button>
-                
+
                 <div class="flex space-x-2">
-                  <button 
-                    @click="exportarReporte('excel')" 
+                  <button
+                    @click="exportarReporte('excel')"
                     :disabled="!reporteGenerado"
                     :class="reporteGenerado ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'"
                     class="py-2 px-4 rounded-lg transition-colors flex items-center"
@@ -1010,9 +901,9 @@
                     <FileTextIcon :size="16" class="mr-2" />
                     Exportar Excel
                   </button>
-                  
-                  <button 
-                    @click="exportarReporte('pdf')" 
+
+                  <button
+                    @click="exportarReporte('pdf')"
                     :disabled="!reporteGenerado"
                     :class="reporteGenerado ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-gray-200 text-gray-500 cursor-not-allowed'"
                     class="py-2 px-4 rounded-lg transition-colors flex items-center"
@@ -1022,16 +913,16 @@
                   </button>
                 </div>
               </div>
-              
+
               <!-- Resultado del reporte -->
               <div v-if="reporteGenerado" class="border border-gray-200 rounded-lg p-4">
                 <h4 class="font-medium text-gray-800 mb-4">
-                  {{ getTituloReporte() }} 
+                  {{ getTituloReporte() }}
                   <span class="text-sm font-normal text-gray-600">
                     ({{ formatearFecha(reporteActual.fechaInicio) }} - {{ formatearFecha(reporteActual.fechaFin) }})
                   </span>
                 </h4>
-                
+
                 <!-- Contenido del reporte según el tipo -->
                 <div v-if="reporteActual.tipo === 'ventas'" class="overflow-x-auto">
                   <table class="w-full border-collapse">
@@ -1061,7 +952,7 @@
                     </tfoot>
                   </table>
                 </div>
-                
+
                 <div v-else-if="reporteActual.tipo === 'productos'" class="overflow-x-auto">
                   <table class="w-full border-collapse">
                     <thead>
@@ -1082,7 +973,7 @@
                     </tbody>
                   </table>
                 </div>
-                
+
                 <!-- Reporte financiero -->
                 <div v-else-if="reporteActual.tipo === 'financiero'" class="overflow-x-auto">
                   <table class="w-full border-collapse">
@@ -1136,7 +1027,7 @@
                     </tfoot>
                   </table>
                 </div>
-                
+
                 <!-- Reporte de pedidos -->
                 <div v-else-if="reporteActual.tipo === 'pedidos'" class="overflow-x-auto">
                   <table class="w-full border-collapse">
@@ -1201,7 +1092,7 @@
                       </tr>
                     </tbody>
                   </table>
-                  
+
                   <!-- Modal para detalles de pedido (se mostraría al hacer clic en "Ver detalle") -->
                   <div v-if="modalPedidoVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl">
@@ -1214,7 +1105,7 @@
                           <XIcon :size="20" />
                         </button>
                       </div>
-                      
+
                       <div class="p-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
@@ -1231,7 +1122,7 @@
                               </p>
                             </div>
                           </div>
-                          
+
                           <div>
                             <h4 class="font-medium text-gray-700">Información del pedido</h4>
                             <div class="bg-gray-50 p-3 rounded-lg mt-2">
@@ -1239,7 +1130,7 @@
                                 <span class="font-medium">Fecha:</span> 18/07/2023 - 13:25
                               </p>
                               <p class="text-sm text-gray-800">
-                                <span class="font-medium">Estado:</span> 
+                                <span class="font-medium">Estado:</span>
                                 <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">Entregado</span>
                               </p>
                               <p class="text-sm text-gray-800">
@@ -1248,7 +1139,7 @@
                             </div>
                           </div>
                         </div>
-                        
+
                         <h4 class="font-medium text-gray-700 mt-4 mb-2">Artículos del pedido</h4>
                         <div class="border border-gray-200 rounded-lg overflow-hidden">
                           <table class="w-full">
@@ -1290,10 +1181,10 @@
                           </table>
                         </div>
                       </div>
-                      
+
                       <div class="p-4 border-t bg-gray-50 flex justify-end">
-                        <button 
-                          @click="modalPedidoVisible = false" 
+                        <button
+                          @click="modalPedidoVisible = false"
                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                         >
                           Cerrar
@@ -1302,13 +1193,13 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- Otros tipos de reportes -->
                 <div v-else class="text-center py-4 text-gray-500">
                   <p>Datos del reporte {{ reporteActual.tipo }} generados correctamente.</p>
                 </div>
               </div>
-              
+
               <!-- Estado inicial -->
               <div v-else class="text-center py-10 text-gray-500">
                 <BarChartIcon :size="48" class="mx-auto text-gray-300 mb-2" />
@@ -1324,7 +1215,7 @@
      <FooterLocal />
 
     <!-- MODALES -->
-    
+
     <!-- Modal para historial de cobros -->
     <transition name="fade">
       <div v-if="modales.historialCobros" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1338,12 +1229,12 @@
               <XIcon :size="20" />
             </button>
           </div>
-          
+
           <div class="p-4 border-b bg-gray-50">
             <div class="flex flex-wrap gap-2">
               <div class="relative">
-                <select 
-                  v-model="filtroHistorialCobros.mes" 
+                <select
+                  v-model="filtroHistorialCobros.mes"
                   class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los meses</option>
@@ -1364,10 +1255,10 @@
                   <CalendarIcon :size="16" />
                 </span>
               </div>
-              
+
               <div class="relative">
-                <select 
-                  v-model="filtroHistorialCobros.anio" 
+                <select
+                  v-model="filtroHistorialCobros.anio"
                   class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los años</option>
@@ -1379,10 +1270,10 @@
                   <CalendarIcon :size="16" />
                 </span>
               </div>
-              
+
               <div class="relative">
-                <select 
-                  v-model="filtroHistorialCobros.estado" 
+                <select
+                  v-model="filtroHistorialCobros.estado"
                   class="pl-8 pr-4 py-2 border border-gray-300 rounded-lg text-white-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Todos los estados</option>
@@ -1394,9 +1285,9 @@
                   <TagIcon :size="16" />
                 </span>
               </div>
-              
-              <button 
-                @click="filtrarHistorialCobros" 
+
+              <button
+                @click="filtrarHistorialCobros"
                 class="ml-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
               >
                 <SearchIcon :size="16" class="inline mr-1" />
@@ -1404,7 +1295,7 @@
               </button>
             </div>
           </div>
-          
+
           <div class="overflow-auto flex-grow">
             <table class="w-full border-collapse">
               <thead class="sticky top-0 bg-white">
@@ -1420,7 +1311,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(cobro, index) in historialCobrosFiltrado" :key="index" 
+                <tr v-for="(cobro, index) in historialCobrosFiltrado" :key="index"
                     class="border-b border-gray-100 hover:bg-gray-50">
                   <td class="py-3 px-4 text-gray-700">{{ cobro.num_factura }}</td>
                   <td class="py-3 px-4 text-gray-700">{{ formatearFecha(cobro.fecha_cobro) }}</td>
@@ -1429,12 +1320,12 @@
                   <td class="py-3 px-4 text-gray-700">L. {{ cobro.comision.toFixed(2) }}</td>
                   <td class="py-3 px-4 text-gray-700">L. {{ cobro.total.toFixed(2) }}</td>
                   <td class="py-3 px-4">
-                    <span 
+                    <span
                       :class="{
                         'bg-green-100 text-green-800': cobro.estado === 'pagado',
                         'bg-yellow-100 text-yellow-800': cobro.estado === 'pendiente',
                         'bg-red-100 text-red-800': cobro.estado === 'vencido'
-                      }" 
+                      }"
                       class="px-2 py-1 rounded-full text-xs"
                     >
                       {{ cobro.estado === 'pagado' ? 'Pagado' : cobro.estado === 'pendiente' ? 'Pendiente' : 'Vencido' }}
@@ -1457,13 +1348,13 @@
               </tbody>
             </table>
           </div>
-          
+
           <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
             <div class="text-sm text-gray-600">
               Mostrando {{ historialCobrosFiltrado.length }} de {{ historialCobros.length }} registros
             </div>
-            <button 
-              @click="exportarHistorialCobros" 
+            <button
+              @click="exportarHistorialCobros"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center"
             >
               <DownloadIcon :size="16" class="mr-1" />
@@ -1473,7 +1364,7 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- Modal para subir comprobante de membresía -->
     <transition name="fade">
   <div v-if="modales.membresiaComprobante" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1540,9 +1431,9 @@
         <button @click="closeModal('membresiaComprobante')" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs">
           Cancelar
         </button>
-        <button 
-          @click="enviarComprobante" 
-          :disabled="!canSubmitComprobante" 
+        <button
+          @click="enviarComprobante"
+          :disabled="!canSubmitComprobante"
           :class="canSubmitComprobante ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
           class="px-3 py-1 rounded-lg text-xs"
         >
@@ -1553,7 +1444,7 @@
   </div>
 </transition>
 
-    
+
     <!-- Modal de notificaciones personalizadas (solo Premium) -->
     <transition name="fade">
       <div v-if="modales.notificacionPersonalizada" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1580,28 +1471,28 @@
                 </div>
               </div>
             </div>
-            
+
             <div :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}">
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Título de la notificación</label>
-                <input 
-                  type="text" 
-                  v-model="modalData.notificacion.titulo" 
+                <input
+                  type="text"
+                  v-model="modalData.notificacion.titulo"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   placeholder="Ej: Nueva promoción disponible"
                 >
               </div>
-              
+
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Mensaje</label>
-                <textarea 
-                  v-model="modalData.notificacion.mensaje" 
+                <textarea
+                  v-model="modalData.notificacion.mensaje"
                   rows="4"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   placeholder="Ej: ¡Aprovecha nuestro descuento del 25% en todos nuestros productos este fin de semana!"
                 ></textarea>
               </div>
-              
+
               <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de destinatario</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -1621,7 +1512,7 @@
                   </label>
                 </div>
               </div>
-              
+
               <div class="mb-4">
                 <div class="flex items-center justify-between mb-2">
                   <label class="text-sm font-medium text-gray-700">Vista previa:</label>
@@ -1646,9 +1537,9 @@
             <button @click="closeModal('notificacionPersonalizada')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
-            <button 
-              @click="enviarNotificacion" 
-              :disabled="!canEnviarNotificacion || membresia.id_membresia < 3" 
+            <button
+              @click="enviarNotificacion"
+              :disabled="!canEnviarNotificacion || membresia.id_membresia < 3"
               :class="canEnviarNotificacion && membresia.id_membresia >= 3 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
               class="px-4 py-2 rounded-lg text-sm"
             >
@@ -1658,7 +1549,7 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- Modal para crear/editar cupón -->
     <transition name="fade">
       <div v-if="modales.cupon" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1676,9 +1567,9 @@
             <div class="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Código de cupón</label>
-                <input 
-                  type="text" 
-                  v-model="modalData.cupon.codigo_cupon" 
+                <input
+                  type="text"
+                  v-model="modalData.cupon.codigo_cupon"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   placeholder="Ej: VERANO2023"
                   :disabled="modalData.isEdit"
@@ -1686,8 +1577,8 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de descuento</label>
-                <select 
-                  v-model="modalData.cupon.tipo_descuento" 
+                <select
+                  v-model="modalData.cupon.tipo_descuento"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 >
                   <option value="porcentaje">Porcentaje (%)</option>
@@ -1695,16 +1586,16 @@
                 </select>
               </div>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   {{ modalData.cupon.tipo_descuento === 'porcentaje' ? 'Porcentaje de descuento' : 'Monto de descuento' }}
                 </label>
                 <div class="relative">
-                  <input 
-                    type="number" 
-                    v-model="modalData.cupon.descuento" 
+                  <input
+                    type="number"
+                    v-model="modalData.cupon.descuento"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     :placeholder="modalData.cupon.tipo_descuento === 'porcentaje' ? '10' : '100'"
                     :min="0"
@@ -1717,40 +1608,40 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Límite de uso</label>
-                <input 
-                  type="number" 
-                  v-model="modalData.cupon.limite_uso" 
+                <input
+                  type="number"
+                  v-model="modalData.cupon.limite_uso"
                   min="1"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                   placeholder="100"
                 >
               </div>
             </div>
-            
+
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Fecha de vencimiento</label>
-              <input 
-                type="date" 
-                v-model="modalData.cupon.fecha_vencimiento" 
+              <input
+                type="date"
+                v-model="modalData.cupon.fecha_vencimiento"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 :min="new Date().toISOString().split('T')[0]"
               >
             </div>
-            
+
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">URL de imagen (opcional)</label>
-              <input 
-                type="text" 
-                v-model="modalData.cupon.imagen_url" 
+              <input
+                type="text"
+                v-model="modalData.cupon.imagen_url"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 placeholder="https://ejemplo.com/imagen.jpg"
               >
             </div>
-            
+
             <div class="mb-4">
               <label class="flex items-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   v-model="modalData.cupon.activo"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 >
@@ -1762,8 +1653,8 @@
             <button @click="closeModal('cupon')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
-            <button 
-              @click="guardarCupon" 
+            <button
+              @click="guardarCupon"
               :disabled="!isValidCupon"
               :class="isValidCupon ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
               class="px-4 py-2 rounded-lg text-sm"
@@ -1774,7 +1665,7 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- Modal para crear/editar sucursal con mapa Leaflet -->
     <transition name="fade">
       <div v-if="modales.sucursal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1788,25 +1679,25 @@
               <XIcon :size="20" />
             </button>
           </div>
-          
+
           <div class="p-4 overflow-y-auto">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div class="mb-4">
                   <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de la sucursal</label>
-                  <input 
-                    type="text" 
-                    v-model="modalData.sucursal.nombre" 
+                  <input
+                    type="text"
+                    v-model="modalData.sucursal.nombre"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     placeholder="Ej: Sucursal Central"
                   >
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Ciudad</label>
-                    <select 
-                      v-model="modalData.sucursal.ciudad" 
+                    <select
+                      v-model="modalData.sucursal.ciudad"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     >
                       <option value="">Seleccionar ciudad</option>
@@ -1815,31 +1706,31 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Colonia</label>
-                    <input 
-                      type="text" 
-                      v-model="modalData.sucursal.colonia" 
+                    <input
+                      type="text"
+                      v-model="modalData.sucursal.colonia"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                       placeholder="Ej: Kennedy"
                     >
                   </div>
                 </div>
-                
+
                 <div class="mb-4">
                   <label class="block text-sm font-medium text-gray-700 mb-2">Dirección precisa</label>
-                  <textarea 
-                    v-model="modalData.sucursal.direccion_precisa" 
+                  <textarea
+                    v-model="modalData.sucursal.direccion_precisa"
                     rows="2"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     placeholder="Ej: Calle principal, frente a farmacia XYZ"
                   ></textarea>
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Latitud</label>
-                    <input 
-                      type="text" 
-                      v-model="modalData.sucursal.lat" 
+                    <input
+                      type="text"
+                      v-model="modalData.sucursal.lat"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                       placeholder="14.0723"
                       readonly
@@ -1847,62 +1738,62 @@
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Longitud</label>
-                    <input 
-                      type="text" 
-                      v-model="modalData.sucursal.long" 
+                    <input
+                      type="text"
+                      v-model="modalData.sucursal.long"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                       placeholder="-87.1921"
                       readonly
                     >
                   </div>
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Hora de apertura</label>
-                    <input 
-                      type="time" 
-                      v-model="modalData.sucursal.apertura" 
+                    <input
+                      type="time"
+                      v-model="modalData.sucursal.apertura"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     >
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Hora de cierre</label>
-                    <input 
-                      type="time" 
-                      v-model="modalData.sucursal.cierre" 
+                    <input
+                      type="time"
+                      v-model="modalData.sucursal.cierre"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                     >
                   </div>
                 </div>
-                
+
                 <div class="mb-4">
                   <label class="flex items-center">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       v-model="modalData.sucursal.activo"
                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     >
                     <span class="ml-2 text-sm text-gray-700">Sucursal activa</span>
                   </label>
                 </div>
-                
+
                 <p class="text-xs text-gray-500 mb-2">Selecciona la ubicación exacta en el mapa haciendo clic en el punto deseado</p>
               </div>
-              
+
               <!-- Mapa Leaflet -->
               <div class="h-96 border border-gray-300 rounded-lg overflow-hidden">
                 <div id="mapaSucursal" class="h-full"></div>
               </div>
             </div>
           </div>
-          
+
           <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
             <button @click="closeModal('sucursal')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
-            <button 
-              @click="guardarSucursal" 
+            <button
+              @click="guardarSucursal"
               :disabled="!isValidSucursal"
               :class="isValidSucursal ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
               class="px-4 py-2 rounded-lg text-sm"
@@ -1913,7 +1804,7 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- Modal para crear/editar banner -->
     <transition name="fade">
       <div v-if="modales.banner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1930,65 +1821,65 @@
           <div class="p-6">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
-              <input 
-                type="text" 
-                v-model="modalData.banner.titulo" 
+              <input
+                type="text"
+                v-model="modalData.banner.titulo"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 placeholder="Ej: Oferta de Verano"
               >
             </div>
-            
+
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-              <textarea 
-                v-model="modalData.banner.descripcion" 
+              <textarea
+                v-model="modalData.banner.descripcion"
                 rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 placeholder="Ej: Descuentos especiales durante toda la temporada"
               ></textarea>
             </div>
-            
+
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">URL destino</label>
-              <input 
-                type="text" 
-                v-model="modalData.banner.url_destino" 
+              <input
+                type="text"
+                v-model="modalData.banner.url_destino"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 placeholder="https://ejemplo.com/promocion"
               >
             </div>
-            
+
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">URL de imagen</label>
-              <input 
-                type="text" 
-                v-model="modalData.banner.imagen_url" 
+              <input
+                type="text"
+                v-model="modalData.banner.imagen_url"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 placeholder="https://ejemplo.com/imagen.jpg"
               >
               <p class="text-xs text-gray-500 mt-1">Recomendado: 1200x400 píxeles</p>
             </div>
-            
+
             <div class="mb-4">
               <label class="flex items-center">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   v-model="modalData.banner.activo"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 >
                 <span class="ml-2 text-sm text-gray-700">Banner activo</span>
               </label>
             </div>
-            
+
             <!-- Vista previa del banner -->
             <div class="border border-gray-200 rounded-lg overflow-hidden">
               <div class="bg-gray-50 py-2 px-3 border-b border-gray-200">
                 <p class="text-xs text-gray-600">Vista previa</p>
               </div>
               <div class="relative h-32">
-                <img 
-                  :src="modalData.banner.imagen_url || 'https://via.placeholder.com/1200x400/f3f4f6/9ca3af?text=Imagen+del+Banner'" 
-                  alt="Vista previa" 
+                <img
+                  :src="modalData.banner.imagen_url || 'https://via.placeholder.com/1200x400/f3f4f6/9ca3af?text=Imagen+del+Banner'"
+                  alt="Vista previa"
                   class="w-full h-full object-cover"
                 >
                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end">
@@ -2004,8 +1895,8 @@
             <button @click="closeModal('banner')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
-            <button 
-              @click="guardarBanner" 
+            <button
+              @click="guardarBanner"
               :disabled="!isValidBanner"
               :class="isValidBanner ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
               class="px-4 py-2 rounded-lg text-sm"
@@ -2016,7 +1907,7 @@
         </div>
       </div>
     </transition>
-    
+
     <!-- Modal para ver detalle de cobro -->
     <transition name="fade">
       <div v-if="modales.detalleCobro" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -2030,7 +1921,7 @@
               <XIcon :size="20" />
             </button>
           </div>
-          
+
           <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
@@ -2050,12 +1941,12 @@
                   </p>
                   <p class="flex justify-between py-2">
                     <span class="text-gray-600">Estado:</span>
-                    <span 
+                    <span
                       :class="{
                         'text-green-600': cobroSeleccionado?.estado === 'pagado',
                         'text-yellow-600': cobroSeleccionado?.estado === 'pendiente',
                         'text-red-600': cobroSeleccionado?.estado === 'vencido'
-                      }" 
+                      }"
                       class="font-medium"
                     >
                       {{ cobroSeleccionado?.estado === 'pagado' ? 'Pagado' : cobroSeleccionado?.estado === 'pendiente' ? 'Pendiente' : 'Vencido' }}
@@ -2063,7 +1954,7 @@
                   </p>
                 </div>
               </div>
-              
+
               <div>
                 <h4 class="font-medium text-gray-800 mb-3">Resumen de cobro</h4>
                 <div class="bg-gray-50 p-4 rounded-lg">
@@ -2090,7 +1981,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Lista de pedidos incluidos en el cobro -->
             <div>
               <h4 class="font-medium text-gray-800 mb-3">Pedidos incluidos</h4>
@@ -2106,7 +1997,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(pedido, index) in cobroSeleccionado?.pedidos" :key="index" 
+                    <tr v-for="(pedido, index) in cobroSeleccionado?.pedidos" :key="index"
                         :class="{'bg-gray-50': index % 2 === 0}">
                       <td class="py-2 px-4 font-medium text-gray-800">{{ pedido.num_pedido }}</td>
                       <td class="py-2 px-4 text-gray-800">{{ pedido.cliente }}</td>
@@ -2119,19 +2010,19 @@
               </div>
             </div>
           </div>
-          
+
           <div class="p-4 border-t bg-gray-50 flex justify-between">
-            <button 
-              @click="imprimirComprobante" 
+            <button
+              @click="imprimirComprobante"
               class="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm flex items-center"
             >
               <PrinterIcon :size="16" class="mr-1" />
               Imprimir comprobante
             </button>
-            
-            <button 
+
+            <button
               v-if="cobroSeleccionado?.estado !== 'pagado'"
-              @click="pagarCobro(cobroSeleccionado); closeModal('detalleCobro')" 
+              @click="pagarCobro(cobroSeleccionado); closeModal('detalleCobro')"
               class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm flex items-center"
             >
               <DollarSignIcon :size="16" class="mr-1" />
@@ -2146,13 +2037,16 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import Chart from 'chart.js/auto';  
-import { 
-  Truck as TruckIcon, 
+import HeaderLocal from '../components/HeaderLocal.vue';
+import LocalInfoHeader from '../components/dashboard-local/LocalInfoHeader.vue';
+import StatusCards from '../components/dashboard-local/StatusCards.vue';
+import Chart from 'chart.js/auto';
+import {
+  Truck as TruckIcon,
   Bell as BellIcon,
   BellOff as BellOffIcon,
   User as UserIcon,
-  MapPin as MapPinIcon, 
+  MapPin as MapPinIcon,
   Map as MapIcon,
   Home as HomeIcon,
   ShoppingBag as ShoppingBagIcon,
@@ -2184,7 +2078,7 @@ import {
   Calendar as CalendarIcon,
   Tag as TagIcon,
   Search as SearchIcon,
-  Download as DownloadIcon 
+  Download as DownloadIcon
 } from 'lucide-vue-next';
 // Estado de la aplicación
 const currentTab = ref('planes');
@@ -2239,7 +2133,7 @@ const modalData = ref({
 
 // Mock data para el local
 const local = ref({
-  id_local: 1,
+  id_local: 10,
   id_cliente: 1,
   id_membresia: 1, // 1: Gratuita, 2: Básica, 3: Premium
   nombre_local: "Café del Valle",
@@ -2421,20 +2315,24 @@ const notifications = ref([
 
 // Estadísticas del local
 const estadisticas = ref({
+  pedidos_semanales: 38,
+  ingresos_semanales: 4560.75,
+  tendencia_pedidos: 14,
+  tendencia_ingresos: 8,
   pedidosHoy: 23,
   pedidosTendencia: 14,
   ingresosHoy: 1560.75,
   ingresosTendencia: 8,
   ventasSemanalesTendencia: 12,
   quejasTendencia: -5,
-  datosVentas: [  
-     { fecha: '2023-06-13', ventas: 3200 }, // Lunes
+  datosVentas: [
+    { fecha: '2023-06-13', ventas: 3200 }, // Lunes
     { fecha: '2023-06-14', ventas: 4100 }, // Martes
-  { fecha: '2023-06-15', ventas: 3800 }, // Miércoles
-  { fecha: '2023-06-16', ventas: 4500 }, // Jueves
-  { fecha: '2023-06-17', ventas: 5200 }, // Viernes
-  { fecha: '2023-06-18', ventas: 4800 }, // Sábado
-      { fecha: '2023-06-19', ventas: 3900 },  // Domingo
+    { fecha: '2023-06-15', ventas: 3800 }, // Miércoles
+    { fecha: '2023-06-16', ventas: 4500 }, // Jueves
+    { fecha: '2023-06-17', ventas: 5200 }, // Viernes
+    { fecha: '2023-06-18', ventas: 4800 }, // Sábado
+    { fecha: '2023-06-19', ventas: 3900 },  // Domingo
   ],
   productosMasVendidos: [
     { nombre: 'Café Americano', ventas: 120 },
@@ -2570,25 +2468,25 @@ const cobroSeleccionado = ref(null);
 // Historial de cobros filtrado
 const historialCobrosFiltrado = computed(() => {
   let resultado = [...historialCobros.value];
-  
+
   if (filtroHistorialCobros.value.mes) {
     resultado = resultado.filter(cobro => {
       const fechaCobro = new Date(cobro.fecha_cobro);
       return (fechaCobro.getMonth() + 1).toString() === filtroHistorialCobros.value.mes;
     });
   }
-  
+
   if (filtroHistorialCobros.value.anio) {
     resultado = resultado.filter(cobro => {
       const fechaCobro = new Date(cobro.fecha_cobro);
       return fechaCobro.getFullYear().toString() === filtroHistorialCobros.value.anio;
     });
   }
-  
+
   if (filtroHistorialCobros.value.estado) {
     resultado = resultado.filter(cobro => cobro.estado === filtroHistorialCobros.value.estado);
   }
-  
+
   return resultado;
 });
 
@@ -2625,7 +2523,7 @@ const canSubmitComprobante = computed(() => {
 
 // Computed para validar formulario de notificación
 const canEnviarNotificacion = computed(() => {
-  return modalData.value.notificacion.titulo.trim() !== '' && 
+  return modalData.value.notificacion.titulo.trim() !== '' &&
          modalData.value.notificacion.mensaje.trim() !== '' &&
          modalData.value.notificacion.tipo_destinatario !== '';
 });
@@ -2633,40 +2531,40 @@ const canEnviarNotificacion = computed(() => {
 // Computed para validar formulario de cupón
 const isValidCupon = computed(() => {
   const cupon = modalData.value.cupon;
-  return cupon.codigo_cupon && 
-         cupon.codigo_cupon.trim() !== '' && 
-         cupon.tipo_descuento && 
-         cupon.descuento > 0 && 
-         cupon.limite_uso > 0 && 
+  return cupon.codigo_cupon &&
+         cupon.codigo_cupon.trim() !== '' &&
+         cupon.tipo_descuento &&
+         cupon.descuento > 0 &&
+         cupon.limite_uso > 0 &&
          cupon.fecha_vencimiento;
 });
 
 // Computed para validar formulario de sucursal
 const isValidSucursal = computed(() => {
   const sucursal = modalData.value.sucursal;
-  return sucursal.nombre && 
-         sucursal.nombre.trim() !== '' && 
-         sucursal.ciudad && 
-         sucursal.colonia && 
-         sucursal.colonia.trim() !== '' && 
-         sucursal.direccion_precisa && 
-         sucursal.direccion_precisa.trim() !== '' && 
-         sucursal.lat && 
-         sucursal.long && 
-         sucursal.apertura && 
+  return sucursal.nombre &&
+         sucursal.nombre.trim() !== '' &&
+         sucursal.ciudad &&
+         sucursal.colonia &&
+         sucursal.colonia.trim() !== '' &&
+         sucursal.direccion_precisa &&
+         sucursal.direccion_precisa.trim() !== '' &&
+         sucursal.lat &&
+         sucursal.long &&
+         sucursal.apertura &&
          sucursal.cierre;
 });
 
 // Computed para validar formulario de banner
 const isValidBanner = computed(() => {
   const banner = modalData.value.banner;
-  return banner.titulo && 
-         banner.titulo.trim() !== '' && 
-         banner.descripcion && 
-         banner.descripcion.trim() !== '' && 
-         banner.url_destino && 
-         banner.url_destino.trim() !== '' && 
-         banner.imagen_url && 
+  return banner.titulo &&
+         banner.titulo.trim() !== '' &&
+         banner.descripcion &&
+         banner.descripcion.trim() !== '' &&
+         banner.url_destino &&
+         banner.url_destino.trim() !== '' &&
+         banner.imagen_url &&
          banner.imagen_url.trim() !== '';
 });
 
@@ -2714,13 +2612,13 @@ const openModal = (modalName, data = null) => {
   Object.keys(modales.value).forEach(key => {
     modales.value[key] = false;
   });
-  
+
   // Abrir el modal solicitado
   modales.value[modalName] = true;
-  
+
   // Inicializar datos según el modal
   modalData.value.isEdit = !!data;
-  
+
   switch (modalName) {
     case 'banner':
       modalData.value.banner = data ? { ...data } : {
@@ -2733,7 +2631,7 @@ const openModal = (modalName, data = null) => {
         activo: true
       };
       break;
-      
+
     case 'cupon':
       modalData.value.cupon = data ? { ...data } : {
         id_cupon: cupones.value.length + 1,
@@ -2747,7 +2645,7 @@ const openModal = (modalName, data = null) => {
         activo: true
       };
       break;
-      
+
     case 'sucursal':
       modalData.value.sucursal = data ? { ...data } : {
         id_sucursal: sucursales.value.length + 1,
@@ -2767,7 +2665,7 @@ const openModal = (modalName, data = null) => {
         inicializarMapa();
       });
       break;
-      
+
     case 'notificacionPersonalizada':
       modalData.value.notificacion = {
         titulo: '',
@@ -2775,13 +2673,13 @@ const openModal = (modalName, data = null) => {
         tipo_destinatario: 'todos'
       };
       break;
-      
+
     case 'membresiaComprobante':
       modalData.value.idMembresiaSeleccionada = data || 1;
       modalData.value.comprobantePreview = null;
       modalData.value.aceptaTerminos = false;
       break;
-      
+
     case 'historialCobros':
       // Reiniciar filtros
       filtroHistorialCobros.value = {
@@ -2790,7 +2688,7 @@ const openModal = (modalName, data = null) => {
         estado: ''
       };
       break;
-      
+
     case 'detalleCobro':
       cobroSeleccionado.value = data;
       break;
@@ -2799,7 +2697,7 @@ const openModal = (modalName, data = null) => {
 
 const closeModal = (modalName) => {
   modales.value[modalName] = false;
-  
+
   // Si es el modal de sucursal, destruir el mapa al cerrar
   if (modalName === 'sucursal' && mapaSucursal) {
     mapaSucursal.remove();
@@ -2810,47 +2708,47 @@ const closeModal = (modalName) => {
 // Inicializar el mapa Leaflet para sucursales
 const inicializarMapa = () => {
   if (!modales.value.sucursal) return;
-  
+
   // Verificar si la librería Leaflet está cargada
   if (typeof L === 'undefined') {
     cargarLibreriaLeaflet(() => inicializarMapa());
     return;
   }
-  
+
   // Verificar que el contenedor del mapa existe
   const contenedorMapa = document.getElementById('mapaSucursal');
   if (!contenedorMapa) return;
-  
+
   // Eliminar mapa anterior si existe
   if (mapaSucursal) {
     mapaSucursal.remove();
     mapaSucursal = null;
   }
-  
+
   // Coordenadas iniciales (centro de Honduras)
   let lat = 14.0723;
   let lng = -87.1921;
-  
+
   // Si estamos editando, usar las coordenadas de la sucursal
   if (modalData.value.isEdit && modalData.value.sucursal.lat && modalData.value.sucursal.long) {
     lat = parseFloat(modalData.value.sucursal.lat);
     lng = parseFloat(modalData.value.sucursal.long);
   }
-  
+
   // Inicializar el mapa
   mapaSucursal = L.map('mapaSucursal').setView([lat, lng], 13);
-  
+
   // Añadir capa de OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(mapaSucursal);
-  
+
   // Añadir marcador si estamos editando
   if (modalData.value.isEdit && modalData.value.sucursal.lat && modalData.value.sucursal.long) {
     marcadorSucursal = L.marker([lat, lng], {
       draggable: true
     }).addTo(mapaSucursal);
-    
+
     // Actualizar coordenadas cuando se arrastra el marcador
     marcadorSucursal.on('dragend', function(event) {
       const posicion = marcadorSucursal.getLatLng();
@@ -2858,23 +2756,23 @@ const inicializarMapa = () => {
       modalData.value.sucursal.long = posicion.lng.toFixed(6);
     });
   }
-  
+
   // Detectar clics en el mapa para añadir/mover marcador
   mapaSucursal.on('click', function(e) {
     // Si ya hay un marcador, eliminarlo
     if (marcadorSucursal) {
       mapaSucursal.removeLayer(marcadorSucursal);
     }
-    
+
     // Añadir nuevo marcador
     marcadorSucursal = L.marker(e.latlng, {
       draggable: true
     }).addTo(mapaSucursal);
-    
+
     // Actualizar coordenadas en el formulario
     modalData.value.sucursal.lat = e.latlng.lat.toFixed(6);
     modalData.value.sucursal.long = e.latlng.lng.toFixed(6);
-    
+
     // Actualizar coordenadas cuando se arrastra el marcador
     marcadorSucursal.on('dragend', function(event) {
       const posicion = marcadorSucursal.getLatLng();
@@ -2882,7 +2780,7 @@ const inicializarMapa = () => {
       modalData.value.sucursal.long = posicion.lng.toFixed(6);
     });
   });
-  
+
   // Asegurar que el mapa se renderice correctamente
   setTimeout(() => {
     mapaSucursal.invalidateSize();
@@ -2896,7 +2794,7 @@ const cargarLibreriaLeaflet = (callback) => {
   linkLeaflet.rel = 'stylesheet';
   linkLeaflet.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
   document.head.appendChild(linkLeaflet);
-  
+
   // Cargar JavaScript de Leaflet
   const scriptLeaflet = document.createElement('script');
   scriptLeaflet.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
@@ -2964,7 +2862,7 @@ const deleteBanner = (banner) => {
 
 const guardarBanner = () => {
   if (!isValidBanner.value) return;
-  
+
   if (modalData.value.isEdit) {
     // Actualizar banner existente
     const index = banners.value.findIndex(b => b.id_banner === modalData.value.banner.id_banner);
@@ -2975,7 +2873,7 @@ const guardarBanner = () => {
     // Crear nuevo banner
     banners.value.push({ ...modalData.value.banner });
   }
-  
+
   closeModal('banner');
 };
 
@@ -3000,7 +2898,7 @@ const deleteCupon = (cupon) => {
 
 const guardarCupon = () => {
   if (!isValidCupon.value) return;
-  
+
   if (modalData.value.isEdit) {
     // Actualizar cupón existente
     const index = cupones.value.findIndex(c => c.id_cupon === modalData.value.cupon.id_cupon);
@@ -3011,7 +2909,7 @@ const guardarCupon = () => {
     // Crear nuevo cupón
     cupones.value.push({ ...modalData.value.cupon });
   }
-  
+
   closeModal('cupon');
 };
 
@@ -3041,7 +2939,7 @@ const viewSucursalOnMap = (sucursal) => {
 
 const guardarSucursal = () => {
   if (!isValidSucursal.value) return;
-  
+
   if (modalData.value.isEdit) {
     // Actualizar sucursal existente
     const index = sucursales.value.findIndex(s => s.id_sucursal === modalData.value.sucursal.id_sucursal);
@@ -3052,7 +2950,7 @@ const guardarSucursal = () => {
     // Crear nueva sucursal
     sucursales.value.push({ ...modalData.value.sucursal });
   }
-  
+
   closeModal('sucursal');
 };
 
@@ -3063,7 +2961,7 @@ const openNotificacionModal = () => {
 
 const enviarNotificacion = () => {
   if (!canEnviarNotificacion.value || membresia.value.id_membresia < 3) return;
-  
+
   if (fuenteDatos.value === 'api' && socketConexion) {
     // Enviar notificación a través de WebSocket si estamos en modo API
     socketConexion.enviarNotificacion(modalData.value.notificacion);
@@ -3078,10 +2976,10 @@ const enviarNotificacion = () => {
       destinatarios: modalData.value.notificacion.tipo_destinatario === 'todos' ? 'Todos los clientes' : 'Clientes recurrentes',
       aperturas: 0
     });
-    
+
     alert(`Notificación "${modalData.value.notificacion.titulo}" enviada a ${modalData.value.notificacion.tipo_destinatario === 'todos' ? 'todos los clientes' : 'clientes recurrentes'}`);
   }
-  
+
   closeModal('notificacionPersonalizada');
 };
 
@@ -3095,7 +2993,7 @@ const openMembresiaComprobanteModal = (idMembresia) => {
   if (membresia.value.id_membresia === idMembresia) {
     return;
   }
-  
+
   openModal('membresiaComprobante', idMembresia);
 };
 
@@ -3112,11 +3010,11 @@ const previewComprobante = (event) => {
 
 const enviarComprobante = () => {
   if (!canSubmitComprobante.value) return;
-  
+
   // Para demostración: activar inmediatamente la membresía seleccionada
   membresia.value.id_membresia = modalData.value.idMembresiaSeleccionada;
   membresia.value.nombre = getTipoMembresiaNombre(modalData.value.idMembresiaSeleccionada);
-  
+
   // Actualizar pedidos restantes según la membresía
   if (modalData.value.idMembresiaSeleccionada === 1) {
     local.value.pedidos_restantes = 5;
@@ -3125,12 +3023,12 @@ const enviarComprobante = () => {
   } else if (modalData.value.idMembresiaSeleccionada === 3) {
     local.value.pedidos_restantes = 999; // "ilimitado"
   }
-  
+
   // Mensaje de éxito
   alert(`¡Membresía ${getTipoMembresiaNombre(modalData.value.idMembresiaSeleccionada)} activada con éxito!`);
-  
+
   closeModal('membresiaComprobante');
-  
+
   // Reiniciar gráficos después de cambiar membresía
   initCharts();
 };
@@ -3146,7 +3044,7 @@ const generarReporte = () => {
     alert('Esta función requiere membresía Premium');
     return;
   }
-  
+
   // Generar datos de ejemplo según el tipo de reporte
   if (reporteActual.value.tipo === 'ventas') {
     reporteData.value = [
@@ -3167,13 +3065,13 @@ const generarReporte = () => {
   } else {
     reporteData.value = [];
   }
-  
+
   reporteGenerado.value = true;
 };
 
 const exportarReporte = (formato) => {
   if (!reporteGenerado.value || membresia.value.id_membresia < 3) return;
-  
+
   alert(`Exportando reporte en formato ${formato.toUpperCase()}...`);
   // Aquí se implementaría la exportación real del reporte
 };
@@ -3215,7 +3113,7 @@ const formatearFecha = (fecha) => {
 
 const formatearHora = (hora) => {
   if (!hora) return '';
-  
+
   // Si la hora ya está en formato HH:MM:SS
   if (typeof hora === 'string' && hora.includes(':')) {
     const [horas, minutos] = hora.split(':');
@@ -3224,7 +3122,7 @@ const formatearHora = (hora) => {
     const hora12 = horaNum > 12 ? horaNum - 12 : (horaNum === 0 ? 12 : horaNum);
     return `${hora12}:${minutos} ${periodo}`;
   }
-  
+
   return 'Formato inválido';
 };
 
@@ -3237,32 +3135,32 @@ class SocketConexion {
     this.intentosReconexion = 0;
     this.maxIntentosReconexion = 5;
   }
-  
+
   conectar() {
     if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       console.log('WebSocket ya está conectado o conectándose');
       return;
     }
-    
+
     try {
       this.socket = new WebSocket(this.url);
-      
+
       this.socket.onopen = () => {
         console.log('WebSocket conectado');
         this.conectado = true;
         this.intentosReconexion = 0;
       };
-      
+
       this.socket.onmessage = (evento) => {
         this.procesarMensaje(evento.data);
       };
-      
+
       this.socket.onclose = () => {
         console.log('WebSocket desconectado');
         this.conectado = false;
         this.intentarReconexion();
       };
-      
+
       this.socket.onerror = (error) => {
         console.error('Error en WebSocket:', error);
       };
@@ -3270,7 +3168,7 @@ class SocketConexion {
       console.error('Error al crear WebSocket:', error);
     }
   }
-  
+
   intentarReconexion() {
     if (this.intentosReconexion < this.maxIntentosReconexion) {
       this.intentosReconexion++;
@@ -3280,7 +3178,7 @@ class SocketConexion {
       console.log('Máximo número de intentos alcanzado. No se intentará reconectar.');
     }
   }
-  
+
   desconectar() {
     if (this.socket) {
       this.socket.close();
@@ -3288,7 +3186,7 @@ class SocketConexion {
       this.conectado = false;
     }
   }
-  
+
   enviarMensaje(mensaje) {
     if (this.socket && this.conectado) {
       this.socket.send(JSON.stringify(mensaje));
@@ -3296,19 +3194,19 @@ class SocketConexion {
       console.error('No se puede enviar mensaje: WebSocket no conectado');
     }
   }
-  
+
   enviarNotificacion(notificacion) {
     this.enviarMensaje({
       tipo: 'notificacion',
       datos: notificacion
     });
   }
-  
+
   procesarMensaje(mensaje) {
     try {
       const datos = JSON.parse(mensaje);
       console.log('Mensaje recibido:', datos);
-      
+
       // Procesar según el tipo de mensaje
       if (datos.tipo === 'notificacion') {
         // Manejar notificación entrante
@@ -3328,20 +3226,20 @@ class SocketConexion {
 const initCharts = async () => {
   // Esperar a que el DOM esté completamente renderizado
   await nextTick();
-  
+
   console.log("Intentando inicializar gráficos..."); // Debug
-  
+
   // Gráfico de productos más vendidos
   if (membresia.value.id_membresia >= 2 && productosChart.value) {
     console.log("Inicializando gráfico de productos..."); // Debug
-    
+
     // Destruir gráfico anterior si existe
     if (productosChart.value._chart) {
       productosChart.value._chart.destroy();
     }
-    
+
     const ctx = productosChart.value.getContext('2d');
-    
+
     // Usar los datos reales de estadísticas
     const data = {
       labels: estadisticas.value.productosMasVendidos.map(p => p.nombre),
@@ -3365,7 +3263,7 @@ const initCharts = async () => {
         borderWidth: 1
       }]
     };
-    
+
     productosChart.value._chart = new Chart(ctx, {
       type: 'bar',
       data: data,
@@ -3385,24 +3283,24 @@ const initCharts = async () => {
       }
     });
   }
-  
+
   // Gráfico de ventas por día
   if (membresia.value.id_membresia >= 3 && ventasChart.value) {
     console.log("Inicializando gráfico de ventas..."); // Debug
-    
+
     // Destruir gráfico anterior si existe
     if (ventasChart.value._chart) {
       ventasChart.value._chart.destroy();
     }
-    
+
     const ctx = ventasChart.value.getContext('2d');
-    
+
     // Usar los datos reales de estadísticas
     const labels = estadisticas.value.datosVentas.map(d => {
       const fecha = new Date(d.fecha);
       return fecha.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
     });
-    
+
     const data = {
       labels: labels,
       datasets: [{
@@ -3416,7 +3314,7 @@ const initCharts = async () => {
         pointRadius: 4
       }]
     };
-    
+
     ventasChart.value._chart = new Chart(ctx, {
       type: 'line',
       data: data,
@@ -3468,15 +3366,49 @@ watch(fuenteDatos, (nuevoValor, valorAnterior) => {
 const cargarDatos = async () => {
   if (fuenteDatos.value === 'api') {
     try {
-      // Implementación de carga desde API
-      alert('Conectando con API...');
+      // Mostrar mensaje de carga
+      console.log('Cargando datos desde la API...');
+
+      // Obtener estadísticas del local (incluye información del local y membresía)
+      const estadisticasResponse = await fetch(`http://localhost:4000/estadisticaslocal/${local.value.id_local}`);
+      if (!estadisticasResponse.ok) throw new Error('Error al obtener estadísticas del local');
+      const estadisticasData = await estadisticasResponse.json();
+
+      // Actualizar datos del local
+      if (estadisticasData.local_info) {
+        local.value = {
+          ...local.value,
+          ...estadisticasData.local_info
+        };
+      }
+
+      // Actualizar datos de la membresía
+      if (estadisticasData.membresia_info) {
+        membresia.value = {
+          ...membresia.value,
+          id_membresia: estadisticasData.membresia_info.id_membresia,
+          nombre: estadisticasData.membresia_info.nombre_membresia,
+          limite_recomendaciones: estadisticasData.membresia_info.limite_recomendaciones
+        };
+      }
+
+      // Actualizar datos de estadísticas
+      estadisticas.value = {
+        ...estadisticas.value,
+        pedidos_semanales: estadisticasData.pedidos_semanales || 0,
+        ingresos_semanales: estadisticasData.ingresos_semanales || 0,
+        tendencia_pedidos: estadisticasData.tendencia_pedidos || 0,
+        tendencia_ingresos: estadisticasData.tendencia_ingresos || 0
+      };
+
+      console.log('Datos cargados correctamente desde la API:', estadisticasData);
     } catch (error) {
       console.error('Error al cargar datos desde la API:', error);
       fuenteDatos.value = 'mock';
       alert('Error al conectar con la API. Se usarán datos de ejemplo.');
     }
   }
-  
+
   // Inicializar gráficos
   nextTick(() => {
     initCharts();
@@ -3486,7 +3418,7 @@ const cargarDatos = async () => {
 // Al montar el componente
 onMounted(() => {
   cargarDatos();
-  
+
   // Inicializar gráficos cuando el componente se monta
   if (currentTab.value === 'estadisticas') {
     initCharts();
@@ -3524,6 +3456,7 @@ watch(() => membresia.value.id_membresia, () => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -12,6 +12,7 @@ const DireccionLocal = require("./DireccionLocal");
 const Producto = require("./Producto");
 const ProductoSucursal = require("./ProductoSucursal");
 const Subcategoria = require("./Subcategoria");
+const EstadisticaLocal = require("./EstadisticaLocal");
 
 // Definir las asociaciones
 const setupAssociations = () => {
@@ -98,5 +99,6 @@ module.exports = {
   DireccionLocal,
   Producto,
   ProductoSucursal,
-  Subcategoria
+  Subcategoria,
+  EstadisticaLocal
 };
