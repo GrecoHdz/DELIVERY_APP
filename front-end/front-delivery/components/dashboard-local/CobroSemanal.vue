@@ -47,8 +47,21 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
       <!-- Productos vendidos esta semana -->
       <div class="lg:col-span-2 p-6 border-r border-gray-100">
-        <div class="mb-4">
+        <div class="mb-4 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-800">Productos Vendidos en la Semana</h3>
+          <div class="flex items-center">
+            <label for="filtroSucursal" class="mr-2 text-sm text-gray-600">Sucursal:</label>
+            <select
+              id="filtroSucursal"
+              v-model="sucursalSeleccionada"
+              class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="todas">Todas las sucursales</option>
+              <option v-for="sucursal in sucursales" :key="sucursal.id_sucursal" :value="sucursal.id_sucursal">
+                {{ sucursal.nombre }}
+              </option>
+            </select>
+          </div>
         </div>
         <div class="border border-gray-200 rounded-lg">
           <div class="overflow-x-auto">
@@ -62,7 +75,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(producto, index) in productosVendidosSemana" :key="index"
+                  <tr v-for="(producto, index) in productosFiltrados" :key="index"
                       :class="{'bg-gray-50': index % 2 === 0}">
                     <td class="py-3 px-4 text-gray-800">
                       <span class="font-medium">(x{{ producto.cantidad }})</span> {{ producto.nombre }}
@@ -88,7 +101,7 @@
                     <span class="font-medium text-gray-800">Total Ventas:</span>
                   </td>
                   <td class="py-3 px-4 font-bold text-gray-800">
-                    L. {{ totalVentasSemana }}
+                    L. {{ totalVentasFiltradas }}
                   </td>
                 </tr>
               </tfoot>
@@ -184,9 +197,9 @@
               <span class="text-green-600 font-medium">L. {{ (ventasTarjetaSemana * 0.85).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between py-3 text-lg">
-              <span class="font-bold text-gray-800">{{ balanceFinal >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
-              <span class="font-bold" :class="balanceFinal >= 0 ? 'text-red-600' : 'text-green-600'">
-                L. {{ Math.abs(balanceFinal).toFixed(2) }}
+              <span class="font-bold text-gray-800">{{ Number(balanceFinal) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
+              <span class="font-bold" :class="Number(balanceFinal) >= 0 ? 'text-red-600' : 'text-green-600'">
+                L. {{ Math.abs(Number(balanceFinal) || 0).toFixed(2) }}
               </span>
             </div>
 
@@ -205,7 +218,7 @@
 
               <!-- Botón de pago solo visible si el local debe pagar a la app y no está pagado -->
               <button
-                v-if="balanceFinal > 0 && !cobroActualPagado"
+                v-if="Number(balanceFinal) > 0 && !cobroActualPagado"
                 @click="openPagoComprobanteModal()"
                 class="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center justify-center"
               >
@@ -215,7 +228,7 @@
 
               <!-- Estado cuando el cobro ya está pagado -->
               <div
-                v-else-if="balanceFinal > 0 && cobroActualPagado"
+                v-else-if="Number(balanceFinal) > 0 && cobroActualPagado"
                 class="flex-1 py-2 px-4 bg-green-100 text-green-700 rounded-lg flex items-center justify-center"
               >
                 <CheckIcon :size="16" class="mr-2" />
@@ -224,7 +237,7 @@
 
               <!-- Estado de pago cuando la app debe pagar al local -->
               <div
-                v-else-if="balanceFinal < 0"
+                v-else-if="Number(balanceFinal) < 0"
                 class="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg flex items-center justify-center"
               >
                 <ClockIcon :size="16" class="mr-2" />
@@ -303,6 +316,66 @@ const props = defineProps({
     required: true
   }
 });
+
+// Lista de sucursales (simulada)
+const sucursales = ref([
+  {
+    id_sucursal: 1,
+    nombre: "Sucursal Central",
+    ciudad: "Tegucigalpa",
+    colonia: "Kennedy"
+  },
+  {
+    id_sucursal: 2,
+    nombre: "Sucursal Mall Multiplaza",
+    ciudad: "Tegucigalpa",
+    colonia: "Los Proceres"
+  },
+  {
+    id_sucursal: 3,
+    nombre: "Sucursal City Mall",
+    ciudad: "San Pedro Sula",
+    colonia: "Centro"
+  }
+]);
+
+// Sucursal seleccionada para filtrar
+const sucursalSeleccionada = ref('todas');
+
+// Productos filtrados por sucursal
+const productosFiltrados = computed(() => {
+  // Asignar una sucursal a cada producto (simulado)
+  const productosConSucursal = props.productosVendidosSemana.map((producto, index) => {
+    // Asignar sucursales de manera alternada para simular datos
+    const idSucursal = (index % sucursales.value.length) + 1;
+    return {
+      ...producto,
+      id_sucursal: idSucursal
+    };
+  });
+
+  // Filtrar por sucursal seleccionada
+  if (sucursalSeleccionada.value === 'todas') {
+    return productosConSucursal;
+  } else {
+    return productosConSucursal.filter(producto =>
+      producto.id_sucursal === parseInt(sucursalSeleccionada.value)
+    );
+  }
+});
+
+// Total de ventas filtradas
+const totalVentasFiltradas = computed(() => {
+  return productosFiltrados.value.reduce((total, producto) => {
+    return total + (producto.cantidad * producto.precio);
+  }, 0).toFixed(2);
+});
+
+// Función para obtener el nombre de la sucursal
+const getNombreSucursal = (idSucursal) => {
+  const sucursal = sucursales.value.find(s => s.id_sucursal === idSucursal);
+  return sucursal ? sucursal.nombre : 'Desconocida';
+};
 
 // Emits para eventos que se enviarán al componente padre
 const emit = defineEmits([
@@ -392,7 +465,7 @@ const exportToExcel = () => {
 };
 
 const exportToPDF = () => {
-  emit('exportToPDF');
+  emit('exportToPDF', sucursalSeleccionada.value);
 };
 
 const openHistorialCobros = () => {

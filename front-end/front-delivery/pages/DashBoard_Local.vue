@@ -33,7 +33,7 @@
         :cobroActualPagado="cobroActualPagado"
         :balanceFinal="balanceFinal"
         @exportToExcel="exportToExcel"
-        @exportToPDF="exportToPDF"
+        @exportToPDF="handleExportToPDF"
         @openHistorialCobros="openHistorialCobros"
         @openPagoComprobanteModal="pagarCobroActual"
       />
@@ -97,7 +97,7 @@
                     <span class="text-gray-700">1 producto recomendado</span>
                   </li>
                   <li class="flex items-start text-gray-400">
-                  <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
                     <span>Notificaciones personalizadas</span>
                   </li>
                   <li class="flex items-start text-gray-400">
@@ -2317,6 +2317,26 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modal de vista previa del PDF -->
+    <PdfPreview
+      v-if="showPdfPreview"
+      :titulo="pdfPreviewData.titulo"
+      :subtitulo="pdfPreviewData.subtitulo"
+      :periodo="pdfPreviewData.periodo"
+      :local="pdfPreviewData.local"
+      :tablaTitle="pdfPreviewData.tablaTitle"
+      :headers="pdfPreviewData.headers"
+      :rows="pdfPreviewData.rows"
+      :footers="pdfPreviewData.footers"
+      :resumen="pdfPreviewData.resumen"
+      :mostrarGrafico="pdfPreviewData.mostrarGrafico"
+      :esComprobante="pdfPreviewData.esComprobante"
+      :estado="pdfPreviewData.estado"
+      @close="showPdfPreview = false"
+      @download="downloadPDF"
+      @cambiarSucursal="cambiarSucursalPdf"
+    />
   </div>
 </template>
 
@@ -2863,13 +2883,13 @@ const comisionSemanal = ref(684.15);
 // Calcular balance final (positivo = local paga a app, negativo = app paga a local)
 const balanceFinal = computed(() => {
   // Comisión del 15% sobre ventas en efectivo que el local debe pagar a la app
-  const comisionEfectivo = parseFloat(ventasEfectivoSemana.value) * 0.15;
+  const comisionEfectivo = parseFloat(ventasEfectivoSemana.value || 0) * 0.15;
 
   // Ventas con tarjeta: la app retiene el 15% y debe transferir el 85% al local
-  const montoAPagarPorApp = parseFloat(ventasTarjetaSemana.value) * 0.85;
+  const montoAPagarPorApp = parseFloat(ventasTarjetaSemana.value || 0) * 0.85;
 
   // Costo de pedidos extra que el local debe pagar
-  const costoPedidosExtra = calcularCostoPedidosExtra();
+  const costoPedidosExtra = parseFloat(calcularCostoPedidosExtra() || 0);
 
   // Balance final: positivo = local paga a app, negativo = app paga a local
   return comisionEfectivo + costoPedidosExtra - montoAPagarPorApp;
@@ -3067,8 +3087,8 @@ const isValidBanner = computed(() => {
 
 // Calcular costo de pedidos extra
 const calcularCostoPedidosExtra = () => {
-  const costoPorPedido = membresia.value.id_membresia === 1 ? 25 : 15;
-  return pedidosExtra.value * costoPorPedido;
+  if (membresia.value.id_membresia === 3) return 0; // Plan Premium no tiene costo por pedidos extra
+  return (pedidosExtra.value * membresia.value.precio_delivery_extra).toFixed(2);
 };
 
 // Calcular comisión de la app (15%)
@@ -3364,6 +3384,10 @@ const filtrarHistorialCobros = () => {
 };
 
 const verDetalleCobro = (cobro) => {
+  // Establecer el cobro seleccionado para poder imprimirlo después
+  cobroSeleccionado.value = cobro;
+
+  // Abrir el modal de detalle
   openModal('detalleCobro', cobro);
 };
 
@@ -3382,7 +3406,7 @@ const openPagoComprobanteModal = (cobro = null) => {
   } else {
     // Si no, buscamos el cobro actual en el historial
     cobroParaPagar.value = historialCobros.value.find(
-      c => c.periodo_fin === formatearFecha(fechaFinSemana.value) && c.estado === 'pendiente'
+      c => c.periodo_fin === formatearFechaCorta(fechaFinSemana.value) && c.estado === 'pendiente'
     );
   }
 
@@ -3518,9 +3542,91 @@ const exportarHistorialCobros = () => {
 
 // Función para imprimir el comprobante
 const imprimirComprobante = () => {
-  alert('Imprimiendo comprobante...');
-  // Aquí se implementaría la impresión real del comprobante
+  if (!cobroSeleccionado.value) return;
+
+  // Preparar datos para la vista previa
+  const comprobantePreviewData = {
+    titulo: 'Detalle de Cobro',
+    subtitulo: `Factura: ${cobroSeleccionado.value.num_factura}`,
+    periodo: `${cobroSeleccionado.value.periodo_inicio} al ${cobroSeleccionado.value.periodo_fin}`,
+    local: {
+      ...local.value,
+      sucursal: 'Todas las sucursales' // Siempre mostrar "Todas las sucursales"
+    },
+    tablaTitle: 'Productos Vendidos en la Semana',
+    headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
+    rows: [],
+    footers: ['', '', 'Total:', `L. ${Math.abs(Number(cobroSeleccionado.value.total) || 0).toFixed(2)}`],
+    resumen: [
+      {
+        label: 'Pedidos Extra',
+        value: `${cobroSeleccionado.value.pedidos_extra || 0}`,
+        color: 'text-gray-800'
+      },
+      {
+        label: 'Costo Pedidos Extra',
+        value: `L. ${cobroSeleccionado.value.costo_pedidos_extra || '0.00'}`,
+        color: 'text-red-600'
+      },
+      {
+        label: 'Comisión app (Pagos Efectivo)',
+        value: `L. ${cobroSeleccionado.value.comision?.toFixed(2) || '0.00'}`,
+        color: 'text-red-600'
+      },
+      {
+        label: 'Número de pedidos',
+        value: `${cobroSeleccionado.value.num_pedidos || 0}`,
+        color: 'text-gray-800'
+      },
+      {
+        label: Number(cobroSeleccionado.value.total) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
+        value: `L. ${Math.abs(Number(cobroSeleccionado.value.total) || 0).toFixed(2)}`,
+        color: Number(cobroSeleccionado.value.total) >= 0 ? 'text-red-600' : 'text-green-600'
+      }
+    ],
+    mostrarGrafico: false,
+    esComprobante: true,
+    estado: cobroSeleccionado.value.estado,
+    sucursalId: 'todas' // Forzar a que siempre use todas las sucursales
+  };
+
+  // Preparar datos para la tabla de productos
+  if (cobroSeleccionado.value.pedidos && cobroSeleccionado.value.pedidos.length > 0) {
+    // Usar los datos de pedidos del cobro seleccionado
+    comprobantePreviewData.rows = cobroSeleccionado.value.pedidos.map(pedido => [
+      pedido.cliente || pedido.nombre || 'Producto',
+      pedido.cantidad?.toString() || '1',
+      `L. ${pedido.precio?.toFixed(2) || (pedido.total / (pedido.cantidad || 1)).toFixed(2) || '0.00'}`,
+      `L. ${pedido.total?.toFixed(2) || ((pedido.cantidad || 1) * (pedido.precio || 0)).toFixed(2)}`
+    ]);
+  } else {
+    // Si no hay pedidos en el cobro seleccionado, usar los datos de productos vendidos en la semana
+    comprobantePreviewData.rows = productosVendidosSemana.value.map(producto => [
+      producto.nombre,
+      producto.cantidad.toString(),
+      `L. ${producto.precio.toFixed(2)}`,
+      `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
+    ]);
+  }
+
+  // Guardar los datos en pdfPreviewData y mostrar la vista previa
+  pdfPreviewData.value = comprobantePreviewData;
+
+  // Asegurarnos de que el estado se pase correctamente
+  pdfPreviewData.value.estado = cobroSeleccionado.value.estado;
+
+  showPdfPreview.value = true;
+
+  // Desactivar la posibilidad de cambiar sucursal en la vista previa del comprobante
+  // Esto se hará ocultando el selector de sucursal en el componente PdfPreview
 };
+
+// Importaciones para exportación
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+// Asegurar que autoTable esté disponible
+import autoTable from 'jspdf-autotable';
 
 // Función para exportar a Excel el cobro semanal
 const exportToExcel = () => {
@@ -3529,60 +3635,503 @@ const exportToExcel = () => {
     return {
       Producto: producto.nombre,
       Cantidad: producto.cantidad,
-      'Precio Unitario': `L. ${producto.precio.toFixed(2)}`,
+      'Precio Unitario': producto.precio.toFixed(2),
       'Método de Pago': producto.metodo_pago === 'tarjeta' ? 'Tarjeta' : 'Efectivo',
-      Total: `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
+      Total: (producto.cantidad * producto.precio).toFixed(2)
     };
   });
 
-  // Agregar fila de totales
-  datosExportar.push({
-    Producto: '',
-    Cantidad: '',
-    'Precio Unitario': '',
-    'Método de Pago': 'Total Ventas:',
-    Total: `L. ${totalVentasSemana.value}`
-  });
+  // Crear una hoja de trabajo
+  const ws = XLSX.utils.json_to_sheet(datosExportar);
 
-  // Agregar información del período
+  // Agregar fila de totales
+  const totalRow = ['Total Ventas:', '', '', '', totalVentasSemana.value];
+  XLSX.utils.sheet_add_aoa(ws, [totalRow], { origin: -1 });
+
+  // Configurar ancho de columnas
+  const wscols = [
+    { wch: 30 }, // Producto
+    { wch: 10 }, // Cantidad
+    { wch: 15 }, // Precio Unitario
+    { wch: 15 }, // Método de Pago
+    { wch: 15 }  // Total
+  ];
+  ws['!cols'] = wscols;
+
+  // Crear un libro de trabajo
+  const wb = XLSX.utils.book_new();
+
+  // Información del período en una hoja separada
+  const infoSheet = XLSX.utils.aoa_to_sheet([
+    ['Información del Reporte'],
+    [''],
+    ['Local:', local.value.nombre_local],
+    ['Período:', `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`],
+    ['Ventas en Efectivo:', `L. ${ventasEfectivoSemana.value}`],
+    ['Ventas con Tarjeta:', `L. ${ventasTarjetaSemana.value}`],
+    ['Total Ventas:', `L. ${totalVentasSemana.value}`],
+    [''],
+    ['Pedidos Extra:', pedidosExtra.value],
+    ['Costo Pedidos Extra:', `L. ${calcularCostoPedidosExtra()}`],
+    ['Comisión (Pagos Efectivo):', `L. ${(parseFloat(ventasEfectivoSemana.value) * 0.15).toFixed(2)}`],
+    ['Comisión (Pagos Tarjeta):', `L. ${(parseFloat(ventasTarjetaSemana.value) * 0.15).toFixed(2)}`],
+    [''],
+    ['Balance Final:', `L. ${Math.abs(balanceFinal.value).toFixed(2)} ${balanceFinal.value >= 0 ? '(a pagar)' : '(a recibir)'}`]
+  ]);
+
+  // Configurar ancho de columnas para la hoja de información
+  const infocols = [
+    { wch: 25 },
+    { wch: 30 }
+  ];
+  infoSheet['!cols'] = infocols;
+
+  // Agregar hojas al libro
+  XLSX.utils.book_append_sheet(wb, infoSheet, 'Información');
+  XLSX.utils.book_append_sheet(wb, ws, 'Productos Vendidos');
+
+  // Generar nombre de archivo
   const nombreArchivo = `Cobro_Semanal_${formatearFechaCorta(fechaInicioSemana.value)}_${formatearFechaCorta(fechaFinSemana.value)}`;
 
-  console.log('Exportando a Excel:', {
-    datos: datosExportar,
-    nombreArchivo: nombreArchivo,
-    periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`
-  });
+  // Exportar a archivo
+  XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+};
 
-  // En un entorno real, aquí se utilizaría una librería como xlsx o exceljs para generar el archivo Excel
-  alert(`Exportando datos a Excel con nombre: ${nombreArchivo}.xlsx`);
+// Importar componente de vista previa
+import PdfPreview from '@/components/dashboard-local/PdfPreview.vue';
+
+// Variables para la vista previa del PDF
+const showPdfPreview = ref(false);
+const pdfPreviewData = ref({
+  titulo: '',
+  subtitulo: '',
+  periodo: '',
+  tablaTitle: '',
+  headers: [],
+  rows: [],
+  footers: [],
+  resumen: [],
+  mostrarGrafico: true
+});
+
+// Función para manejar el evento de exportar a PDF
+const handleExportToPDF = (sucursalId) => {
+  exportToPDF(sucursalId);
+};
+
+// Función para cambiar la sucursal en la vista previa del PDF
+const cambiarSucursalPdf = (sucursalId) => {
+  // Recalcular los valores financieros según la sucursal seleccionada
+  let ventasEfectivoFiltradas = ventasEfectivoSemana.value;
+  let ventasTarjetaFiltradas = ventasTarjetaSemana.value;
+  let pedidosExtraFiltrados = pedidosExtra.value;
+  let costoPedidosExtraFiltrado = calcularCostoPedidosExtra();
+
+  // Si se selecciona una sucursal específica, filtrar los valores
+  if (sucursalId !== 'todas') {
+    // Simulamos que cada sucursal tiene un porcentaje del total
+    // En un entorno real, estos datos vendrían de la base de datos
+    const porcentajes = {
+      1: 0.4, // 40% para sucursal 1
+      2: 0.35, // 35% para sucursal 2
+      3: 0.25  // 25% para sucursal 3
+    };
+
+    const porcentaje = porcentajes[sucursalId] || 0.33; // Por defecto, distribución equitativa
+
+    ventasEfectivoFiltradas = (parseFloat(ventasEfectivoSemana.value) * porcentaje).toFixed(2);
+    ventasTarjetaFiltradas = (parseFloat(ventasTarjetaSemana.value) * porcentaje).toFixed(2);
+    pedidosExtraFiltrados = Math.round(pedidosExtra.value * porcentaje);
+    costoPedidosExtraFiltrado = (parseFloat(calcularCostoPedidosExtra()) * porcentaje).toFixed(2);
+  }
+
+  // Calcular el balance final filtrado
+  const comisionEfectivo = (parseFloat(ventasEfectivoFiltradas) * 0.15).toFixed(2);
+  const comisionTarjeta = (parseFloat(ventasTarjetaFiltradas) * 0.85).toFixed(2);
+  const balanceFinalFiltrado = (parseFloat(costoPedidosExtraFiltrado) + parseFloat(comisionEfectivo) - parseFloat(comisionTarjeta)).toFixed(2);
+
+  // Actualizar el resumen financiero en la vista previa
+  pdfPreviewData.value.resumen = [
+    {
+      label: 'Pedidos Extra',
+      value: `${pedidosExtraFiltrados}`,
+      color: 'text-gray-800'
+    },
+    {
+      label: 'Costo Pedidos Extra',
+      value: `L. ${costoPedidosExtraFiltrado}`,
+      color: 'text-red-600'
+    },
+    {
+      label: 'Comisión app (Pagos Efectivo)',
+      value: `L. ${comisionEfectivo}`,
+      color: 'text-red-600'
+    },
+    {
+      label: 'Comisión app (Pagos Tarjeta)',
+      value: `L. ${comisionTarjeta}`,
+      color: 'text-green-600'
+    },
+    {
+      label: Number(balanceFinalFiltrado) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
+      value: `L. ${Math.abs(Number(balanceFinalFiltrado)).toFixed(2)}`,
+      color: Number(balanceFinalFiltrado) >= 0 ? 'text-red-600' : 'text-green-600'
+    }
+  ];
+
+  // Llamar a exportToPDF para actualizar la tabla de productos
+  exportToPDF(sucursalId);
 };
 
 // Función para exportar a PDF el cobro semanal
-const exportToPDF = () => {
-  // Preparar los datos para el PDF
-  const datosPDF = {
-    nombreLocal: local.value.nombre_local,
-    periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`,
-    productos: productosVendidosSemana.value,
-    totalVentas: totalVentasSemana.value,
-    ventasEfectivo: ventasEfectivoSemana.value,
-    ventasTarjeta: ventasTarjetaSemana.value,
-    pedidosExtra: pedidosExtra.value,
-    costoPedidosExtra: calcularCostoPedidosExtra(),
-    comisionEfectivo: (parseFloat(ventasEfectivoSemana.value) * 0.15).toFixed(2),
-    comisionTarjeta: (parseFloat(ventasTarjetaSemana.value) * 0.15).toFixed(2),
-    balanceFinal: balanceFinal.value
+const exportToPDF = (sucursalId = 'todas') => {
+  // Lista de sucursales (simulada)
+  const sucursales = [
+    { id_sucursal: 1, nombre: "Sucursal Central" },
+    { id_sucursal: 2, nombre: "Sucursal Mall Multiplaza" },
+    { id_sucursal: 3, nombre: "Sucursal City Mall" }
+  ];
+
+  // Función para obtener el nombre de la sucursal
+  const getNombreSucursal = (idSucursal) => {
+    const sucursal = sucursales.find(s => s.id_sucursal === idSucursal);
+    return sucursal ? sucursal.nombre : 'Desconocida';
   };
 
-  const nombreArchivo = `Cobro_Semanal_${formatearFechaCorta(fechaInicioSemana.value)}_${formatearFechaCorta(fechaFinSemana.value)}`;
-
-  console.log('Exportando a PDF:', {
-    datos: datosPDF,
-    nombreArchivo: nombreArchivo
+  // Asignar sucursales a los productos (simulado)
+  const productosConSucursal = productosVendidosSemana.value.map((producto, index) => {
+    // Asignar sucursales de manera alternada para simular datos
+    const idSucursal = (index % sucursales.length) + 1;
+    return {
+      ...producto,
+      id_sucursal: idSucursal
+    };
   });
 
-  // En un entorno real, aquí se utilizaría una librería como jsPDF o pdfmake para generar el archivo PDF
-  alert(`Exportando datos a PDF con nombre: ${nombreArchivo}.pdf`);
+  // Filtrar productos por sucursal seleccionada
+  const productosFiltrados = sucursalId === 'todas'
+    ? productosConSucursal
+    : productosConSucursal.filter(p => p.id_sucursal === parseInt(sucursalId));
+
+  // Calcular total de ventas filtradas
+  const totalVentasFiltradas = productosFiltrados.reduce((total, producto) => {
+    return total + (producto.cantidad * producto.precio);
+  }, 0).toFixed(2);
+
+  // Preparar datos para la tabla de productos
+  const productosData = productosFiltrados.map(producto => [
+    producto.nombre,
+    producto.cantidad.toString(),
+    `L. ${producto.precio.toFixed(2)}`,
+    `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
+  ]);
+
+  // Obtener nombre de la sucursal seleccionada para el título
+  const tituloSucursal = sucursalId === 'todas'
+    ? 'Todas las sucursales'
+    : getNombreSucursal(parseInt(sucursalId));
+
+  // Preparar datos para la vista previa
+  pdfPreviewData.value = {
+    titulo: 'Detalle de Cobro',
+    subtitulo: `Factura: FA-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+    periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`,
+    local: {
+      ...local.value,
+      sucursal: tituloSucursal
+    },
+    tablaTitle: 'Productos Vendidos en la Semana',
+    headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
+    rows: productosData,
+    footers: ['', '', 'Total Ventas:', `L. ${totalVentasFiltradas}`],
+    resumen: [
+      {
+        label: 'Pedidos Extra',
+        value: `${pedidosExtra.value}`,
+        color: 'text-gray-800'
+      },
+      {
+        label: 'Costo Pedidos Extra',
+        value: `L. ${calcularCostoPedidosExtra()}`,
+        color: 'text-red-600'
+      },
+      {
+        label: 'Comisión app (Pagos Efectivo)',
+        value: `L. ${(parseFloat(ventasEfectivoSemana.value || 0) * 0.15).toFixed(2)}`,
+        color: 'text-red-600'
+      },
+      {
+        label: 'Comisión app (Pagos Tarjeta)',
+        value: `L. ${(parseFloat(ventasTarjetaSemana.value || 0) * 0.85).toFixed(2)}`,
+        color: 'text-green-600'
+      },
+      {
+        label: Number(balanceFinal.value) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
+        value: `L. ${Math.abs(Number(balanceFinal.value) || 0).toFixed(2)}`,
+        color: Number(balanceFinal.value) >= 0 ? 'text-red-600' : 'text-green-600'
+      }
+    ],
+    mostrarGrafico: false,
+    sucursalId: sucursalId // Guardar el ID de la sucursal seleccionada
+  };
+
+  // Mostrar la vista previa
+  showPdfPreview.value = true;
+};
+
+// Función para generar y descargar el PDF después de la vista previa
+const downloadPDF = () => {
+  // Crear nuevo documento PDF con orientación portrait y unidades en mm
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  // Márgenes y ancho disponible
+  const margenIzquierdo = 20;
+  const margenDerecho = 20;
+  const anchoDisponible = 210 - margenIzquierdo - margenDerecho;
+  const centroX = 210 / 2;
+
+  // Configurar fuente y tamaño
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+
+  // Título del documento
+  doc.setTextColor(0, 0, 0);
+  doc.text(pdfPreviewData.value.titulo, margenIzquierdo, 20);
+
+  // Línea debajo del título
+  doc.setDrawColor(200, 200, 200);
+  doc.line(margenIzquierdo, 22, 210 - margenDerecho, 22);
+
+  // Número de factura
+  doc.setFontSize(12);
+  doc.text(pdfPreviewData.value.subtitulo, margenIzquierdo, 30);
+
+  // Fecha de generación
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(`Fecha: ${formatearFechaCorta(new Date())}`, 210 - margenDerecho, 30, { align: 'right' });
+
+  // Sección de información del local
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Información del Local', margenIzquierdo, 40);
+
+  // Crear un recuadro para la información del local
+  doc.setDrawColor(200, 200, 200);
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(margenIzquierdo, 43, anchoDisponible / 2 - 5, 50, 2, 2, 'FD');
+
+  // Información del local
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  // Etiquetas y valores en líneas separadas
+  doc.text('Nombre:', margenIzquierdo + 5, 50);
+  doc.setFont('helvetica', 'bold');
+  doc.text(local.value.nombre_local, margenIzquierdo + 5, 55);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text('RTN:', margenIzquierdo + 5, 62);
+  doc.setFont('helvetica', 'bold');
+  doc.text(local.value.rtn, margenIzquierdo + 5, 67);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text('Período:', margenIzquierdo + 5, 74);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`, margenIzquierdo + 5, 79);
+
+  doc.setFont('helvetica', 'normal');
+  doc.text('Sucursal:', margenIzquierdo + 5, 86);
+  doc.setFont('helvetica', 'bold');
+  doc.text(pdfPreviewData.value.sucursal, margenIzquierdo + 5, 91);
+
+  // Sección de resumen financiero
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Resumen Financiero', centroX + 5, 40);
+
+  // Crear un recuadro para el resumen
+  doc.setDrawColor(200, 200, 200);
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(centroX + 5, 43, anchoDisponible / 2 - 5, 50, 2, 2, 'FD');
+
+  // Información del resumen
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+
+  // Etiquetas y valores
+  doc.text('Pedidos extra:', centroX + 10, 50);
+  doc.setTextColor(255, 0, 0);
+  doc.text(`L. ${calcularCostoPedidosExtra()}`, centroX + anchoDisponible / 2 - 15, 50, { align: 'right' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.text('Comisión app (Pagos Efectivo):', centroX + 10, 57);
+  doc.setTextColor(255, 0, 0);
+  doc.text(`L. ${(parseFloat(ventasEfectivoSemana.value || 0) * 0.15).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 57, { align: 'right' });
+
+  doc.setTextColor(0, 0, 0);
+  doc.text('Comisión app (Pagos Tarjeta):', centroX + 10, 64);
+  doc.setTextColor(0, 128, 0);
+  doc.text(`L. ${(parseFloat(ventasTarjetaSemana.value || 0) * 0.85).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 64, { align: 'right' });
+
+  // Balance final
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${Number(balanceFinal.value) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:'}`, centroX + 10, 78);
+  doc.setTextColor(Number(balanceFinal.value) >= 0 ? 255 : 0, Number(balanceFinal.value) >= 0 ? 0 : 128, 0);
+  doc.text(`L. ${Math.abs(Number(balanceFinal.value) || 0).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 78, { align: 'right' });
+
+  // Título de la tabla de productos
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Productos Vendidos en la Semana', margenIzquierdo, 105);
+
+  // Preparar datos para la tabla de productos
+  const productosData = pdfPreviewData.value.rows;
+
+  // Agregar tabla de productos con diseño mejorado
+  autoTable(doc, {
+    startY: 108,
+    head: [pdfPreviewData.value.headers],
+    body: productosData,
+    foot: [pdfPreviewData.value.footers],
+    theme: 'grid',
+    headStyles: {
+      fillColor: [52, 152, 219],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    footStyles: {
+      fillColor: [240, 240, 240],
+      fontStyle: 'bold',
+      halign: 'right',
+      textColor: [0, 0, 0]
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245]
+    },
+    styles: {
+      cellPadding: 5,
+      fontSize: 10,
+      textColor: [0, 0, 0],
+      halign: 'center' // Centrar todo el contenido por defecto
+    },
+    bodyStyles: {
+      textColor: [0, 0, 0]
+    },
+    columnStyles: {
+      0: { cellWidth: 60, textColor: [0, 0, 0], halign: 'center' }, // Centrar nombre del producto
+      1: { cellWidth: 20, halign: 'center', textColor: [0, 0, 0] }, // Centrar cantidad
+      2: { cellWidth: 40, halign: 'center', textColor: [0, 0, 0] }, // Centrar precio unitario
+      3: { cellWidth: 50, halign: 'center', textColor: [0, 0, 0] }  // Centrar total (más ancho)
+    },
+    margin: { left: margenIzquierdo, right: margenDerecho }
+  });
+
+  // Obtener la posición final de la tabla
+  const finalY = doc.lastAutoTable.finalY + 10;
+
+  // Información de pago (solo para reportes, no para comprobantes)
+  const pagoY = finalY + 15;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+
+  if (!pdfPreviewData.value.esComprobante) {
+    doc.text('Información de Pago', margenIzquierdo, pagoY);
+
+    // Crear un recuadro para la información de pago
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(margenIzquierdo, pagoY + 3, anchoDisponible, 25, 2, 2, 'FD');
+
+    // Detalles de pago
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Realiza tu pago a cualquiera de nuestras cuentas:', margenIzquierdo + 5, pagoY + 10);
+
+    // Banco 1
+    doc.setFont('helvetica', 'bold');
+    doc.text('Banco Atlántida:', margenIzquierdo + 5, pagoY + 17);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Cuenta: 1234-5678-9012-3456', margenIzquierdo + 40, pagoY + 17);
+
+    // Banco 2
+    doc.setFont('helvetica', 'bold');
+    doc.text('BAC Credomatic:', centroX, pagoY + 17);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Cuenta: 9876-5432-1098-7654', centroX + 35, pagoY + 17);
+  } else {
+    // Para comprobantes, mostrar el estado del cobro
+    doc.text('Estado del Cobro', margenIzquierdo, pagoY);
+
+    // Crear un recuadro para el estado
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(margenIzquierdo, pagoY + 3, anchoDisponible, 25, 2, 2, 'FD');
+
+    // Mostrar el estado
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+
+    // Estado con color
+    if (pdfPreviewData.value.estado === 'pagado') {
+      doc.setTextColor(0, 128, 0); // Verde para pagado
+      doc.text('PAGADO', centroX, pagoY + 17, { align: 'center' });
+    } else if (pdfPreviewData.value.estado === 'vencido') {
+      doc.setTextColor(255, 0, 0); // Rojo para vencido
+      doc.text('VENCIDO', centroX, pagoY + 17, { align: 'center' });
+    } else {
+      doc.setTextColor(128, 128, 128); // Gris para pendiente
+      doc.text('PENDIENTE', centroX, pagoY + 17, { align: 'center' });
+    }
+
+    doc.setTextColor(0, 0, 0); // Restaurar color
+  }
+
+  // Línea de firma
+  const firmaY = pagoY + 40;
+  doc.setDrawColor(100, 100, 100);
+  doc.line(margenIzquierdo + 20, firmaY, margenIzquierdo + 80, firmaY);
+  doc.line(centroX + 20, firmaY, centroX + 80, firmaY);
+
+  // Texto de firma
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Firma del Local', margenIzquierdo + 35, firmaY + 7);
+  doc.text('Firma Delivery App', centroX + 35, firmaY + 7);
+
+  // Pie de página
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Este documento es un comprobante generado automáticamente por el sistema.', centroX, 280, { align: 'center' });
+  doc.setFontSize(8);
+  doc.text(`© ${new Date().getFullYear()} Delivery App - Todos los derechos reservados`, centroX, 285, { align: 'center' });
+
+  // Generar nombre de archivo según el tipo de documento
+  let nombreArchivo;
+  if (pdfPreviewData.value.esComprobante) {
+    // Para comprobantes, usar el número de factura
+    const numFactura = pdfPreviewData.value.subtitulo.replace('Factura: ', '');
+    nombreArchivo = `Comprobante_${numFactura}`;
+  } else {
+    // Para reportes, usar el período
+    const fechaInicio = pdfPreviewData.value.periodo.split(' al ')[0].replace(/\//g, '-');
+    const fechaFin = pdfPreviewData.value.periodo.split(' al ')[1].replace(/\//g, '-');
+    nombreArchivo = `Reporte_${fechaInicio}_a_${fechaFin}`;
+  }
+
+  // Guardar el PDF
+  doc.save(`${nombreArchivo}.pdf`);
+
+  // Cerrar la vista previa
+  showPdfPreview.value = false;
 };
 
 // Banner publicitario
@@ -4090,86 +4639,335 @@ const exportarReporte = (formato) => {
   const nombreArchivo = `Reporte_${tipoReporte}_${fechaInicio}_${fechaFin}`;
 
   if (formato === 'excel') {
-    // Preparar datos para Excel según el tipo de reporte
-    let datosExportar = [];
+    // Crear un libro de trabajo
+    const wb = XLSX.utils.book_new();
 
+    // Información general en una hoja separada
+    const infoSheet = XLSX.utils.aoa_to_sheet([
+      [`Reporte de ${tipoReporte}`],
+      [''],
+      ['Local:', local.value.nombre_local],
+      ['Período:', `${fechaInicio} al ${fechaFin}`],
+      ['Fecha de generación:', formatearFechaCorta(new Date())],
+      ['']
+    ]);
+
+    // Configurar ancho de columnas para la hoja de información
+    const infocols = [
+      { wch: 25 },
+      { wch: 30 }
+    ];
+    infoSheet['!cols'] = infocols;
+
+    // Agregar hoja de información
+    XLSX.utils.book_append_sheet(wb, infoSheet, 'Información');
+
+    // Preparar datos para Excel según el tipo de reporte
     if (reporteActual.value.tipo === 'ventas') {
-      datosExportar = reporteData.value.map(item => {
+      // Preparar datos para el reporte de ventas
+      const datosVentas = reporteData.value.map(item => {
         return {
           Fecha: formatearFecha(item.fecha),
           Pedidos: item.pedidos,
           'Método de Pago': item.metodo_pago,
-          Total: `L. ${item.total.toFixed(2)}`
+          Total: item.total.toFixed(2)
         };
       });
 
+      // Crear hoja de trabajo para ventas
+      const wsVentas = XLSX.utils.json_to_sheet(datosVentas);
+
       // Agregar fila de totales
-      datosExportar.push({
-        Fecha: '',
-        Pedidos: totalPedidosReporte.value,
-        'Método de Pago': 'Total:',
-        Total: `L. ${totalVentasReporte.value.toFixed(2)}`
-      });
+      const totalRow = ['Total:', totalPedidosReporte.value, '', totalVentasReporte.value.toFixed(2)];
+      XLSX.utils.sheet_add_aoa(wsVentas, [totalRow], { origin: -1 });
+
+      // Configurar ancho de columnas
+      const wscols = [
+        { wch: 25 }, // Fecha
+        { wch: 10 }, // Pedidos
+        { wch: 15 }, // Método de Pago
+        { wch: 15 }  // Total
+      ];
+      wsVentas['!cols'] = wscols;
+
+      // Agregar hoja de ventas
+      XLSX.utils.book_append_sheet(wb, wsVentas, 'Ventas');
     }
     else if (reporteActual.value.tipo === 'productos') {
-      datosExportar = reporteData.value.map(item => {
+      // Preparar datos para el reporte de productos
+      const datosProductos = reporteData.value.map(item => {
         return {
           Producto: item.nombre,
           'Cantidad Vendida': item.cantidad,
-          'Precio Unitario': `L. ${item.precio.toFixed(2)}`,
-          Total: `L. ${(item.cantidad * item.precio).toFixed(2)}`
+          'Precio Unitario': item.precio.toFixed(2),
+          Total: (item.cantidad * item.precio).toFixed(2)
         };
       });
+
+      // Crear hoja de trabajo para productos
+      const wsProductos = XLSX.utils.json_to_sheet(datosProductos);
 
       // Calcular total
       const totalVentas = reporteData.value.reduce((total, item) => total + (item.cantidad * item.precio), 0);
 
       // Agregar fila de totales
-      datosExportar.push({
-        Producto: '',
-        'Cantidad Vendida': '',
-        'Precio Unitario': 'Total:',
-        Total: `L. ${totalVentas.toFixed(2)}`
+      const totalRow = ['Total:', '', '', totalVentas.toFixed(2)];
+      XLSX.utils.sheet_add_aoa(wsProductos, [totalRow], { origin: -1 });
+
+      // Configurar ancho de columnas
+      const wscols = [
+        { wch: 30 }, // Producto
+        { wch: 15 }, // Cantidad Vendida
+        { wch: 15 }, // Precio Unitario
+        { wch: 15 }  // Total
+      ];
+      wsProductos['!cols'] = wscols;
+
+      // Agregar hoja de productos
+      XLSX.utils.book_append_sheet(wb, wsProductos, 'Productos');
+    }
+    else if (reporteActual.value.tipo === 'pedidos') {
+      // Preparar datos para el reporte de pedidos
+      const datosPedidos = reporteData.value.length > 0 ? reporteData.value : [
+        { num_pedido: '#123456', cliente: 'Laura Martínez', fecha: '15/07/2023 - 14:20', total: 245.00, estado: 'Entregado' },
+        { num_pedido: '#123457', cliente: 'Carlos Rodríguez', fecha: '16/07/2023 - 18:45', total: 180.50, estado: 'Entregado' },
+        { num_pedido: '#123458', cliente: 'Ana López', fecha: '17/07/2023 - 12:30', total: 320.75, estado: 'Entregado' },
+        { num_pedido: '#123459', cliente: 'Miguel Torres', fecha: '18/07/2023 - 16:30', total: 320.00, estado: 'Preparando' }
+      ];
+
+      // Convertir a formato para Excel
+      const pedidosExcel = datosPedidos.map(item => {
+        return {
+          'Número de Pedido': item.num_pedido || '',
+          Cliente: item.cliente,
+          Fecha: item.fecha,
+          Total: typeof item.total === 'number' ? item.total.toFixed(2) : item.total,
+          Estado: item.estado
+        };
+      });
+
+      // Crear hoja de trabajo para pedidos
+      const wsPedidos = XLSX.utils.json_to_sheet(pedidosExcel);
+
+      // Configurar ancho de columnas
+      const wscols = [
+        { wch: 20 }, // Número de Pedido
+        { wch: 25 }, // Cliente
+        { wch: 20 }, // Fecha
+        { wch: 15 }, // Total
+        { wch: 15 }  // Estado
+      ];
+      wsPedidos['!cols'] = wscols;
+
+      // Agregar hoja de pedidos
+      XLSX.utils.book_append_sheet(wb, wsPedidos, 'Pedidos');
+    }
+
+    // Exportar a archivo
+    XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+  }
+  else if (formato === 'pdf') {
+    // Crear nuevo documento PDF
+    const doc = new jsPDF();
+
+    // Configurar fuente y tamaño
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+
+    // Agregar logo (simulado con un rectángulo de color)
+    doc.setFillColor(52, 152, 219); // Color azul
+    doc.rect(14, 10, 30, 15, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text('DELIVERY', 16, 20);
+
+    // Título del documento
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Reporte de ${tipoReporte}`, 105, 20, { align: 'center' });
+
+    // Información del local
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Local: ${local.value.nombre_local}`, 14, 35);
+    doc.text(`RTN: ${local.value.rtn}`, 14, 42);
+
+    // Información del período
+    doc.setFont('helvetica', 'bold');
+    doc.text('Período:', 14, 52);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${fechaInicio} al ${fechaFin}`, 40, 52);
+
+    // Fecha de generación
+    const fechaActual = new Date();
+    doc.text(`Fecha de generación: ${formatearFechaCorta(fechaActual)} - ${fechaActual.getHours()}:${fechaActual.getMinutes().toString().padStart(2, '0')}`, 14, 59);
+
+    // Contenido específico según el tipo de reporte
+    if (reporteActual.value.tipo === 'ventas') {
+      // Título de la sección
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Ventas por Día', 14, 70);
+
+      // Preparar datos para la tabla
+      const ventasData = reporteData.value.map(item => [
+        formatearFecha(item.fecha),
+        item.pedidos,
+        item.metodo_pago,
+        `L. ${item.total.toFixed(2)}`
+      ]);
+
+      // Agregar tabla de ventas
+      autoTable(doc, {
+        startY: 75,
+        head: [['Fecha', 'Pedidos', 'Método de Pago', 'Total']],
+        body: ventasData,
+        foot: [['Total:', totalPedidosReporte.value, '', `L. ${totalVentasReporte.value.toFixed(2)}`]],
+        theme: 'grid',
+        headStyles: {
+          fillColor: [52, 152, 219],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        footStyles: {
+          fillColor: [240, 240, 240],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+
+      // Gráfico de ventas (simulado con texto)
+      const finalY = doc.lastAutoTable.finalY + 15;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumen de Ventas', 14, finalY);
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total de pedidos: ${totalPedidosReporte.value}`, 14, finalY + 10);
+      doc.text(`Total de ventas: L. ${totalVentasReporte.value.toFixed(2)}`, 14, finalY + 20);
+    }
+    else if (reporteActual.value.tipo === 'productos') {
+      // Título de la sección
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Productos Vendidos', 14, 70);
+
+      // Preparar datos para la tabla
+      const productosData = reporteData.value.map(item => [
+        item.nombre,
+        item.cantidad,
+        `L. ${item.precio.toFixed(2)}`,
+        `L. ${(item.cantidad * item.precio).toFixed(2)}`
+      ]);
+
+      // Calcular total
+      const totalVentas = reporteData.value.reduce((total, item) => total + (item.cantidad * item.precio), 0);
+
+      // Agregar tabla de productos
+      autoTable(doc, {
+        startY: 75,
+        head: [['Producto', 'Cantidad', 'Precio Unitario', 'Total']],
+        body: productosData,
+        foot: [['', '', 'Total:', `L. ${totalVentas.toFixed(2)}`]],
+        theme: 'grid',
+        headStyles: {
+          fillColor: [52, 152, 219],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        footStyles: {
+          fillColor: [240, 240, 240],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+
+      // Productos más vendidos (top 3)
+      const finalY = doc.lastAutoTable.finalY + 15;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Productos Más Vendidos', 14, finalY);
+
+      // Ordenar productos por cantidad vendida
+      const topProductos = [...reporteData.value]
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .slice(0, 3);
+
+      // Mostrar top 3
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      topProductos.forEach((producto, index) => {
+        doc.text(`${index + 1}. ${producto.nombre} - ${producto.cantidad} unidades`, 14, finalY + 10 + (index * 8));
       });
     }
     else if (reporteActual.value.tipo === 'pedidos') {
-      // Para el reporte de pedidos, usamos datos de ejemplo
-      datosExportar = [
-        { 'Número de Pedido': '#123456', Cliente: 'Laura Martínez', Fecha: '15/07/2023 - 14:20', Total: 'L. 245.00', Estado: 'Entregado' },
-        { 'Número de Pedido': '#123457', Cliente: 'Carlos Rodríguez', Fecha: '16/07/2023 - 18:45', Total: 'L. 180.50', Estado: 'Entregado' },
-        { 'Número de Pedido': '#123458', Cliente: 'Ana López', Fecha: '17/07/2023 - 12:30', Total: 'L. 320.75', Estado: 'Entregado' },
-        { 'Número de Pedido': '#123459', Cliente: 'Miguel Torres', Fecha: '18/07/2023 - 16:30', Total: 'L. 320.00', Estado: 'Preparando' }
+      // Título de la sección
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle de Pedidos', 14, 70);
+
+      // Preparar datos para la tabla
+      const pedidosData = reporteData.value.length > 0 ? reporteData.value : [
+        { num_pedido: '#123456', cliente: 'Laura Martínez', fecha: '15/07/2023 - 14:20', total: 245.00, estado: 'Entregado' },
+        { num_pedido: '#123457', cliente: 'Carlos Rodríguez', fecha: '16/07/2023 - 18:45', total: 180.50, estado: 'Entregado' },
+        { num_pedido: '#123458', cliente: 'Ana López', fecha: '17/07/2023 - 12:30', total: 320.75, estado: 'Entregado' },
+        { num_pedido: '#123459', cliente: 'Miguel Torres', fecha: '18/07/2023 - 16:30', total: 320.00, estado: 'Preparando' }
       ];
+
+      // Convertir a formato para la tabla
+      const pedidosTabla = pedidosData.map(item => [
+        item.num_pedido || '',
+        item.cliente,
+        item.fecha,
+        `L. ${typeof item.total === 'number' ? item.total.toFixed(2) : item.total}`,
+        item.estado
+      ]);
+
+      // Agregar tabla de pedidos
+      autoTable(doc, {
+        startY: 75,
+        head: [['Número', 'Cliente', 'Fecha', 'Total', 'Estado']],
+        body: pedidosTabla,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [52, 152, 219],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+
+      // Resumen de pedidos
+      const finalY = doc.lastAutoTable.finalY + 15;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumen de Pedidos', 14, finalY);
+
+      // Contar pedidos por estado
+      const pedidosEntregados = pedidosData.filter(p => p.estado === 'Entregado').length;
+      const pedidosPendientes = pedidosData.filter(p => p.estado === 'Preparando' || p.estado === 'Pendiente').length;
+
+      // Mostrar resumen
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total de pedidos: ${pedidosData.length}`, 14, finalY + 10);
+      doc.text(`Pedidos entregados: ${pedidosEntregados}`, 14, finalY + 20);
+      doc.text(`Pedidos pendientes: ${pedidosPendientes}`, 14, finalY + 30);
     }
 
-    console.log('Exportando a Excel:', {
-      tipo: reporteActual.value.tipo,
-      datos: datosExportar,
-      nombreArchivo: nombreArchivo
-    });
+    // Pie de página
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Este reporte de ${tipoReporte.toLowerCase()} fue generado automáticamente por el sistema.`, 105, 280, { align: 'center' });
 
-    // En un entorno real, aquí se utilizaría una librería como xlsx o exceljs para generar el archivo Excel
-    alert(`Exportando reporte de ${reporteActual.value.tipo} a Excel con nombre: ${nombreArchivo}.xlsx`);
-  }
-  else if (formato === 'pdf') {
-    // Preparar datos para PDF
-    const datosPDF = {
-      tipoReporte: tipoReporte,
-      fechaInicio: fechaInicio,
-      fechaFin: fechaFin,
-      datos: reporteData.value,
-      totalPedidos: totalPedidosReporte.value,
-      totalVentas: totalVentasReporte.value
-    };
-
-    console.log('Exportando a PDF:', {
-      tipo: reporteActual.value.tipo,
-      datos: datosPDF,
-      nombreArchivo: nombreArchivo
-    });
-
-    // En un entorno real, aquí se utilizaría una librería como jsPDF o pdfmake para generar el archivo PDF
-    alert(`Exportando reporte de ${reporteActual.value.tipo} a PDF con nombre: ${nombreArchivo}.pdf`);
+    // Guardar el PDF
+    doc.save(`${nombreArchivo}.pdf`);
   }
 };
 
