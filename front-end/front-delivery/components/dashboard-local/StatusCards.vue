@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Tarjeta de Pedidos Semanales -->
-    <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+    <div class="bg-white rounded-xl shadow p-6 border-2 border-gray-200">
       <div class="flex justify-between items-start mb-4">
         <div>
           <p class="text-gray-600 text-sm">Pedidos Semanales</p>
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Tarjeta de Ingresos Semanales -->
-    <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+    <div class="bg-white rounded-xl shadow p-6 border-2 border-gray-200">
       <div class="flex justify-between items-start mb-4">
         <div>
           <p class="text-gray-600 text-sm">Ingresos Semanales</p>
@@ -41,12 +41,12 @@
     </div>
 
     <!-- Tarjeta de Pedidos Restantes -->
-    <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+    <div class="bg-white rounded-xl shadow p-6 border-2 border-gray-200">
       <div class="flex justify-between items-start mb-3">
         <div>
           <p class="text-gray-600 text-sm">Pedidos Restantes</p>
           <h3 class="text-2xl font-bold text-gray-800 mt-1">
-            {{ localInfo.pedidos_restantes }}/{{ getPedidosMaximos() }}
+            {{ membresia.id_membresia === 3 ? '∞' : `${localInfo.pedidos_restantes}/${getPedidosMaximos()}` }}
           </h3>
         </div>
         <div class="p-3 bg-amber-100 rounded-full">
@@ -54,9 +54,9 @@
         </div>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-2">
-        <div 
-          class="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out" 
-          :style="{width: `${(localInfo.pedidos_restantes / getPedidosMaximos()) * 100}%`}"
+        <div
+          class="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+          :style="{width: membresia.id_membresia === 3 ? '100%' : `${(localInfo.pedidos_restantes / getPedidosMaximos()) * 100}%`}"
         ></div>
       </div>
       <p class="text-xs text-gray-600 mt-2">
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Tarjeta de Membresía -->
-    <div class="bg-white rounded-xl shadow p-6 border border-gray-100">
+    <div class="bg-white rounded-xl shadow p-6 border-2 border-gray-200">
       <div class="flex justify-between items-start mb-4">
         <div>
           <p class="text-gray-600 text-sm">Membresía Actual</p>
@@ -89,7 +89,7 @@
       </div>
       <p class="text-amber-600 text-sm flex items-center">
         <ClockIcon :size="16" class="mr-1" />
-        Vence: Domingo 11:59 PM
+        Vence: {{ localInfo.fecha_vencimiento_membresia || 'No disponible' }}
       </p>
     </div>
   </div>
@@ -97,7 +97,7 @@
 
 <script setup>
 import { defineProps } from 'vue';
-import { 
+import {
   Box as BoxIcon,
   DollarSign as DollarSignIcon,
   ShoppingBag as ShoppingBagIcon,

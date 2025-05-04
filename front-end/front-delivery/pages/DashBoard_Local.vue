@@ -20,98 +20,23 @@
       />
 
       <!-- Cobro semanal con lista de productos vendidos -->
-      <div class="bg-white rounded-xl shadow mb-8 border border-gray-100">
-<div class="border-b border-gray-100 p-6">
-  <div class="flex flex-col sm:flex-row sm:items-center justify-between">
-    <!-- Ícono y texto -->
-    <div class="flex items-center">
-      <div class="p-3 bg-amber-100 rounded-full mr-4">
-        <ReceiptIcon class="text-amber-600" :size="20" />
-      </div>
-      <div>
-        <h2 class="text-lg sm:text-xl font-bold text-gray-800">Cobro Semanal</h2>
-        <p class="text-gray-600 text-sm sm:text-base">El cobro se realiza automáticamente cada domingo a las 11:59 PM</p>
-      </div>
-    </div>
-
-    <!-- Botones de exportación -->
-    <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
-      <button @click="exportToExcel" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
-        Exportar Excel
-      </button>
-      <button @click="exportToPDF" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
-        Exportar PDF
-      </button>
-    </div>
-  </div>
-</div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
-          <!-- Productos vendidos esta semana -->
-          <div class="lg:col-span-2 p-6 border-r border-gray-100">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Productos Vendidos esta Semana</h3>
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="text-left border-b border-gray-100">
-                    <th class="py-2 px-4 text-gray-600 font-medium">Producto</th>
-                    <th class="py-2 px-4 text-gray-600 font-medium">Cantidad</th>
-                    <th class="py-2 px-4 text-gray-600 font-medium">Precio Unitario</th>
-                    <th class="py-2 px-4 text-gray-600 font-medium">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(producto, index) in productosVendidosSemana" :key="index"
-                      :class="{'bg-gray-50': index % 2 === 0}">
-                    <td class="py-3 px-4 text-gray-800">{{ producto.nombre }}</td>
-                    <td class="py-3 px-4 text-gray-800">{{ producto.cantidad }}</td>
-                    <td class="py-3 px-4 text-gray-800">L. {{ producto.precio }}</td>
-                    <td class="py-3 px-4 font-medium text-gray-800">L. {{ (producto.cantidad * producto.precio).toFixed(2) }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="border-t border-gray-100">
-                    <td colspan="2" class="py-3 px-4"></td>
-                    <td class="py-3 px-4 font-medium text-gray-800">Total Ventas:</td>
-                    <td class="py-3 px-4 font-bold text-gray-800">L. {{ totalVentasSemana }}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          <!-- Resumen del cobro -->
-          <div class="p-6 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen del Cobro</h3>
-            <div class="space-y-4">
-              <div class="flex justify-between py-2 border-b border-gray-200">
-                <span class="text-gray-600">Pedidos extra ({{ pedidosExtra }})</span>
-                <span class="text-gray-800 font-medium">L. {{ calcularCostoPedidosExtra() }}</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-gray-200">
-                <span class="text-gray-600">Comisión app (15%)</span>
-                <span class="text-gray-800 font-medium">L. {{ calcularComisionApp() }}</span>
-              </div>
-              <div class="flex justify-between py-3 text-lg">
-                <span class="font-bold text-gray-800">Total a pagar:</span>
-                <span class="font-bold text-gray-800">L. {{ calcularTotalPago() }}</span>
-              </div>
-
-              <div class="bg-amber-50 border border-amber-100 rounded-lg p-4 text-amber-800">
-                <p class="flex items-center text-sm">
-                  <InfoIcon :size="16" class="mr-2 text-amber-500 flex-shrink-0" />
-                  El cobro del {{ formatearFecha(fechaProximoCobro) }} incluirá todos los pedidos y comisiones hasta el domingo a las 11:59 PM
-                </p>
-              </div>
-
-              <button @click="openHistorialCobros" class="w-full mt-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center justify-center">
-                <FileTextIcon :size="16" class="mr-2" />
-                Ver historial de cobros
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <CobroSemanal
+        :fechaInicioSemana="fechaInicioSemana"
+        :fechaFinSemana="fechaFinSemana"
+        :fechaLimitePago="fechaLimitePago"
+        :productosVendidosSemana="productosVendidosSemana"
+        :ventasEfectivoSemana="ventasEfectivoSemana"
+        :ventasTarjetaSemana="ventasTarjetaSemana"
+        :totalVentasSemana="totalVentasSemana"
+        :pedidosExtra="pedidosExtra"
+        :membresia="membresia"
+        :cobroActualPagado="cobroActualPagado"
+        :balanceFinal="balanceFinal"
+        @exportToExcel="exportToExcel"
+        @exportToPDF="exportToPDF"
+        @openHistorialCobros="openHistorialCobros"
+        @openPagoComprobanteModal="pagarCobroActual"
+      />
 
       <!-- Pestañas de Secciones -->
       <div class="mb-6">
@@ -172,12 +97,20 @@
                     <span class="text-gray-700">1 producto recomendado</span>
                   </li>
                   <li class="flex items-start text-gray-400">
-                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
-                    <span>Mayor visibilidad</span>
+                  <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Notificaciones personalizadas</span>
                   </li>
                   <li class="flex items-start text-gray-400">
                     <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
-                    <span>Estadísticas avanzadas</span>
+                    <span>Creación de Banners publicitarios</span>
+                  </li>
+                  <li class="flex items-start text-gray-400">
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Acceso a Generación de Reportes</span>
+                  </li>
+                  <li class="flex items-start text-gray-400">
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Acceso a Todas las Estadísticas</span>
                   </li>
                 </ul>
 
@@ -205,7 +138,7 @@
                 <ul class="space-y-3">
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                    <span class="text-gray-700">Mayor visibilidad en búsqueda</span>
+                    <span class="text-gray-700">Mejor visibilidad en búsqueda</span>
                   </li>
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
@@ -225,7 +158,19 @@
                   </li>
                   <li class="flex items-start text-gray-400">
                     <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
-                    <span>Banners publicitarios</span>
+                    <span>Notificaciones personalizadas</span>
+                  </li>
+                  <li class="flex items-start text-gray-400">
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Creación de Banners publicitarios</span>
+                  </li>
+                  <li class="flex items-start text-gray-400">
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Acceso a Generación de Reportes</span>
+                  </li>
+                  <li class="flex items-start text-gray-400">
+                    <XIcon :size="16" class="text-gray-300 mt-1 mr-3 flex-shrink-0" />
+                    <span>Acceso a Todas las Estadísticas</span>
                   </li>
                 </ul>
 
@@ -258,7 +203,15 @@
                 <ul class="space-y-3">
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span class="text-gray-700">Visibilidad Prioritaria</span>
+                  </li>
+                  <li class="flex items-start">
+                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
                     <span class="text-gray-700">Pedidos ilimitados semanales</span>
+                  </li>
+                  <li class="flex items-start">
+                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span class="text-gray-700">Sin cobro por pedido extra</span>
                   </li>
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
@@ -266,19 +219,23 @@
                   </li>
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                    <span class="text-gray-700">Notificaciones personalizadas</span>
-                  </li>
-                  <li class="flex items-start">
-                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                    <span class="text-gray-700">Banners publicitarios</span>
-                  </li>
-                  <li class="flex items-start">
-                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
                     <span class="text-gray-700">5 productos recomendados</span>
                   </li>
                   <li class="flex items-start">
                     <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
-                    <span class="text-gray-700">Todas las estadísticas</span>
+                    <span class="text-gray-700">Notificaciones personalizadas</span>
+                  </li>
+                  <li class="flex items-start">
+                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span class="text-gray-700">Cración de Banners publicitarios</span>
+                  </li>
+                  <li class="flex items-start">
+                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span class="text-gray-700">Acceso a Generación de Reportes</span>
+                  </li>
+                  <li class="flex items-start">
+                    <CheckIcon :size="16" class="text-green-500 mt-1 mr-3 flex-shrink-0" />
+                    <span class="text-gray-700">Acceso a Todas las Estadísticas</span>
                   </li>
                 </ul>
 
@@ -310,7 +267,7 @@
             </button>
           </div>
 
-          <div class="overflow-x-auto bg-white shadow rounded-xl border border-gray-100">
+          <div class="overflow-x-auto bg-white shadow rounded-xl border-2 border-gray-300">
             <table class="w-full border-collapse">
               <thead>
                 <tr class="bg-gray-50 text-left text-gray-600 text-sm border-b border-gray-100">
@@ -386,7 +343,7 @@
             <div
               v-for="(sucursal, index) in sucursales"
               :key="index"
-              class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border border-gray-100"
+              class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border-2 border-gray-300"
             >
               <div class="p-4 border-b border-gray-100">
                 <div class="flex justify-between items-start">
@@ -496,7 +453,7 @@
             <div
               v-for="banner in banners"
               :key="banner.id_banner"
-              class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border border-gray-100"
+              class="bg-white rounded-xl shadow overflow-hidden group hover:shadow-md transition-shadow border-2 border-gray-300"
             >
               <div class="relative h-40">
                 <img :src="banner.imagen_url" alt="Banner" class="w-full h-full object-cover">
@@ -566,7 +523,7 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Estadística de Producto Más Vendido (disponible para Básica y Premium) -->
-    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+    <div class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300 relative">
       <div class="p-4 border-b border-gray-100">
         <div class="flex justify-between items-center">
           <h3 class="font-bold text-gray-800 flex items-center">
@@ -597,7 +554,7 @@
     </div>
 
     <!-- Estadística de Ingresos por Día (solo Premium) -->
-    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+    <div class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300 relative">
       <div class="p-4 border-b border-gray-100">
         <div class="flex justify-between items-center">
           <h3 class="font-bold text-gray-800 flex items-center">
@@ -628,7 +585,7 @@
     </div>
 
     <!-- Cliente más frecuente (solo Premium) - modificado a top 3 sin fotos -->
-    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+    <div class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300 relative">
       <div class="p-4 border-b border-gray-100">
         <div class="flex justify-between items-center">
           <h3 class="font-bold text-gray-800 flex items-center">
@@ -677,7 +634,7 @@
     </div>
 
     <!-- Ranking en ventas por categoría (solo Premium) - modificado para ocultar información sensible -->
-    <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-100 relative">
+    <div class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300 relative">
       <div class="p-4 border-b border-gray-100">
         <div class="flex justify-between items-center">
           <h3 class="font-bold text-gray-800 flex items-center">
@@ -779,7 +736,7 @@
 
           <!-- Histórico de notificaciones -->
           <div
-            class="bg-white rounded-xl shadow overflow-hidden border border-gray-100"
+            class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300"
             :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}"
           >
             <div class="p-4 border-b border-gray-100">
@@ -807,13 +764,113 @@
           </div>
         </div>
 
-        <!-- Nueva pestaña: Reportería -->
-        <div v-if="currentTab === 'reporteria'" class="space-y-6">
+        <!-- Nueva pestaña: empleados -->
+        <div v-if="currentTab === 'empleados'" class="space-y-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+              <UserIcon :size="20" class="mr-2 text-blue-500" />
+              Gestión de Empleados
+            </h2>
+            <button
+              @click="openEmpleadoModal()"
+              class="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
+            >
+              <UserPlusIcon :size="16" class="mr-1" />
+              Agregar Empleado
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300">
+            <div class="p-4 border-b border-gray-100">
+              <p class="text-gray-600">
+                Los empleados agregados tendrán acceso limitado a la página de pedidos para aceptarlos o rechazarlos.
+              </p>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="bg-gray-50 text-left text-gray-600 text-sm border-b border-gray-100">
+                    <th class="py-3 px-4">Nombre</th>
+                    <th class="py-3 px-4">Identidad Nacional</th>
+                    <th class="py-3 px-4">Teléfono</th>
+                    <th class="py-3 px-4">Correo</th>
+                    <th class="py-3 px-4">Fecha Registro</th>
+                    <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(empleado, index) in empleados" :key="empleado.id_empleado"
+                      :class="{'bg-gray-50': index % 2 === 0}">
+                    <td class="py-3 px-4 font-medium text-gray-800">{{ empleado.nombre }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ empleado.identidad }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ empleado.telefono }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ empleado.correo || '-' }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ formatearFecha(empleado.fecha_registro) }}</td>
+                    <td class="py-3 px-4">
+                      <span
+                        :class="empleado.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                        class="px-2 py-1 rounded-full text-xs"
+                      >
+                        {{ empleado.activo ? 'Activo' : 'Inactivo' }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                      <div class="flex justify-end space-x-1">
+                        <button @click="openEmpleadoModal(empleado)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <EditIcon :size="16" />
+                        </button>
+                        <button @click="toggleEmpleadoEstado(empleado)" class="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                              :class="empleado.activo ? 'text-amber-600' : 'text-green-600'">
+                          <component :is="empleado.activo ? BanIcon : CheckIcon" :size="16" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="empleados.length === 0">
+                    <td colspan="7" class="p-6 text-center text-gray-500">
+                      No hay empleados registrados. Haga clic en "Agregar Empleado" para crear uno.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-4 bg-blue-50 border-t border-blue-100">
+              <div class="flex items-start">
+                <InfoIcon :size="20" class="text-blue-500 mr-2 mt-0.5" />
+                <div>
+                  <h4 class="font-medium text-blue-800">Información importante</h4>
+                  <p class="text-sm text-blue-700 mt-1">
+                    Los empleados agregados solo tendrán acceso a la página de pedidos para aceptarlos o rechazarlos.
+                    No podrán acceder a otras secciones del panel de administración.
+                  </p>
+                  <div class="mt-2 flex items-center">
+                    <KeyIcon :size="16" class="text-blue-500 mr-1" />
+                    <p class="text-sm text-blue-700">
+                      Las credenciales de acceso se generan automáticamente a partir de la identidad nacional.
+                    </p>
+                  </div>
+                  <div class="mt-1 flex items-center">
+                    <ShieldIcon :size="16" class="text-blue-500 mr-1" />
+                    <p class="text-sm text-blue-700">
+                      Puede desactivar el acceso de un empleado en cualquier momento.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nueva pestaña: reportes -->
+        <div v-if="currentTab === 'reportes'" class="space-y-6">
           <div class="flex justify-between items-center mb-6">
             <div class="flex items-center">
               <h2 class="text-xl font-bold text-gray-800 flex items-center">
                 <FileTextIcon :size="20" class="mr-2 text-purple-500" />
-                Reportería
+                Reportes
               </h2>
               <div v-if="membresia.id_membresia < 3" class="ml-2 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
                 Premium
@@ -827,7 +884,7 @@
               <CrownIcon :size="20" class="text-amber-500 mr-3 flex-shrink-0 mt-1" />
               <div>
                 <p class="font-medium text-amber-800">Función disponible solo en plan Premium</p>
-                <p class="text-amber-700 text-sm mt-1">La sección de reportería te permite generar informes detallados sobre tu negocio y exportarlos en diferentes formatos.</p>
+                <p class="text-amber-700 text-sm mt-1">La sección de reportes te permite generar informes detallados sobre tu negocio y exportarlos en diferentes formatos.</p>
                 <button
                   @click="openMembresiaComprobanteModal(3)"
                   class="mt-2 text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity"
@@ -838,9 +895,9 @@
             </div>
           </div>
 
-          <!-- Contenido de Reportería -->
+          <!-- Contenido de reportes -->
           <div
-            class="bg-white rounded-xl shadow overflow-hidden border border-gray-100"
+            class="bg-white rounded-xl shadow overflow-hidden border-2 border-gray-300"
             :class="{'opacity-50 pointer-events-none': membresia.id_membresia < 3}"
           >
             <div class="p-4 border-b border-gray-100">
@@ -1095,8 +1152,8 @@
 
                   <!-- Modal para detalles de pedido (se mostraría al hacer clic en "Ver detalle") -->
                   <div v-if="modalPedidoVisible" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl">
-                      <div class="flex justify-between items-center p-4 border-b">
+                    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+                      <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
                         <h3 class="text-lg font-bold text-gray-800">
                           <ShoppingBagIcon :size="20" class="text-blue-500 inline mr-2" />
                           Detalle del Pedido #123456
@@ -1106,7 +1163,7 @@
                         </button>
                       </div>
 
-                      <div class="p-4">
+                      <div class="p-4 overflow-y-auto flex-grow">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
                             <h4 class="font-medium text-gray-700">Información del cliente</h4>
@@ -1182,7 +1239,7 @@
                         </div>
                       </div>
 
-                      <div class="p-4 border-t bg-gray-50 flex justify-end">
+                      <div class="p-4 border-t bg-gray-50 flex justify-end flex-shrink-0">
                         <button
                           @click="modalPedidoVisible = false"
                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
@@ -1219,7 +1276,7 @@
     <!-- Modal para historial de cobros -->
     <transition name="fade">
       <div v-if="modales.historialCobros" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+        <div class="bg-white rounded-xl shadow-xl w-[95%] sm:w-[90%] md:w-[85%] max-w-4xl max-h-[80vh] flex flex-col">
           <div class="flex justify-between items-center p-4 border-b">
             <h3 class="text-lg font-bold text-gray-800">
               <ReceiptIcon :size="20" class="text-amber-500 inline mr-2" />
@@ -1297,56 +1354,49 @@
           </div>
 
           <div class="overflow-auto flex-grow">
-            <table class="w-full border-collapse">
-              <thead class="sticky top-0 bg-white">
-                <tr class="text-left text-gray-600 text-sm border-b border-gray-100 bg-gray-50">
-                  <th class="py-3 px-4">#Factura</th>
-                  <th class="py-3 px-4">Fecha</th>
-                  <th class="py-3 px-4">Período</th>
-                  <th class="py-3 px-4">Pedidos</th>
-                  <th class="py-3 px-8">Comisión</th>
-                  <th class="py-3 px-8">Total</th>
-                  <th class="py-3 px-4">Estado</th>
-                  <th class="py-3 px-4 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(cobro, index) in historialCobrosFiltrado" :key="index"
-                    class="border-b border-gray-100 hover:bg-gray-50">
-                  <td class="py-3 px-4 text-gray-700">{{ cobro.num_factura }}</td>
-                  <td class="py-3 px-4 text-gray-700">{{ formatearFecha(cobro.fecha_cobro) }}</td>
-                  <td class="py-3 px-4 text-gray-700">{{ cobro.periodo_inicio }} - {{ cobro.periodo_fin }}</td>
-                  <td class="py-3 px-4 text-gray-700">{{ cobro.num_pedidos }} <span class="text-sm text-gray-400">({{ cobro.pedidos_extra }} extras)</span></td>
-                  <td class="py-3 px-4 text-gray-700">L. {{ cobro.comision.toFixed(2) }}</td>
-                  <td class="py-3 px-4 text-gray-700">L. {{ cobro.total.toFixed(2) }}</td>
-                  <td class="py-3 px-4">
-                    <span
-                      :class="{
-                        'bg-green-100 text-green-800': cobro.estado === 'pagado',
-                        'bg-yellow-100 text-yellow-800': cobro.estado === 'pendiente',
-                        'bg-red-100 text-red-800': cobro.estado === 'vencido'
-                      }"
-                      class="px-2 py-1 rounded-full text-xs"
-                    >
-                      {{ cobro.estado === 'pagado' ? 'Pagado' : cobro.estado === 'pendiente' ? 'Pendiente' : 'Vencido' }}
-                    </span>
-                  </td>
-                  <td class="py-3 px-4 text-center">
-                    <button @click="verDetalleCobro(cobro)" class="p-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
-                      <EyeIcon :size="18" />
-                    </button>
-                    <button v-if="cobro.estado !== 'pagado'" @click="pagarCobro(cobro)" class="p-1 ml-1 text-green-600 hover:bg-green-50 rounded-md transition-colors">
-                      <DollarSignIcon :size="18" />
-                    </button>
-                  </td>
-                </tr>
-                <tr v-if="historialCobrosFiltrado.length === 0">
-                  <td colspan="8" class="py-6 text-center text-gray-500">
-                    No se encontraron registros de cobros con los filtros aplicados
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="overflow-y-auto" style="max-height: 300px;">
+              <table class="w-full border-collapse">
+                <thead class="sticky top-0 bg-white z-10">
+                  <tr class="text-left text-gray-600 text-sm border-b border-gray-100 bg-gray-50">
+                    <th class="py-3 px-4 w-[15%]">#Factura</th>
+                    <th class="py-3 px-4 w-[35%]">Período</th>
+                    <th class="py-3 px-6 w-[15%]">Total</th>
+                    <th class="py-3 px-4 w-[15%]">Estado</th>
+                    <th class="py-3 px-4 w-[20%] text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(cobro, index) in historialCobrosFiltrado" :key="index"
+                      class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 text-gray-700">{{ cobro.num_factura }}</td>
+                    <td class="py-3 px-4 text-gray-700">{{ formatearFechaCorta(cobro.periodo_inicio) }} - {{ formatearFechaCorta(cobro.periodo_fin) }}</td>
+                    <td class="py-3 px-6 text-gray-700 whitespace-nowrap">L.&nbsp;{{ cobro.total.toFixed(2) }}</td>
+                    <td class="py-3 px-4">
+                      <span
+                        :class="{
+                          'bg-green-100 text-green-800': cobro.estado === 'pagado',
+                          'bg-gray-200 text-gray-800': cobro.estado === 'pendiente',
+                          'bg-red-100 text-red-800': cobro.estado === 'vencido'
+                        }"
+                        class="px-2 py-1 rounded-full text-xs"
+                      >
+                        {{ cobro.estado === 'pagado' ? 'Pagado' : cobro.estado === 'pendiente' ? 'Pendiente' : 'Vencido' }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <button @click="verDetalleCobro(cobro)" class="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-sm">
+                        Ver Detalles
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="historialCobrosFiltrado.length === 0">
+                    <td colspan="8" class="py-6 text-center text-gray-500">
+                      No se encontraron registros de cobros con los filtros aplicados
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
@@ -1368,24 +1418,35 @@
     <!-- Modal para subir comprobante de membresía -->
     <transition name="fade">
   <div v-if="modales.membresiaComprobante" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
-      <div class="flex justify-between items-center p-3 border-b">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center p-3 border-b flex-shrink-0">
         <h3 class="text-base font-bold text-gray-800">Comprobante de Pago - {{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</h3>
         <button @click="closeModal('membresiaComprobante')" class="text-gray-500 hover:text-gray-700">
           <XIcon :size="20" />
         </button>
       </div>
-      <div class="p-4">
+      <div class="p-4 overflow-y-auto flex-grow">
         <div class="mb-4 bg-blue-50 p-3 rounded-lg">
           <h4 class="font-medium text-blue-800 mb-2">Detalles del Plan</h4>
           <p class="text-gray-700 text-sm flex justify-between border-b pb-1">
             <span>Plan:</span> <span class="font-medium">{{ getTipoMembresiaNombre(modalData.idMembresiaSeleccionada) }}</span>
           </p>
           <p class="text-gray-700 text-sm flex justify-between border-b pb-1">
-            <span>Precio:</span> <span class="font-medium">L. {{ getPrecioMembresia(modalData.idMembresiaSeleccionada) }}</span>
+            <span>Precio base:</span> <span class="font-medium">L. {{ getPrecioMembresia(modalData.idMembresiaSeleccionada) }} / semana</span>
           </p>
-          <p class="text-gray-700 text-sm flex justify-between">
-            <span>Duración:</span> <span class="font-medium">1 semana</span>
+          <p class="text-gray-700 text-sm flex justify-between border-b pb-1">
+            <span>Duración:</span>
+            <select v-model="modalData.duracionSeleccionada" class="ml-2 px-2 py-1 border border-blue-200 rounded text-blue-800 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300">
+              <option value="1">1 semana</option>
+              <option value="2">2 semanas</option>
+              <option value="4">1 mes (4 semanas)</option>
+            </select>
+          </p>
+          <p class="text-gray-700 text-sm flex justify-between font-medium">
+            <span>Total a pagar:</span> <span class="text-blue-800">L. {{ calcularPrecioTotal() }}</span>
+          </p>
+          <p class="text-gray-700 text-xs mt-2">
+            <span>Vence exactamente en {{ modalData.duracionSeleccionada }} semana(s) el:</span> <span class="font-medium">{{ calcularFechaVencimiento() }}</span>
           </p>
         </div>
 
@@ -1413,8 +1474,8 @@
                 <UploadIcon :size="28" class="mx-auto text-gray-400" />
                 <p class="text-gray-500 text-sm">Haz clic para subir comprobante</p>
               </div>
-              <div v-else>
-                <img :src="modalData.comprobantePreview" class="max-h-36 mx-auto mb-1 rounded-lg">
+              <div v-else class="max-h-48 overflow-y-auto">
+                <img :src="modalData.comprobantePreview" class="mx-auto mb-1 rounded-lg max-w-full">
                 <p class="text-xs text-blue-600">Haz clic para cambiar archivo</p>
               </div>
             </label>
@@ -1427,7 +1488,7 @@
         </div>
       </div>
 
-      <div class="p-3 border-t bg-gray-50 flex justify-end space-x-2">
+      <div class="p-3 border-t bg-gray-50 flex justify-end space-x-2 flex-shrink-0">
         <button @click="closeModal('membresiaComprobante')" class="px-3 py-1 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs">
           Cancelar
         </button>
@@ -1448,8 +1509,8 @@
     <!-- Modal de notificaciones personalizadas (solo Premium) -->
     <transition name="fade">
       <div v-if="modales.notificacionPersonalizada" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-          <div class="flex justify-between items-center p-4 border-b">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
             <h3 class="text-lg font-bold text-gray-800">
               <BellIcon :size="20" class="text-amber-500 inline mr-2" />
               Enviar Notificación Personalizada
@@ -1458,7 +1519,7 @@
               <XIcon :size="20" />
             </button>
           </div>
-          <div class="p-6">
+          <div class="p-6 overflow-y-auto flex-grow">
             <div v-if="membresia.id_membresia < 3" class="bg-amber-50 text-amber-800 p-4 rounded-lg mb-4">
               <div class="flex items-start">
                 <CrownIcon :size="20" class="text-amber-500 mt-1 mr-3 flex-shrink-0" />
@@ -1533,7 +1594,7 @@
               </div>
             </div>
           </div>
-          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
+          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2 flex-shrink-0">
             <button @click="closeModal('notificacionPersonalizada')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
@@ -1553,8 +1614,8 @@
     <!-- Modal para crear/editar cupón -->
     <transition name="fade">
       <div v-if="modales.cupon" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-          <div class="flex justify-between items-center p-4 border-b">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
             <h3 class="text-lg font-bold text-gray-800">
               <TicketIcon :size="20" class="text-green-500 inline mr-2" />
               {{ modalData.isEdit ? 'Editar Cupón' : 'Crear Nuevo Cupón' }}
@@ -1563,7 +1624,7 @@
               <XIcon :size="20" />
             </button>
           </div>
-          <div class="p-6">
+          <div class="p-6 overflow-y-auto flex-grow">
             <div class="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Código de cupón</label>
@@ -1580,10 +1641,13 @@
                 <select
                   v-model="modalData.cupon.tipo_descuento"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                  style="color: #6B7280;"
                 >
-                  <option value="porcentaje">Porcentaje (%)</option>
-                  <option value="fijo">Monto Fijo (L)</option>
+                  <option value="" disabled style="color: #6B7280;">Seleccionar tipo</option>
+                  <option value="porcentaje" style="color: #1F2937;">Porcentaje (%)</option>
+                  <option value="fijo" style="color: #1F2937;">Monto Fijo (L)</option>
                 </select>
+                <p class="text-xs text-gray-500 mt-1">Selecciona si el descuento será un porcentaje o un monto fijo</p>
               </div>
             </div>
 
@@ -1625,7 +1689,9 @@
                 v-model="modalData.cupon.fecha_vencimiento"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 :min="new Date().toISOString().split('T')[0]"
+                style="color: #6B7280;"
               >
+              <p class="text-xs text-gray-500 mt-1">Selecciona la fecha hasta la que será válido el cupón</p>
             </div>
 
             <div class="mb-4">
@@ -1649,7 +1715,7 @@
               </label>
             </div>
           </div>
-          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
+          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2 flex-shrink-0">
             <button @click="closeModal('cupon')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
@@ -1699,10 +1765,12 @@
                     <select
                       v-model="modalData.sucursal.ciudad"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                      style="color: #6B7280;"
                     >
-                      <option value="">Seleccionar ciudad</option>
-                      <option v-for="ciudad in ciudades" :key="ciudad" :value="ciudad">{{ ciudad }}</option>
+                      <option value="" disabled style="color: #6B7280;">Seleccionar ciudad</option>
+                      <option v-for="ciudad in ciudades" :key="ciudad" :value="ciudad" style="color: #1F2937;">{{ ciudad }}</option>
                     </select>
+                    <p class="text-xs text-gray-500 mt-1">Selecciona la ciudad donde se encuentra la sucursal</p>
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Colonia</label>
@@ -1755,7 +1823,9 @@
                       type="time"
                       v-model="modalData.sucursal.apertura"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                      style="color: #6B7280;"
                     >
+                    <p class="text-xs text-gray-500 mt-1">Hora de apertura (ej: 08:00)</p>
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Hora de cierre</label>
@@ -1763,7 +1833,9 @@
                       type="time"
                       v-model="modalData.sucursal.cierre"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                      style="color: #6B7280;"
                     >
+                    <p class="text-xs text-gray-500 mt-1">Hora de cierre (ej: 20:00)</p>
                   </div>
                 </div>
 
@@ -1808,8 +1880,8 @@
     <!-- Modal para crear/editar banner -->
     <transition name="fade">
       <div v-if="modales.banner" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-          <div class="flex justify-between items-center p-4 border-b">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
             <h3 class="text-lg font-bold text-gray-800">
               <ImageIcon :size="20" class="text-red-500 inline mr-2" />
               {{ modalData.isEdit ? 'Editar Banner' : 'Crear Nuevo Banner' }}
@@ -1818,7 +1890,7 @@
               <XIcon :size="20" />
             </button>
           </div>
-          <div class="p-6">
+          <div class="p-6 overflow-y-auto flex-grow">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
               <input
@@ -1850,14 +1922,33 @@
             </div>
 
             <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">URL de imagen</label>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Imagen del banner</label>
+              <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer">
+                <input type="file" id="banner-image" class="hidden" accept="image/*" @change="previewBannerImage">
+                <label for="banner-image" class="cursor-pointer">
+                  <div v-if="!modalData.bannerImagePreview" class="space-y-1">
+                    <UploadIcon :size="28" class="mx-auto text-gray-400" />
+                    <p class="text-gray-500 text-sm">Haz clic para subir imagen</p>
+                    <p class="text-xs text-gray-400">Recomendado: 1200x400 píxeles (formato horizontal)</p>
+                  </div>
+                  <div v-else class="max-h-48 overflow-y-auto">
+                    <img :src="modalData.bannerImagePreview" class="mx-auto mb-1 rounded-lg max-w-full">
+                    <p class="text-xs text-blue-600">Haz clic para cambiar imagen</p>
+                    <p v-if="modalData.bannerImageError" class="text-xs text-red-600 mt-1">{{ modalData.bannerImageError }}</p>
+                    <p v-else-if="modalData.bannerImageDimensions" class="text-xs text-gray-500 mt-1">
+                      Dimensiones: {{ modalData.bannerImageDimensions.width }}x{{ modalData.bannerImageDimensions.height }} px
+                    </p>
+                  </div>
+                </label>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">O ingresa una URL de imagen:</p>
               <input
                 type="text"
                 v-model="modalData.banner.imagen_url"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 mt-2"
                 placeholder="https://ejemplo.com/imagen.jpg"
+                @change="validateImageUrl"
               >
-              <p class="text-xs text-gray-500 mt-1">Recomendado: 1200x400 píxeles</p>
             </div>
 
             <div class="mb-4">
@@ -1878,7 +1969,7 @@
               </div>
               <div class="relative h-32">
                 <img
-                  :src="modalData.banner.imagen_url || 'https://via.placeholder.com/1200x400/f3f4f6/9ca3af?text=Imagen+del+Banner'"
+                  :src="modalData.bannerImagePreview || modalData.banner.imagen_url || 'https://via.placeholder.com/1200x400/f3f4f6/9ca3af?text=Imagen+del+Banner'"
                   alt="Vista previa"
                   class="w-full h-full object-cover"
                 >
@@ -1891,7 +1982,7 @@
               </div>
             </div>
           </div>
-          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
+          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2 flex-shrink-0">
             <button @click="closeModal('banner')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
               Cancelar
             </button>
@@ -1902,6 +1993,100 @@
               class="px-4 py-2 rounded-lg text-sm"
             >
               {{ modalData.isEdit ? 'Actualizar' : 'Crear' }} banner
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Modal para crear/editar empleado -->
+    <transition name="fade">
+      <div v-if="modales.empleado" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+          <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
+            <h3 class="text-lg font-bold text-gray-800">
+              <UserIcon :size="20" class="text-blue-500 inline mr-2" />
+              {{ modalData.isEdit ? 'Editar Empleado' : 'Agregar Nuevo Empleado' }}
+            </h3>
+            <button @click="closeModal('empleado')" class="text-gray-500 hover:text-gray-700">
+              <XIcon :size="20" />
+            </button>
+          </div>
+          <div class="p-6 overflow-y-auto flex-grow">
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Identidad Nacional</label>
+              <input
+                type="text"
+                v-model="modalData.empleado.identidad"
+                @blur="buscarEmpleadoPorIdentidad"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                placeholder="Ej: 0801-1990-12345"
+              >
+              <p class="text-xs text-gray-500 mt-1">Formato: 0801-1990-12345 (sin guiones)</p>
+            </div>
+
+            <!-- Información del empleado encontrado (solo visible si se encontró) -->
+            <div v-if="modalData.empleadoEncontrado" class="mt-6 border-t pt-4">
+              <h4 class="font-medium text-gray-800 mb-3">Información del empleado</h4>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">Nombre:</p>
+                  <p class="font-medium text-gray-800">{{ modalData.empleado.nombre }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Teléfono:</p>
+                  <p class="font-medium text-gray-800">{{ modalData.empleado.telefono }}</p>
+                </div>
+                <div v-if="modalData.empleado.correo">
+                  <p class="text-sm text-gray-500">Correo:</p>
+                  <p class="font-medium text-gray-800">{{ modalData.empleado.correo }}</p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Fecha registro:</p>
+                  <p class="font-medium text-gray-800">{{ formatearFecha(modalData.empleado.fecha_registro) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mensaje de empleado no encontrado -->
+            <div v-if="modalData.busquedaRealizada && !modalData.empleadoEncontrado" class="mt-4 p-4 bg-red-50 rounded-lg">
+              <div class="flex items-start">
+                <AlertTriangleIcon :size="20" class="text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 class="font-medium text-red-800">Empleado no encontrado</h4>
+                  <p class="text-sm text-red-700 mt-1">
+                    No se encontró ningún usuario con esta identidad. Verifique el número e intente nuevamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg mt-6">
+              <div class="flex items-start">
+                <InfoIcon :size="20" class="text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 class="font-medium text-blue-800">Información importante</h4>
+                  <p class="text-sm text-blue-700 mt-1">
+                    El empleado tendrá acceso limitado a la página de pedidos para aceptarlos o rechazarlos.
+                    Se generará automáticamente un usuario y contraseña basados en su identidad nacional.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2 flex-shrink-0">
+            <button @click="closeModal('empleado')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+              Cancelar
+            </button>
+            <button
+              @click="guardarEmpleado"
+              :disabled="!isValidEmpleado"
+              :class="isValidEmpleado ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'"
+              class="px-4 py-2 rounded-lg text-sm"
+            >
+              {{ modalData.isEdit ? 'Guardar cambios' : 'Agregar empleado' }}
             </button>
           </div>
         </div>
@@ -1932,10 +2117,6 @@
                     <span class="font-medium text-gray-800">{{ cobroSeleccionado?.num_factura }}</span>
                   </p>
                   <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Fecha de cobro:</span>
-                    <span class="font-medium text-gray-800">{{ formatearFecha(cobroSeleccionado?.fecha_cobro) }}</span>
-                  </p>
-                  <p class="flex justify-between py-2 border-b border-gray-200">
                     <span class="text-gray-600">Período:</span>
                     <span class="font-medium text-gray-800">{{ cobroSeleccionado?.periodo_inicio }} - {{ cobroSeleccionado?.periodo_fin }}</span>
                   </p>
@@ -1959,54 +2140,70 @@
                 <h4 class="font-medium text-gray-800 mb-3">Resumen de cobro</h4>
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Pedidos incluidos:</span>
-                    <span class="font-medium text-gray-800">{{ cobroSeleccionado?.num_pedidos }}</span>
+                    <span class="text-gray-600">Pedidos extra ({{ cobroSeleccionado?.pedidos_extra }}):</span>
+                    <span class="font-medium text-red-600">L. {{ cobroSeleccionado?.costo_pedidos_extra.toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Pedidos extra:</span>
-                    <span class="font-medium text-gray-800">{{ cobroSeleccionado?.pedidos_extra }}</span>
+                    <span class="text-gray-600">Comisión app (Pagos Efectivo):</span>
+                    <span class="font-medium text-red-600">L. {{ cobroSeleccionado?.comision.toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Costo por pedidos extra:</span>
-                    <span class="font-medium text-gray-800">L. {{ cobroSeleccionado?.costo_pedidos_extra.toFixed(2) }}</span>
-                  </p>
-                  <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Comisión app (15%):</span>
-                    <span class="font-medium text-gray-800">L. {{ cobroSeleccionado?.comision.toFixed(2) }}</span>
+                    <span class="text-gray-600">Comisión app (Pagos Tarjeta):</span>
+                    <span class="font-medium text-green-600">L. {{ (cobroSeleccionado?.total - cobroSeleccionado?.comision - cobroSeleccionado?.costo_pedidos_extra).toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 text-lg">
-                    <span class="font-bold text-gray-800">Total:</span>
-                    <span class="font-bold text-gray-800">L. {{ cobroSeleccionado?.total.toFixed(2) }}</span>
+                    <span class="font-bold text-gray-800">{{ cobroSeleccionado?.total >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
+                    <span class="font-bold" :class="cobroSeleccionado?.total >= 0 ? 'text-red-600' : 'text-green-600'">
+                      L. {{ Math.abs(cobroSeleccionado?.total).toFixed(2) }}
+                    </span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- Lista de pedidos incluidos en el cobro -->
+            <!-- Productos vendidos esta semana -->
             <div>
-              <h4 class="font-medium text-gray-800 mb-3">Pedidos incluidos</h4>
-              <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                <table class="w-full border-collapse">
-                  <thead>
-                    <tr class="bg-gray-50 text-left text-gray-600 text-sm border-b border-gray-200">
-                      <th class="py-2 px-4">#Pedido</th>
-                      <th class="py-2 px-4">Cliente</th>
-                      <th class="py-2 px-4">Fecha</th>
-                      <th class="py-2 px-4">Total</th>
-                      <th class="py-2 px-4">Comisión</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(pedido, index) in cobroSeleccionado?.pedidos" :key="index"
-                        :class="{'bg-gray-50': index % 2 === 0}">
-                      <td class="py-2 px-4 font-medium text-gray-800">{{ pedido.num_pedido }}</td>
-                      <td class="py-2 px-4 text-gray-800">{{ pedido.cliente }}</td>
-                      <td class="py-2 px-4 text-gray-800">{{ formatearFecha(pedido.fecha) }}</td>
-                      <td class="py-2 px-4 text-gray-800">L. {{ pedido.total.toFixed(2) }}</td>
-                      <td class="py-2 px-4 text-gray-800">L. {{ pedido.comision.toFixed(2) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <h4 class="font-medium text-gray-800 mb-3">Productos Vendidos</h4>
+              <div class="border border-gray-200 rounded-lg">
+                <div class="overflow-y-auto" style="max-height: 250px;">
+                  <table class="w-full border-collapse">
+                    <thead class="sticky top-0 bg-white">
+                      <tr class="bg-gray-50 text-left text-gray-600 text-sm border-b border-gray-200">
+                        <th class="py-2 px-4">Producto</th>
+                        <th class="py-2 px-4">Precio Unitario</th>
+                        <th class="py-2 px-4">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(producto, index) in productosVendidosSemana" :key="index"
+                          :class="{'bg-gray-50': index % 2 === 0}">
+                        <td class="py-2 px-4 text-gray-800">
+                          <span class="font-medium">(x{{ producto.cantidad }})</span> {{ producto.nombre }}
+                        </td>
+                        <td class="py-2 px-4 text-gray-800">
+                          <span>L. {{ producto.precio }}</span>
+                        </td>
+                        <td class="py-2 px-4 font-medium text-gray-800 flex items-center">
+                          <span class="mr-2">L. {{ (producto.cantidad * producto.precio).toFixed(2) }}</span>
+                          <span v-if="producto.metodo_pago === 'tarjeta'" class="text-gray-500" title="Pago con tarjeta">
+                            <CreditCardIcon :size="16" />
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                    <tfoot class="sticky bottom-0 bg-white border-t border-gray-200">
+                      <tr>
+                        <td class="py-2 px-4"></td>
+                        <td class="py-2 px-4">
+                          <span class="font-medium text-gray-800">Total Ventas:</span>
+                        </td>
+                        <td class="py-2 px-4 font-bold text-gray-800">
+                          L. {{ totalVentasSemana }}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -2032,6 +2229,94 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modal para subir comprobante de pago -->
+    <transition name="fade">
+      <div v-if="modales.pagoComprobante" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+          <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-lg font-bold text-gray-800">
+              <DollarSignIcon :size="20" class="text-green-500 inline mr-2" />
+              Subir Comprobante de Pago
+            </h3>
+            <button @click="closeModal('pagoComprobante')" class="text-gray-500 hover:text-gray-700">
+              <XIcon :size="20" />
+            </button>
+          </div>
+
+          <div class="p-6">
+            <p class="text-gray-600 mb-4">
+              Por favor, sube una imagen del comprobante de pago para el cobro
+              <span class="font-medium">{{ cobroParaPagar?.num_factura || 'actual' }}</span>.
+            </p>
+
+            <div class="mb-4">
+              <h4 class="font-medium text-gray-800 mb-2">Información de Pago</h4>
+              <p class="text-xs text-gray-600 mb-3">
+                Realiza tu pago a cualquiera de nuestras cuentas y sube el comprobante:
+              </p>
+              <div class="bg-gray-50 p-2 rounded-lg text-sm">
+                <p class="font-medium text-gray-800">Banco Atlántida</p>
+                <p class="text-gray-700">Cuenta: 1234-5678-9012-3456</p>
+              </div>
+              <div class="bg-gray-50 p-2 rounded-lg text-sm mt-2">
+                <p class="font-medium text-gray-800">BAC Credomatic</p>
+                <p class="text-gray-700">Cuenta: 9876-5432-1098-7654</p>
+              </div>
+            </div>
+
+
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Comprobante de pago
+              </label>
+              <div
+                class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer"
+                @click="triggerFileInput"
+              >
+                <div v-if="!comprobantePreview">
+                  <UploadIcon :size="32" class="mx-auto text-gray-400 mb-2" />
+                  <p class="text-gray-500">Haz clic para seleccionar una imagen</p>
+                  <p class="text-gray-400 text-sm">JPG, PNG o PDF (máx. 4MB)</p>
+                </div>
+                <div v-else class="relative">
+                  <img :src="comprobantePreview" alt="Vista previa del comprobante" class="max-h-40 mx-auto rounded">
+                  <button
+                    @click.stop="removeComprobante"
+                    class="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-1/2 -translate-y-1/2"
+                  >
+                    <XIcon :size="16" />
+                  </button>
+                </div>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  accept="image/jpeg,image/png,application/pdf"
+                  class="hidden"
+                  @change="handleFileUpload"
+                >
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+              <button
+                @click="closeModal('pagoComprobante')"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                @click="confirmarPago"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!comprobanteFile"
+              >
+                Confirmar Pago
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -2040,6 +2325,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import HeaderLocal from '../components/HeaderLocal.vue';
 import LocalInfoHeader from '../components/dashboard-local/LocalInfoHeader.vue';
 import StatusCards from '../components/dashboard-local/StatusCards.vue';
+import CobroSemanal from '../components/dashboard-local/CobroSemanal.vue';
 import Chart from 'chart.js/auto';
 import {
   Truck as TruckIcon,
@@ -2078,21 +2364,135 @@ import {
   Calendar as CalendarIcon,
   Tag as TagIcon,
   Search as SearchIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  CreditCard as CreditCardIcon,
+  ChevronDown as ChevronDownIcon,
+  BarChart2 as ChartBarIcon,
+  HelpCircle as HelpCircleIcon,
+  UserPlus as UserPlusIcon,
+  Key as KeyIcon,
+  Shield as ShieldIcon,
 } from 'lucide-vue-next';
 // Estado de la aplicación
 const currentTab = ref('planes');
 const fuenteDatos = ref('mock'); // 'mock' o 'api'
 const ventasChart = ref(null);
 const productosChart = ref(null);
+// Utilidades de formato (definidas al principio para evitar errores de inicialización)
+const formatearFecha = (fecha) => {
+  if (!fecha) return 'N/A';
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(fecha).toLocaleDateString('es-ES', options);
+};
+
+// Formatear fecha en formato corto (dd/mm/aaaa)
+const formatearFechaCorta = (fecha) => {
+  if (!fecha) return 'N/A';
+
+  // Si la fecha ya está en formato dd/mm/aaaa, devolverla tal cual
+  if (typeof fecha === 'string' && fecha.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+    return fecha;
+  }
+
+  // Intentar convertir a fecha
+  try {
+    const date = new Date(fecha);
+    if (isNaN(date.getTime())) {
+      return fecha; // Si no se puede convertir, devolver la fecha original
+    }
+    const dia = date.getDate().toString().padStart(2, '0');
+    const mes = (date.getMonth() + 1).toString().padStart(2, '0');
+    const anio = date.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  } catch (e) {
+    return fecha; // En caso de error, devolver la fecha original
+  }
+};
+
+// Obtener el día de la semana para una fecha
+const obtenerDiaSemana = (fecha) => {
+  if (!fecha) return '';
+  const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  return diasSemana[new Date(fecha).getDay()];
+};
+
+const formatearHora = (hora) => {
+  if (!hora) return '';
+
+  // Si la hora ya está en formato HH:MM:SS
+  if (typeof hora === 'string' && hora.includes(':')) {
+    const [horas, minutos] = hora.split(':');
+    const horaNum = parseInt(horas);
+    const periodo = horaNum >= 12 ? 'PM' : 'AM';
+    const hora12 = horaNum > 12 ? horaNum - 12 : (horaNum === 0 ? 12 : horaNum);
+    return `${hora12}:${minutos} ${periodo}`;
+  }
+
+  return 'Formato inválido';
+};
+
 const selectedProfile = ref('Local');
 const fechaProximoCobro = ref(new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000));
+const fechaLimitePago = ref(new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000));
+
+// Calcular días restantes para pago
+const diasRestantesPago = computed(() => {
+  const hoy = new Date();
+  const limite = new Date(fechaLimitePago.value);
+  const diferencia = limite.getTime() - hoy.getTime();
+  const dias = Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+  return Math.max(0, dias);
+});
+
+// Color de la barra de progreso según días restantes
+const getColorClaseDiasPago = computed(() => {
+  if (diasRestantesPago.value <= 2) return 'bg-red-600';
+  if (diasRestantesPago.value <= 4) return 'bg-amber-500';
+  return 'bg-green-600';
+});
+
+// Fechas para el período de reporte (semana anterior)
+const calcularFechasSemanaAnterior = () => {
+  const hoy = new Date();
+  const diaSemanaHoy = hoy.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+
+  // Calcular el lunes de la semana actual (retroceder hasta el lunes)
+  const lunesActual = new Date(hoy);
+  // Si hoy es domingo (0), retroceder 6 días, si es lunes (1) retroceder 0 días, etc.
+  const diasHastaLunes = diaSemanaHoy === 0 ? 6 : diaSemanaHoy - 1;
+  lunesActual.setDate(hoy.getDate() - diasHastaLunes);
+  lunesActual.setHours(0, 0, 0, 0);
+
+  // Calcular el lunes de la semana anterior (7 días antes del lunes actual)
+  const lunesAnterior = new Date(lunesActual);
+  lunesAnterior.setDate(lunesActual.getDate() - 7);
+
+  // Calcular el domingo de la semana anterior (6 días después del lunes anterior)
+  const domingoAnterior = new Date(lunesAnterior);
+  domingoAnterior.setDate(lunesAnterior.getDate() + 6);
+  domingoAnterior.setHours(23, 59, 59, 999);
+
+  return {
+    inicio: lunesAnterior,
+    fin: domingoAnterior
+  };
+};
+
+const fechasSemanaAnterior = calcularFechasSemanaAnterior();
+const fechaInicioSemana = ref(fechasSemanaAnterior.inicio);
+const fechaFinSemana = ref(fechasSemanaAnterior.fin);
+
+// Variables para los tooltips
+const showInfoTooltip = ref(false);
+const showPedidosExtraTooltip = ref(false);
+const showComisionTooltip = ref(false);
+const showTarjetaTooltip = ref(false);
 let mapaSucursal = null;
 let marcadorSucursal = null;
 let socketConexion = null;
 const modalPedidoVisible = ref(false);
 
-// Lista de pestañas con la nueva pestaña de reportería
+// Lista de pestañas con la nueva pestaña de reportes
 const tabs = [
   { id: 'planes', name: 'Planes', icon: CrownIcon },
   { id: 'cupones', name: 'Cupones', icon: TicketIcon },
@@ -2100,7 +2500,8 @@ const tabs = [
   { id: 'banners', name: 'Banners', icon: ImageIcon },
   { id: 'estadisticas', name: 'Estadísticas', icon: BarChartIcon },
   { id: 'notificaciones', name: 'Notificaciones', icon: BellIcon },
-  { id: 'reporteria', name: 'Reportería', icon: FileTextIcon }
+  { id: 'reportes', name: 'Reportes', icon: FileTextIcon },
+  { id: 'empleados', name: 'Empleados', icon: UserIcon }
 ];
 
 // Control de modales
@@ -2112,22 +2513,38 @@ const modales = ref({
   membresiaComprobante: false,
   notificacionPersonalizada: false,
   historialCobros: false,
-  detalleCobro: false
+  detalleCobro: false,
+  empleado: false,
+  pagoComprobante: false
 });
 
 // Datos para los modales
 const modalData = ref({
   isEdit: false,
   banner: {},
+  bannerImagePreview: null,
+  bannerImageFile: null,
+  bannerImageError: null,
+  bannerImageDimensions: null,
   cupon: {},
   sucursal: {},
   idMembresiaSeleccionada: 1,
+  duracionSeleccionada: "1", // Duración en semanas (por defecto 1 semana)
   comprobantePreview: null,
   aceptaTerminos: false,
   notificacion: {
     titulo: '',
     mensaje: '',
     tipo_destinatario: 'todos'
+  },
+  empleado: {
+    id_empleado: null,
+    id_local: null,
+    nombre: '',
+    identidad: '',
+    telefono: '',
+    correo: '',
+    activo: true
   }
 });
 
@@ -2144,7 +2561,8 @@ const local = ref({
   activo: true,
   pedidos_restantes: 3,
   recomendaciones_restantes: 0,
-  usuario_empleado: "admin_cafe"
+  usuario_empleado: "admin_cafe",
+  fecha_vencimiento_membresia: "30/06/2023 a las 11:59 PM"
 });
 
 // Membresía actual
@@ -2155,6 +2573,30 @@ const membresia = ref({
   deliveries_gratuitos: 5,
   precio_delivery_extra: 25
 });
+
+// Lista de empleados
+const empleados = ref([
+  {
+    id_empleado: 1,
+    id_local: 10,
+    nombre: 'Ana Martínez',
+    identidad: '0801-1992-12345',
+    telefono: '+504 9988-7766',
+    correo: 'ana.martinez@gmail.com',
+    fecha_registro: '2023-05-10',
+    activo: true
+  },
+  {
+    id_empleado: 2,
+    id_local: 10,
+    nombre: 'Roberto Sánchez',
+    identidad: '0801-1988-67890',
+    telefono: '+504 8877-6655',
+    correo: 'roberto.sanchez@hotmail.com',
+    fecha_registro: '2023-06-15',
+    activo: false
+  }
+]);
 
 // Lista de ciudades para sucursales
 const ciudades = ref([
@@ -2170,22 +2612,38 @@ const ciudades = ref([
   'Juticalpa'
 ]);
 
-// Datos de ventas de productos esta semana (MODIFICACIÓN: máximo 10 ventas por producto)
+// Datos de ventas de productos de la semana anterior
 const productosVendidosSemana = ref([
-  { nombre: 'Café Americano', cantidad: 8, precio: 45.00 },
-  { nombre: 'Cappuccino', cantidad: 6, precio: 60.00 },
-  { nombre: 'Latte', cantidad: 5, precio: 55.00 },
-  { nombre: 'Croissant', cantidad: 10, precio: 30.00 },
-  { nombre: 'Sándwich de pollo', cantidad: 4, precio: 85.00 },
-  { nombre: 'Jugo natural', cantidad: 7, precio: 40.00 },
-  { nombre: 'Pastel de chocolate', cantidad: 3, precio: 50.00 }
+  { nombre: 'Café Americano', cantidad: 18, precio: 45.00, metodo_pago: 'efectivo' },
+  { nombre: 'Cappuccino', cantidad: 6, precio: 60.00, metodo_pago: 'tarjeta' },
+  { nombre: 'Latte', cantidad: 15, precio: 55.00, metodo_pago: 'efectivo' },
+  { nombre: 'Croissant', cantidad: 5, precio: 30.00, metodo_pago: 'tarjeta' },
+  { nombre: 'Sándwich de pollo', cantidad: 14, precio: 85.00, metodo_pago: 'efectivo' },
+  { nombre: 'Jugo natural', cantidad: 3, precio: 40.00, metodo_pago: 'tarjeta' },
+  { nombre: 'Pastel de chocolate', cantidad: 13, precio: 50.00, metodo_pago: 'efectivo' }
 ]);
 
-// Calcular total de ventas de la semana
+// Calcular ventas en efectivo de la semana anterior
+const ventasEfectivoSemana = computed(() => {
+  return productosVendidosSemana.value
+    .filter(producto => producto.metodo_pago === 'efectivo')
+    .reduce((total, producto) => {
+      return total + (producto.cantidad * producto.precio);
+    }, 0).toFixed(2);
+});
+
+// Calcular ventas con tarjeta de la semana anterior
+const ventasTarjetaSemana = computed(() => {
+  return productosVendidosSemana.value
+    .filter(producto => producto.metodo_pago === 'tarjeta')
+    .reduce((total, producto) => {
+      return total + (producto.cantidad * producto.precio);
+    }, 0).toFixed(2);
+});
+
+// Calcular total de ventas de la semana anterior (suma de efectivo y tarjeta)
 const totalVentasSemana = computed(() => {
-  return productosVendidosSemana.value.reduce((total, producto) => {
-    return total + (producto.cantidad * producto.precio);
-  }, 0).toFixed(2);
+  return (parseFloat(ventasEfectivoSemana.value) + parseFloat(ventasTarjetaSemana.value)).toFixed(2);
 });
 
 // Cupones
@@ -2396,27 +2854,55 @@ const rankingCategoria = ref({
   ]
 });
 
+
+
 // Pedidos extra y cobros
-const pedidosExtra = ref(8);
+const pedidosExtra = ref(15);
 const comisionSemanal = ref(684.15);
+
+// Calcular balance final (positivo = local paga a app, negativo = app paga a local)
+const balanceFinal = computed(() => {
+  // Comisión del 15% sobre ventas en efectivo que el local debe pagar a la app
+  const comisionEfectivo = parseFloat(ventasEfectivoSemana.value) * 0.15;
+
+  // Ventas con tarjeta: la app retiene el 15% y debe transferir el 85% al local
+  const montoAPagarPorApp = parseFloat(ventasTarjetaSemana.value) * 0.85;
+
+  // Costo de pedidos extra que el local debe pagar
+  const costoPedidosExtra = calcularCostoPedidosExtra();
+
+  // Balance final: positivo = local paga a app, negativo = app paga a local
+  return comisionEfectivo + costoPedidosExtra - montoAPagarPorApp;
+});
+
+// Verificar si el cobro actual ya está pagado
+const cobroActualPagado = computed(() => {
+  // Buscar el cobro actual en el historial (el que coincide con el período actual)
+  const cobroActual = historialCobros.value.find(
+    c => c.periodo_fin === formatearFechaCorta(fechaFinSemana.value)
+  );
+
+  // Si existe y está pagado, retornar true
+  return cobroActual && cobroActual.estado === 'pagado';
+});
 
 // Historial de cobros
 const historialCobros = ref([
   {
     num_factura: 'FA-2023-0045',
-    fecha_cobro: '2023-06-18',
-    periodo_inicio: '12/06/2023',
-    periodo_fin: '18/06/2023',
-    num_pedidos: 8,
-    pedidos_extra: 3,
-    costo_pedidos_extra: 75.00,
-    comision: 920.00,
-    total: 995.00,
+    fecha_cobro: new Date().toISOString().split('T')[0],
+    periodo_inicio: formatearFechaCorta(fechaInicioSemana.value),
+    periodo_fin: formatearFechaCorta(fechaFinSemana.value),
+    num_pedidos: 60,
+    pedidos_extra: 15,
+    costo_pedidos_extra: 375.00,
+    comision: 1520.00,
+    total: 1895.00,
     estado: 'pendiente',
     pedidos: [
-      { num_pedido: 'PD-4298', cliente: 'Juan Pérez', fecha: '2023-06-13', total: 200.00, comision: 30.00 },
-      { num_pedido: 'PD-4302', cliente: 'María González', fecha: '2023-06-13', total: 245.75, comision: 36.75 },
-      { num_pedido: 'PD-4315', cliente: 'Carlos Rodríguez', fecha: '2023-06-13', total: 13.00, comision: 20.25 }
+      { num_pedido: 'PD-4298', cliente: 'Juan Pérez', fecha: new Date().toISOString().split('T')[0], total: 200.00, comision: 30.00 },
+      { num_pedido: 'PD-4302', cliente: 'María González', fecha: new Date().toISOString().split('T')[0], total: 245.75, comision: 36.75 },
+      { num_pedido: 'PD-4315', cliente: 'Carlos Rodríguez', fecha: new Date().toISOString().split('T')[0], total: 13.00, comision: 20.25 }
     ]
   },
   {
@@ -2490,7 +2976,7 @@ const historialCobrosFiltrado = computed(() => {
   return resultado;
 });
 
-// Datos para la sección de reportería
+// Datos para la sección de reportes
 const reporteActual = ref({
   tipo: 'ventas',
   fechaInicio: new Date().toISOString().split('T')[0],
@@ -2555,17 +3041,28 @@ const isValidSucursal = computed(() => {
          sucursal.cierre;
 });
 
+// Computed para validar formulario de empleado
+const isValidEmpleado = computed(() => {
+  // Si estamos editando, siempre es válido
+  if (modalData.value.isEdit) return true;
+
+  // Para nuevo empleado, solo validamos que se haya encontrado un usuario con esa identidad
+  return modalData.value.empleadoEncontrado === true;
+});
+
 // Computed para validar formulario de banner
 const isValidBanner = computed(() => {
   const banner = modalData.value.banner;
+  const hasImage = (modalData.value.bannerImagePreview && !modalData.value.bannerImageError) ||
+                  (banner.imagen_url && banner.imagen_url.trim() !== '');
+
   return banner.titulo &&
          banner.titulo.trim() !== '' &&
          banner.descripcion &&
          banner.descripcion.trim() !== '' &&
          banner.url_destino &&
          banner.url_destino.trim() !== '' &&
-         banner.imagen_url &&
-         banner.imagen_url.trim() !== '';
+         hasImage;
 });
 
 // Calcular costo de pedidos extra
@@ -2582,6 +3079,39 @@ const calcularComisionApp = () => {
 // Calcular total a pagar
 const calcularTotalPago = () => {
   return (parseFloat(calcularCostoPedidosExtra()) + parseFloat(calcularComisionApp())).toFixed(2);
+};
+
+// Funciones para mostrar/ocultar los tooltips
+const toggleInfoTooltip = () => {
+  showInfoTooltip.value = !showInfoTooltip.value;
+  // Cerrar otros tooltips
+  showPedidosExtraTooltip.value = false;
+  showComisionTooltip.value = false;
+  showTarjetaTooltip.value = false;
+};
+
+const togglePedidosExtraTooltip = () => {
+  showPedidosExtraTooltip.value = !showPedidosExtraTooltip.value;
+  // Cerrar otros tooltips
+  showInfoTooltip.value = false;
+  showComisionTooltip.value = false;
+  showTarjetaTooltip.value = false;
+};
+
+const toggleComisionTooltip = () => {
+  showComisionTooltip.value = !showComisionTooltip.value;
+  // Cerrar otros tooltips
+  showInfoTooltip.value = false;
+  showPedidosExtraTooltip.value = false;
+  showTarjetaTooltip.value = false;
+};
+
+const toggleTarjetaTooltip = () => {
+  showTarjetaTooltip.value = !showTarjetaTooltip.value;
+  // Cerrar otros tooltips
+  showInfoTooltip.value = false;
+  showPedidosExtraTooltip.value = false;
+  showComisionTooltip.value = false;
 };
 
 // Redirección entre perfiles
@@ -2621,6 +3151,12 @@ const openModal = (modalName, data = null) => {
 
   switch (modalName) {
     case 'banner':
+      // Limpiar datos de imagen previa
+      modalData.value.bannerImagePreview = null;
+      modalData.value.bannerImageFile = null;
+      modalData.value.bannerImageError = null;
+      modalData.value.bannerImageDimensions = null;
+
       modalData.value.banner = data ? { ...data } : {
         id_banner: banners.value.length + 1,
         id_local: local.value.id_local,
@@ -2630,17 +3166,24 @@ const openModal = (modalName, data = null) => {
         url_destino: '',
         activo: true
       };
+
+      // Si estamos editando y hay una URL de imagen, validarla
+      if (data && data.imagen_url) {
+        nextTick(() => {
+          validateImageUrl();
+        });
+      }
       break;
 
     case 'cupon':
       modalData.value.cupon = data ? { ...data } : {
         id_cupon: cupones.value.length + 1,
         codigo_cupon: '',
-        tipo_descuento: 'porcentaje',
+        tipo_descuento: 'porcentaje', // Valor por defecto para que no aparezca vacío
         descuento: '',
         limite_uso: '',
         usos_actuales: 0,
-        fecha_vencimiento: '',
+        fecha_vencimiento: new Date().toISOString().split('T')[0], // Fecha actual por defecto
         imagen_url: '',
         activo: true
       };
@@ -2651,13 +3194,13 @@ const openModal = (modalName, data = null) => {
         id_sucursal: sucursales.value.length + 1,
         id_local: local.value.id_local,
         nombre: '',
-        ciudad: '',
+        ciudad: '', // Se seleccionará de la lista
         colonia: '',
         direccion_precisa: '',
         lat: '',
         long: '',
-        apertura: '',
-        cierre: '',
+        apertura: '08:00', // Hora de apertura por defecto
+        cierre: '20:00', // Hora de cierre por defecto
         activo: true
       };
       // Inicializar el mapa Leaflet después de que el DOM se actualice
@@ -2702,6 +3245,14 @@ const closeModal = (modalName) => {
   if (modalName === 'sucursal' && mapaSucursal) {
     mapaSucursal.remove();
     mapaSucursal = null;
+  }
+
+  // Si es el modal de banner, limpiar datos de imagen
+  if (modalName === 'banner') {
+    modalData.value.bannerImagePreview = null;
+    modalData.value.bannerImageFile = null;
+    modalData.value.bannerImageError = null;
+    modalData.value.bannerImageDimensions = null;
   }
 };
 
@@ -2816,25 +3367,222 @@ const verDetalleCobro = (cobro) => {
   openModal('detalleCobro', cobro);
 };
 
-const pagarCobro = (cobro) => {
-  if (confirm(`¿Estás seguro de marcar como pagado el cobro #${cobro.num_factura}?`)) {
-    // Buscar el cobro en el historial y actualizarlo
-    const index = historialCobros.value.findIndex(c => c.num_factura === cobro.num_factura);
-    if (index !== -1) {
-      historialCobros.value[index].estado = 'pagado';
-      alert(`Cobro #${cobro.num_factura} marcado como pagado`);
-    }
+// Variables para el modal de comprobante de pago
+const fileInput = ref(null);
+const comprobanteFile = ref(null);
+const comprobantePreview = ref(null);
+const metodoPagoSeleccionado = ref('transferencia');
+const cobroParaPagar = ref(null);
+
+// Función para abrir el modal de comprobante de pago
+const openPagoComprobanteModal = (cobro = null) => {
+  // Si se pasa un cobro específico, lo guardamos
+  if (cobro) {
+    cobroParaPagar.value = cobro;
+  } else {
+    // Si no, buscamos el cobro actual en el historial
+    cobroParaPagar.value = historialCobros.value.find(
+      c => c.periodo_fin === formatearFecha(fechaFinSemana.value) && c.estado === 'pendiente'
+    );
+  }
+
+  // Resetear valores
+  comprobanteFile.value = null;
+  comprobantePreview.value = null;
+  metodoPagoSeleccionado.value = 'transferencia';
+
+  // Abrir el modal
+  openModal('pagoComprobante');
+};
+
+// Función para activar el input de archivo
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
+
+// Función para manejar la subida de archivos
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validar tamaño (máximo 4MB)
+  if (file.size > 4 * 1024 * 1024) {
+    alert('El archivo es demasiado grande. El tamaño máximo permitido es 4MB.');
+    return;
+  }
+
+  // Validar tipo de archivo
+  if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
+    alert('Formato de archivo no válido. Por favor, sube un archivo JPG, PNG o PDF.');
+    return;
+  }
+
+  comprobanteFile.value = file;
+
+  // Crear vista previa (solo para imágenes)
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      comprobantePreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // Para PDF, mostrar un icono genérico
+    comprobantePreview.value = '/images/pdf-icon.png';
   }
 };
 
+// Función para eliminar el comprobante
+const removeComprobante = () => {
+  comprobanteFile.value = null;
+  comprobantePreview.value = null;
+  fileInput.value.value = '';
+};
+
+// Función para confirmar el pago
+const confirmarPago = () => {
+  if (!comprobanteFile.value) {
+    alert('Por favor, sube un comprobante de pago.');
+    return;
+  }
+
+  // Aquí iría la lógica para enviar el comprobante al servidor
+  // Por ahora, simulamos el proceso
+
+  // Actualizar el estado del cobro
+  if (cobroParaPagar.value) {
+    // Buscar el cobro en el historial y actualizarlo
+    const index = historialCobros.value.findIndex(c => c.num_factura === cobroParaPagar.value.num_factura);
+    if (index !== -1) {
+      historialCobros.value[index].estado = 'pagado';
+
+      // Si es el cobro actual, actualizar la fecha límite de pago para el siguiente período
+      if (cobroParaPagar.value.periodo_fin === formatearFechaCorta(fechaFinSemana.value)) {
+        // Establecer la nueva fecha límite para 7 días después
+        fechaLimitePago.value = new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+      }
+
+      alert('Pago registrado correctamente. El comprobante será revisado por nuestro equipo.');
+      closeModal('pagoComprobante');
+    }
+  } else {
+    alert('No se pudo identificar el cobro a pagar.');
+  }
+};
+
+// Función para pagar un cobro del historial
+const pagarCobro = (cobro) => {
+  // Ahora en lugar de mostrar un confirm, abrimos el modal de comprobante
+  openPagoComprobanteModal(cobro);
+};
+
+// Función para pagar el cobro actual (desde la sección de Cobro Semanal)
+const pagarCobroActual = () => {
+  // Buscar el cobro actual en el historial (el que coincide con el período actual)
+  const cobroActual = historialCobros.value.find(
+    c => c.periodo_fin === formatearFechaCorta(fechaFinSemana.value) && c.estado === 'pendiente'
+  );
+
+  if (cobroActual) {
+    // Usar la función existente para abrir el modal de comprobante
+    openPagoComprobanteModal(cobroActual);
+  } else {
+    // Si no existe un cobro pendiente para el período actual, crear uno nuevo
+    const nuevoCobro = {
+      num_factura: `FA-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      fecha_cobro: new Date().toISOString().split('T')[0],
+      periodo_inicio: formatearFechaCorta(fechaInicioSemana.value),
+      periodo_fin: formatearFechaCorta(fechaFinSemana.value),
+      num_pedidos: productosVendidosSemana.value.reduce((total, producto) => total + producto.cantidad, 0),
+      pedidos_extra: pedidosExtra.value,
+      costo_pedidos_extra: calcularCostoPedidosExtra(),
+      comision: parseFloat(ventasEfectivoSemana.value) * 0.15,
+      total: balanceFinal.value,
+      estado: 'pendiente',
+      pedidos: []
+    };
+
+    // Agregar el nuevo cobro al historial
+    historialCobros.value.unshift(nuevoCobro);
+
+    // Abrir el modal de comprobante para el nuevo cobro
+    openPagoComprobanteModal(nuevoCobro);
+  }
+};
+
+// Función para exportar el historial de cobros
 const exportarHistorialCobros = () => {
   alert('Exportando historial de cobros...');
   // Aquí se implementaría la exportación real del historial
 };
 
+// Función para imprimir el comprobante
 const imprimirComprobante = () => {
   alert('Imprimiendo comprobante...');
   // Aquí se implementaría la impresión real del comprobante
+};
+
+// Función para exportar a Excel el cobro semanal
+const exportToExcel = () => {
+  // Preparar los datos para exportar
+  const datosExportar = productosVendidosSemana.value.map(producto => {
+    return {
+      Producto: producto.nombre,
+      Cantidad: producto.cantidad,
+      'Precio Unitario': `L. ${producto.precio.toFixed(2)}`,
+      'Método de Pago': producto.metodo_pago === 'tarjeta' ? 'Tarjeta' : 'Efectivo',
+      Total: `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
+    };
+  });
+
+  // Agregar fila de totales
+  datosExportar.push({
+    Producto: '',
+    Cantidad: '',
+    'Precio Unitario': '',
+    'Método de Pago': 'Total Ventas:',
+    Total: `L. ${totalVentasSemana.value}`
+  });
+
+  // Agregar información del período
+  const nombreArchivo = `Cobro_Semanal_${formatearFechaCorta(fechaInicioSemana.value)}_${formatearFechaCorta(fechaFinSemana.value)}`;
+
+  console.log('Exportando a Excel:', {
+    datos: datosExportar,
+    nombreArchivo: nombreArchivo,
+    periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`
+  });
+
+  // En un entorno real, aquí se utilizaría una librería como xlsx o exceljs para generar el archivo Excel
+  alert(`Exportando datos a Excel con nombre: ${nombreArchivo}.xlsx`);
+};
+
+// Función para exportar a PDF el cobro semanal
+const exportToPDF = () => {
+  // Preparar los datos para el PDF
+  const datosPDF = {
+    nombreLocal: local.value.nombre_local,
+    periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`,
+    productos: productosVendidosSemana.value,
+    totalVentas: totalVentasSemana.value,
+    ventasEfectivo: ventasEfectivoSemana.value,
+    ventasTarjeta: ventasTarjetaSemana.value,
+    pedidosExtra: pedidosExtra.value,
+    costoPedidosExtra: calcularCostoPedidosExtra(),
+    comisionEfectivo: (parseFloat(ventasEfectivoSemana.value) * 0.15).toFixed(2),
+    comisionTarjeta: (parseFloat(ventasTarjetaSemana.value) * 0.15).toFixed(2),
+    balanceFinal: balanceFinal.value
+  };
+
+  const nombreArchivo = `Cobro_Semanal_${formatearFechaCorta(fechaInicioSemana.value)}_${formatearFechaCorta(fechaFinSemana.value)}`;
+
+  console.log('Exportando a PDF:', {
+    datos: datosPDF,
+    nombreArchivo: nombreArchivo
+  });
+
+  // En un entorno real, aquí se utilizaría una librería como jsPDF o pdfmake para generar el archivo PDF
+  alert(`Exportando datos a PDF con nombre: ${nombreArchivo}.pdf`);
 };
 
 // Banner publicitario
@@ -2860,8 +3608,113 @@ const deleteBanner = (banner) => {
   }
 };
 
+// Función para previsualizar y validar la imagen del banner
+const previewBannerImage = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validar tamaño (máximo 4MB)
+  if (file.size > 4 * 1024 * 1024) {
+    modalData.value.bannerImageError = "La imagen no debe exceder los 4MB";
+    return;
+  }
+
+  // Crear URL para previsualización
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    // Crear una imagen para verificar dimensiones
+    const img = new Image();
+    img.onload = () => {
+      // Guardar dimensiones
+      modalData.value.bannerImageDimensions = {
+        width: img.width,
+        height: img.height
+      };
+
+      // Validar que sea horizontal (más ancha que alta)
+      if (img.width < img.height) {
+        modalData.value.bannerImageError = "La imagen debe ser horizontal (más ancha que alta)";
+      } else {
+        // Validar proporción (ideal: 3:1 para 1200x400)
+        const ratio = img.width / img.height;
+        if (ratio < 2) { // Menos de 2:1 es demasiado cuadrada
+          modalData.value.bannerImageError = "La proporción de la imagen no es ideal. Recomendado: 3:1";
+        } else {
+          modalData.value.bannerImageError = null;
+        }
+      }
+    };
+
+    img.src = e.target.result;
+    modalData.value.bannerImagePreview = e.target.result;
+    modalData.value.bannerImageFile = file;
+  };
+
+  reader.readAsDataURL(file);
+};
+
+// Función para validar URL de imagen
+const validateImageUrl = () => {
+  const url = modalData.value.banner.imagen_url;
+  if (!url || url.trim() === '') {
+    return;
+  }
+
+  // Crear una imagen para verificar dimensiones
+  const img = new Image();
+  img.onload = () => {
+    // Guardar dimensiones
+    modalData.value.bannerImageDimensions = {
+      width: img.width,
+      height: img.height
+    };
+
+    // Validar que sea horizontal (más ancha que alta)
+    if (img.width < img.height) {
+      modalData.value.bannerImageError = "La imagen debe ser horizontal (más ancha que alta)";
+    } else {
+      // Validar proporción (ideal: 3:1 para 1200x400)
+      const ratio = img.width / img.height;
+      if (ratio < 2) { // Menos de 2:1 es demasiado cuadrada
+        modalData.value.bannerImageError = "La proporción de la imagen no es ideal. Recomendado: 3:1";
+      } else {
+        modalData.value.bannerImageError = null;
+      }
+    }
+  };
+
+  img.onerror = () => {
+    modalData.value.bannerImageError = "No se pudo cargar la imagen. Verifica la URL.";
+  };
+
+  img.src = url;
+};
+
 const guardarBanner = () => {
   if (!isValidBanner.value) return;
+
+  // Si hay un error en la imagen, no permitir guardar
+  if (modalData.value.bannerImageError) {
+    alert("Corrige los errores en la imagen antes de guardar");
+    return;
+  }
+
+  // Si hay una imagen cargada, usarla en lugar de la URL
+  if (modalData.value.bannerImagePreview && modalData.value.bannerImageFile) {
+    // En un entorno real, aquí se subiría la imagen al servidor
+    // y se obtendría la URL para guardarla en el banner
+
+    // Simulamos que la imagen se subió correctamente
+    modalData.value.banner.imagen_url = modalData.value.bannerImagePreview;
+
+    // En un entorno real, aquí se haría algo como:
+    // const formData = new FormData();
+    // formData.append('imagen', modalData.value.bannerImageFile);
+    // axios.post('/api/upload', formData).then(response => {
+    //   modalData.value.banner.imagen_url = response.data.url;
+    //   // Continuar con el guardado
+    // });
+  }
 
   if (modalData.value.isEdit) {
     // Actualizar banner existente
@@ -2954,6 +3807,136 @@ const guardarSucursal = () => {
   closeModal('sucursal');
 };
 
+
+
+// Función para abrir el modal de empleado
+const openEmpleadoModal = (empleado = null) => {
+  modalData.value.isEdit = !!empleado;
+  modalData.value.empleadoEncontrado = false;
+  modalData.value.busquedaRealizada = false;
+
+  if (empleado) {
+    // Editar empleado existente
+    modalData.value.empleado = { ...empleado };
+    modalData.value.empleadoEncontrado = true;
+  } else {
+    // Crear nuevo empleado
+    modalData.value.empleado = {
+      id_empleado: empleados.value.length > 0 ? Math.max(...empleados.value.map(e => e.id_empleado)) + 1 : 1,
+      id_local: local.value.id_local,
+      nombre: '',
+      identidad: '',
+      telefono: '',
+      correo: '',
+      fecha_registro: new Date().toISOString().split('T')[0],
+      activo: true
+    };
+  }
+
+  openModal('empleado');
+};
+
+// Función para buscar empleado por identidad
+const buscarEmpleadoPorIdentidad = () => {
+  // Limpiar espacios y guiones de la identidad
+  const identidadLimpia = modalData.value.empleado.identidad.replace(/[-\s]/g, '');
+
+  // Formatear la identidad con guiones (0801-1990-12345)
+  if (identidadLimpia.length === 13) {
+    modalData.value.empleado.identidad = `${identidadLimpia.substring(0, 4)}-${identidadLimpia.substring(4, 8)}-${identidadLimpia.substring(8, 13)}`;
+  }
+
+  // Si la identidad no tiene el formato correcto, no buscar
+  if (!/^\d{4}-\d{4}-\d{5}$/.test(modalData.value.empleado.identidad)) {
+    modalData.value.empleadoEncontrado = false;
+    modalData.value.busquedaRealizada = false;
+    return;
+  }
+
+  // Simular búsqueda en la base de datos
+  // En un entorno real, esto sería una llamada a la API
+  const usuariosRegistrados = [
+    {
+      id: 1,
+      nombre: 'Juan Pérez Rodríguez',
+      identidad: '0801-1990-12345',
+      telefono: '+504 9876-5432',
+      correo: 'juan.perez@gmail.com',
+      fecha_registro: '2023-01-15'
+    },
+    {
+      id: 2,
+      nombre: 'María López Hernández',
+      identidad: '0801-1985-67890',
+      telefono: '+504 8765-4321',
+      correo: 'maria.lopez@hotmail.com',
+      fecha_registro: '2023-02-20'
+    },
+    {
+      id: 3,
+      nombre: 'Carlos Mendoza Gómez',
+      identidad: '0501-1992-54321',
+      telefono: '+504 9988-7766',
+      correo: 'carlos.mendoza@yahoo.com',
+      fecha_registro: '2023-03-10'
+    }
+  ];
+
+  // Buscar usuario por identidad
+  const usuarioEncontrado = usuariosRegistrados.find(u => u.identidad === modalData.value.empleado.identidad);
+
+  modalData.value.busquedaRealizada = true;
+
+  if (usuarioEncontrado) {
+    // Usuario encontrado, llenar datos
+    modalData.value.empleado.nombre = usuarioEncontrado.nombre;
+    modalData.value.empleado.telefono = usuarioEncontrado.telefono;
+    modalData.value.empleado.correo = usuarioEncontrado.correo;
+    modalData.value.empleado.fecha_registro = usuarioEncontrado.fecha_registro;
+    modalData.value.empleadoEncontrado = true;
+  } else {
+    // Usuario no encontrado
+    modalData.value.empleadoEncontrado = false;
+  }
+};
+
+// Función para guardar empleado
+const guardarEmpleado = () => {
+  if (!isValidEmpleado.value) return;
+
+  if (modalData.value.isEdit) {
+    // Actualizar empleado existente
+    const index = empleados.value.findIndex(e => e.id_empleado === modalData.value.empleado.id_empleado);
+    if (index !== -1) {
+      empleados.value[index] = { ...modalData.value.empleado };
+      alert(`Empleado ${modalData.value.empleado.nombre} actualizado con éxito.`);
+    }
+  } else {
+    // Verificar si el empleado ya existe en la lista
+    const empleadoExistente = empleados.value.find(e => e.identidad === modalData.value.empleado.identidad);
+
+    if (empleadoExistente) {
+      alert(`El empleado ${modalData.value.empleado.nombre} ya está registrado en este local.`);
+    } else {
+      // Crear nuevo empleado
+      empleados.value.push({ ...modalData.value.empleado });
+      alert(`Empleado ${modalData.value.empleado.nombre} agregado con éxito.`);
+    }
+  }
+
+  closeModal('empleado');
+};
+
+// Función para cambiar estado de empleado (activar/desactivar)
+const toggleEmpleadoEstado = (empleado) => {
+  const index = empleados.value.findIndex(e => e.id_empleado === empleado.id_empleado);
+  if (index !== -1) {
+    empleados.value[index].activo = !empleados.value[index].activo;
+    const nuevoEstado = empleados.value[index].activo ? 'activado' : 'desactivado';
+    alert(`Empleado ${empleados.value[index].nombre} ${nuevoEstado} con éxito.`);
+  }
+};
+
 // Notificaciones personalizadas
 const openNotificacionModal = () => {
   openModal('notificacionPersonalizada');
@@ -2994,6 +3977,9 @@ const openMembresiaComprobanteModal = (idMembresia) => {
     return;
   }
 
+  // Inicializar la duración seleccionada a 1 semana por defecto
+  modalData.value.duracionSeleccionada = "1";
+
   openModal('membresiaComprobante', idMembresia);
 };
 
@@ -3024,8 +4010,33 @@ const enviarComprobante = () => {
     local.value.pedidos_restantes = 999; // "ilimitado"
   }
 
+  // Calcular fecha de vencimiento
+  const fechaVencimiento = calcularFechaVencimiento();
+
+  // Actualizar la fecha de vencimiento en el objeto local
+  local.value.fecha_vencimiento_membresia = fechaVencimiento;
+
+  // En un entorno real, aquí se guardaría en la base de datos:
+  // - id_pago (generado automáticamente)
+  // - id_local (local.value.id_local)
+  // - id_membresia (modalData.value.idMembresiaSeleccionada)
+  // - monto (calcularPrecioTotal())
+  // - deposito_url (URL de la imagen subida)
+  // - fecha_pago (new Date())
+  // - fecha_vencimiento (fecha calculada)
+  // - estado ('pendiente' o 'aprobado')
+
+  console.log('Datos de pago de membresía:', {
+    id_local: local.value.id_local,
+    id_membresia: modalData.value.idMembresiaSeleccionada,
+    duracion_semanas: parseInt(modalData.value.duracionSeleccionada),
+    monto: calcularPrecioTotal(),
+    fecha_pago: new Date().toISOString(),
+    fecha_vencimiento: fechaVencimiento
+  });
+
   // Mensaje de éxito
-  alert(`¡Membresía ${getTipoMembresiaNombre(modalData.value.idMembresiaSeleccionada)} activada con éxito!`);
+  alert(`¡Membresía ${getTipoMembresiaNombre(modalData.value.idMembresiaSeleccionada)} activada con éxito por ${modalData.value.duracionSeleccionada} semana(s)! Vence el ${fechaVencimiento}`);
 
   closeModal('membresiaComprobante');
 
@@ -3038,7 +4049,7 @@ const mostrarDetallePedido = () => {
   modalPedidoVisible.value = true;
 };
 
-// Reportería
+// reportes
 const generarReporte = () => {
   if (membresia.value.id_membresia < 3) {
     alert('Esta función requiere membresía Premium');
@@ -3072,8 +4083,94 @@ const generarReporte = () => {
 const exportarReporte = (formato) => {
   if (!reporteGenerado.value || membresia.value.id_membresia < 3) return;
 
-  alert(`Exportando reporte en formato ${formato.toUpperCase()}...`);
-  // Aquí se implementaría la exportación real del reporte
+  // Obtener el nombre del reporte según el tipo
+  const tipoReporte = reporteActual.value.tipo.charAt(0).toUpperCase() + reporteActual.value.tipo.slice(1);
+  const fechaInicio = formatearFechaCorta(reporteActual.value.fechaInicio);
+  const fechaFin = formatearFechaCorta(reporteActual.value.fechaFin);
+  const nombreArchivo = `Reporte_${tipoReporte}_${fechaInicio}_${fechaFin}`;
+
+  if (formato === 'excel') {
+    // Preparar datos para Excel según el tipo de reporte
+    let datosExportar = [];
+
+    if (reporteActual.value.tipo === 'ventas') {
+      datosExportar = reporteData.value.map(item => {
+        return {
+          Fecha: formatearFecha(item.fecha),
+          Pedidos: item.pedidos,
+          'Método de Pago': item.metodo_pago,
+          Total: `L. ${item.total.toFixed(2)}`
+        };
+      });
+
+      // Agregar fila de totales
+      datosExportar.push({
+        Fecha: '',
+        Pedidos: totalPedidosReporte.value,
+        'Método de Pago': 'Total:',
+        Total: `L. ${totalVentasReporte.value.toFixed(2)}`
+      });
+    }
+    else if (reporteActual.value.tipo === 'productos') {
+      datosExportar = reporteData.value.map(item => {
+        return {
+          Producto: item.nombre,
+          'Cantidad Vendida': item.cantidad,
+          'Precio Unitario': `L. ${item.precio.toFixed(2)}`,
+          Total: `L. ${(item.cantidad * item.precio).toFixed(2)}`
+        };
+      });
+
+      // Calcular total
+      const totalVentas = reporteData.value.reduce((total, item) => total + (item.cantidad * item.precio), 0);
+
+      // Agregar fila de totales
+      datosExportar.push({
+        Producto: '',
+        'Cantidad Vendida': '',
+        'Precio Unitario': 'Total:',
+        Total: `L. ${totalVentas.toFixed(2)}`
+      });
+    }
+    else if (reporteActual.value.tipo === 'pedidos') {
+      // Para el reporte de pedidos, usamos datos de ejemplo
+      datosExportar = [
+        { 'Número de Pedido': '#123456', Cliente: 'Laura Martínez', Fecha: '15/07/2023 - 14:20', Total: 'L. 245.00', Estado: 'Entregado' },
+        { 'Número de Pedido': '#123457', Cliente: 'Carlos Rodríguez', Fecha: '16/07/2023 - 18:45', Total: 'L. 180.50', Estado: 'Entregado' },
+        { 'Número de Pedido': '#123458', Cliente: 'Ana López', Fecha: '17/07/2023 - 12:30', Total: 'L. 320.75', Estado: 'Entregado' },
+        { 'Número de Pedido': '#123459', Cliente: 'Miguel Torres', Fecha: '18/07/2023 - 16:30', Total: 'L. 320.00', Estado: 'Preparando' }
+      ];
+    }
+
+    console.log('Exportando a Excel:', {
+      tipo: reporteActual.value.tipo,
+      datos: datosExportar,
+      nombreArchivo: nombreArchivo
+    });
+
+    // En un entorno real, aquí se utilizaría una librería como xlsx o exceljs para generar el archivo Excel
+    alert(`Exportando reporte de ${reporteActual.value.tipo} a Excel con nombre: ${nombreArchivo}.xlsx`);
+  }
+  else if (formato === 'pdf') {
+    // Preparar datos para PDF
+    const datosPDF = {
+      tipoReporte: tipoReporte,
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin,
+      datos: reporteData.value,
+      totalPedidos: totalPedidosReporte.value,
+      totalVentas: totalVentasReporte.value
+    };
+
+    console.log('Exportando a PDF:', {
+      tipo: reporteActual.value.tipo,
+      datos: datosPDF,
+      nombreArchivo: nombreArchivo
+    });
+
+    // En un entorno real, aquí se utilizaría una librería como jsPDF o pdfmake para generar el archivo PDF
+    alert(`Exportando reporte de ${reporteActual.value.tipo} a PDF con nombre: ${nombreArchivo}.pdf`);
+  }
 };
 
 const getTituloReporte = () => {
@@ -3104,27 +4201,33 @@ const getPrecioMembresia = (id) => {
   }
 };
 
-// Utilidades de formato
-const formatearFecha = (fecha) => {
-  if (!fecha) return 'N/A';
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
-  return new Date(fecha).toLocaleDateString('es-ES', options);
+// Calcular precio total según la duración seleccionada
+const calcularPrecioTotal = () => {
+  const precioBase = parseInt(getPrecioMembresia(modalData.value.idMembresiaSeleccionada));
+  const duracion = parseInt(modalData.value.duracionSeleccionada);
+
+  // No aplicar descuentos
+  const precioTotal = precioBase * duracion;
+  return precioTotal.toFixed(2);
 };
 
-const formatearHora = (hora) => {
-  if (!hora) return '';
+// Calcular fecha de vencimiento (exactamente el período pagado)
+const calcularFechaVencimiento = () => {
+  const hoy = new Date();
+  const duracionSemanas = parseInt(modalData.value.duracionSeleccionada);
 
-  // Si la hora ya está en formato HH:MM:SS
-  if (typeof hora === 'string' && hora.includes(':')) {
-    const [horas, minutos] = hora.split(':');
-    const horaNum = parseInt(horas);
-    const periodo = horaNum >= 12 ? 'PM' : 'AM';
-    const hora12 = horaNum > 12 ? horaNum - 12 : (horaNum === 0 ? 12 : horaNum);
-    return `${hora12}:${minutos} ${periodo}`;
-  }
+  // Calcular la fecha de vencimiento sumando exactamente los días pagados
+  const fechaVencimiento = new Date(hoy);
+  fechaVencimiento.setDate(hoy.getDate() + (duracionSemanas * 7));
 
-  return 'Formato inválido';
+  // Establecer la hora a las 11:59 PM
+  fechaVencimiento.setHours(23, 59, 59, 0);
+
+  // Formatear la fecha para mostrarla
+  return `${fechaVencimiento.getDate()}/${fechaVencimiento.getMonth() + 1}/${fechaVencimiento.getFullYear()} a las 11:59 PM`;
 };
+
+// Las funciones de formato ya están definidas al principio del script
 
 // Clase para manejar la conexión WebSocket
 class SocketConexion {
@@ -3350,7 +4453,7 @@ watch([fuenteDatos, () => membresia.value.id_membresia], () => {
 });
 
 // Observar los cambios en la fuente de datos para manejar WebSocket
-watch(fuenteDatos, (nuevoValor, valorAnterior) => {
+watch(fuenteDatos, (nuevoValor) => {
   if (nuevoValor === 'api' && !socketConexion) {
     // Inicializar WebSocket si estamos en modo API
     socketConexion = new SocketConexion('wss://echo.websocket.org'); // Este es un servicio de ejemplo que hace eco de los mensajes
@@ -3424,6 +4527,19 @@ onMounted(() => {
     initCharts();
   }
 
+  // Inicializar fecha límite de pago (7 días desde la generación del informe)
+  // En un entorno real, esto vendría del backend
+  const fechaInforme = new Date(fechaFinSemana.value);
+  fechaLimitePago.value = new Date(fechaInforme.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  // Agregar event listener para cerrar los tooltips cuando se hace clic fuera de ellos
+  document.addEventListener('click', () => {
+    showInfoTooltip.value = false;
+    showPedidosExtraTooltip.value = false;
+    showComisionTooltip.value = false;
+    showTarjetaTooltip.value = false;
+  });
+
   // Simular una notificación nueva
   setTimeout(() => {
     notifications.value.unshift({
@@ -3470,5 +4586,60 @@ watch(() => membresia.value.id_membresia, () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Responsive font sizing for productos table */
+@media (max-width: 768px) {
+  .productos-table {
+    font-size: 0.875rem; /* 14px */
+  }
+}
+@media (max-width: 640px) {
+  .productos-table {
+    font-size: 0.75rem; /* 12px */
+  }
+}
+@media (max-width: 480px) {
+  .productos-table {
+    font-size: 0.7rem; /* 11.2px */
+  }
+}
+
+/* Tooltip positioning for small screens */
+@media (max-width: 640px) {
+  .info-tooltip {
+    max-width: 90vw;
+    width: 90vw !important;
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 50 !important;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5) !important;
+    font-size: 14px !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Añadir botón de cerrar */
+  .info-tooltip::after {
+    content: "×";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
 }
 </style>
