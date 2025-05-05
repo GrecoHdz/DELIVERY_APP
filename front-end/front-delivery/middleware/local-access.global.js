@@ -1,7 +1,9 @@
 import { useAuth } from '../composables/useAuth'
 
 export default defineNuxtRouteMiddleware((to) => {
+  // Temporalmente desactivado para permitir acceso sin autenticación
   // Verificar si la ruta requiere acceso de local
+  /*
   if (to.path.startsWith('/dashboard-local')) {
     const auth = useAuth()
 
@@ -15,4 +17,8 @@ export default defineNuxtRouteMiddleware((to) => {
       return navigateTo('/')
     }
   }
+  */
+
+  // Permitir acceso a todas las rutas sin autenticación
+  console.log('Middleware de autenticación desactivado temporalmente');
 })

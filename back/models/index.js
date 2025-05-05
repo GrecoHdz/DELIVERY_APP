@@ -13,6 +13,10 @@ const Producto = require("./Producto");
 const ProductoSucursal = require("./ProductoSucursal");
 const Subcategoria = require("./Subcategoria");
 const EstadisticaLocal = require("./EstadisticaLocal");
+const CobroSemanal = require("./CobroSemanal");
+const CobroProducto = require("./CobroProducto");
+const Ciudad = require("./Ciudad");
+const MembresiaLocal = require("./MembresiaLocales");
 
 // Definir las asociaciones
 const setupAssociations = () => {
@@ -82,6 +86,69 @@ const setupAssociations = () => {
     foreignKey: "id_direccion_local",
     onDelete: "CASCADE"
   });
+
+  // Asociaciones de CobroSemanal
+  CobroSemanal.belongsTo(Local, {
+    foreignKey: "id_local",
+    onDelete: "CASCADE"
+  });
+
+  CobroSemanal.hasMany(CobroProducto, {
+    foreignKey: "id_cobro",
+    as: "productos",
+    onDelete: "CASCADE"
+  });
+
+  // Asociaciones de CobroProducto
+  CobroProducto.belongsTo(CobroSemanal, {
+    foreignKey: "id_cobro",
+    onDelete: "CASCADE"
+  });
+
+  CobroProducto.belongsTo(Producto, {
+    foreignKey: "id_producto",
+    onDelete: "CASCADE"
+  });
+
+  CobroProducto.belongsTo(DireccionLocal, {
+    foreignKey: "id_direccion_local",
+    as: "sucursal",
+    onDelete: "SET NULL"
+  });
+
+  // Asociación entre DireccionLocal y Local
+  DireccionLocal.belongsTo(Local, {
+    foreignKey: "id_local",
+    onDelete: "CASCADE"
+  });
+
+  Local.hasMany(DireccionLocal, {
+    foreignKey: "id_local",
+    as: "DireccionLocales",
+    onDelete: "CASCADE"
+  });
+
+  // Asociación entre DireccionLocal y Ciudad
+  DireccionLocal.belongsTo(Ciudad, {
+    foreignKey: "id_ciudad",
+    onDelete: "CASCADE"
+  });
+
+  Ciudad.hasMany(DireccionLocal, {
+    foreignKey: "id_ciudad",
+    onDelete: "CASCADE"
+  });
+
+  // Asociación entre Local y MembresiaLocal
+  Local.belongsTo(MembresiaLocal, {
+    foreignKey: "id_membresia",
+    onDelete: "SET NULL"
+  });
+
+  MembresiaLocal.hasMany(Local, {
+    foreignKey: "id_membresia",
+    onDelete: "SET NULL"
+  });
 };
 
 // Ejecutar las asociaciones
@@ -100,5 +167,9 @@ module.exports = {
   Producto,
   ProductoSucursal,
   Subcategoria,
-  EstadisticaLocal
+  EstadisticaLocal,
+  CobroSemanal,
+  CobroProducto,
+  Ciudad,
+  MembresiaLocal
 };

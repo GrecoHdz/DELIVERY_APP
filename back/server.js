@@ -47,6 +47,7 @@ const pedidodetalleRoutes= require("./routes/pedidoDetalle");
 const estadisticasRoutes = require("./routes/estadisticas");
 const estadisticasLocalRoutes = require("./routes/estadisticasLocal");
 const quejaLocalRoutes = require("./routes/quejaLocalRoutes");
+const cobroSemanalRoutes = require("./routes/cobroSemanal");
 const { initSocket } = require('./socket');
 
 const app = express();
@@ -107,8 +108,9 @@ app.use("/rentarauto", rentarAutoRoutes);
 app.use("/autoenrenta", autoEnRentaRoutes);
 app.use("/estadisticas", estadisticasRoutes);
 app.use("/estadisticaslocal", estadisticasLocalRoutes);
-app.use("/quejalocal",quejaLocalRoutes)
+app.use("/quejalocal",quejaLocalRoutes);
 app.use("/ofertadriver", ofertadriverRoutes);
+app.use("/cobros-semanales", cobroSemanalRoutes);
 // Middleware de sockets
 io.on("connection", (socket) => {
   console.log("Cliente conectado:", socket.id);

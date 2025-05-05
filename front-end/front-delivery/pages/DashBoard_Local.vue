@@ -21,6 +21,7 @@
 
       <!-- Cobro semanal con lista de productos vendidos -->
       <CobroSemanal
+        :dataSource="fuenteDatos"
         :fechaInicioSemana="fechaInicioSemana"
         :fechaFinSemana="fechaFinSemana"
         :fechaLimitePago="fechaLimitePago"
@@ -2392,6 +2393,7 @@ import {
   UserPlus as UserPlusIcon,
   Key as KeyIcon,
   Shield as ShieldIcon,
+  AlertTriangle as AlertTriangleIcon,
 } from 'lucide-vue-next';
 // Estado de la aplicación
 const currentTab = ref('planes');
@@ -3374,8 +3376,63 @@ const cargarLibreriaLeaflet = (callback) => {
 };
 
 // Historial de cobros
-const openHistorialCobros = () => {
+const openHistorialCobros = async () => {
+  // Si estamos en modo API, cargar los datos desde la API
+  if (fuenteDatos.value === 'api') {
+    await cargarHistorialCobros();
+  }
+
+  // Abrir el modal
   openModal('historialCobros');
+};
+
+const cargarHistorialCobros = async () => {
+  try {
+    console.log('Cargando historial de cobros desde la API...');
+
+    // Usar ID_LOCAL_TEMPORAL para la solicitud
+    const response = await axios.get(`${API_URL}/cobros-semanales/local/${local.value.id_local}`);
+
+    console.log('Respuesta del servidor (historial cobros) - status:', response.status);
+    console.log('Respuesta del servidor (historial cobros) - tipo:', typeof response.data);
+    console.log('Respuesta del servidor (historial cobros) - data:', response.data);
+
+    // Verificar si la respuesta es un array directamente o está dentro de un objeto con estructura {success, data}
+    const cobrosData = Array.isArray(response.data)
+      ? response.data
+      : (response.data && response.data.success && Array.isArray(response.data.data))
+        ? response.data.data
+        : null;
+
+    if (cobrosData && cobrosData.length > 0) {
+      // Transformar los datos al formato esperado por la aplicación
+      historialCobros.value = cobrosData.map(cobro => ({
+        num_factura: cobro.num_factura || `FAC-${cobro.id_cobro}`,
+        fecha_cobro: cobro.fecha_cobro || new Date().toISOString().split('T')[0],
+        periodo_inicio: formatearFechaCorta(cobro.periodo_inicio),
+        periodo_fin: formatearFechaCorta(cobro.periodo_fin),
+        num_pedidos: cobro.num_pedidos || 0,
+        pedidos_extra: cobro.pedidos_extra || 0,
+        costo_pedidos_extra: cobro.costo_pedidos_extra || 0,
+        comision: cobro.comision_efectivo || 0,
+        total: cobro.total || 0,
+        estado: cobro.estado || 'pendiente',
+        pedidos: cobro.productos || []
+      }));
+
+      console.log('Historial de cobros cargado desde API:', historialCobros.value);
+    } else {
+      console.error('No se encontraron cobros o el formato de respuesta es inválido');
+      // Si no hay datos, mantener los datos de demostración
+      console.log('Usando datos de demostración como fallback para historial de cobros');
+    }
+  } catch (err) {
+    console.error('Error al cargar historial de cobros:', err);
+    console.error('Detalles del error:', err.response ? err.response.data : err.message);
+
+    // En caso de error, mantener los datos de demostración
+    console.log('Usando datos de demostración como fallback para historial de cobros');
+  }
 };
 
 const filtrarHistorialCobros = () => {
@@ -3383,12 +3440,87 @@ const filtrarHistorialCobros = () => {
   console.log('Filtros aplicados:', filtroHistorialCobros.value);
 };
 
-const verDetalleCobro = (cobro) => {
+const verDetalleCobro = async (cobro) => {
   // Establecer el cobro seleccionado para poder imprimirlo después
   cobroSeleccionado.value = cobro;
 
+  // Si estamos en modo API y el cobro no tiene productos cargados, cargarlos
+  if (fuenteDatos.value === 'api' && (!cobro.pedidos || cobro.pedidos.length === 0)) {
+    await cargarProductosCobro(cobro);
+  }
+
   // Abrir el modal de detalle
   openModal('detalleCobro', cobro);
+};
+
+const cargarProductosCobro = async (cobro) => {
+  try {
+    console.log('Cargando productos del cobro desde la API...');
+
+    // Extraer el ID del cobro del num_factura si es necesario
+    let idCobro = cobro.id_cobro;
+    if (!idCobro && cobro.num_factura) {
+      // Si el num_factura tiene formato FAC-{id_cobro}, extraer el id_cobro
+      const match = cobro.num_factura.match(/FAC-(\d+)/);
+      if (match && match[1]) {
+        idCobro = match[1];
+      }
+    }
+
+    if (!idCobro) {
+      console.error('No se pudo determinar el ID del cobro');
+      return;
+    }
+
+    const response = await axios.get(`${API_URL}/cobros-semanales/${idCobro}/productos`);
+
+    console.log('Respuesta del servidor (productos cobro) - status:', response.status);
+    console.log('Respuesta del servidor (productos cobro) - tipo:', typeof response.data);
+    console.log('Respuesta del servidor (productos cobro) - data:', response.data);
+
+    // Verificar si la respuesta es un array directamente o está dentro de un objeto con estructura {success, data}
+    const productosData = Array.isArray(response.data)
+      ? response.data
+      : (response.data && response.data.success && Array.isArray(response.data.data))
+        ? response.data.data
+        : null;
+
+    if (productosData && productosData.length > 0) {
+      // Actualizar los productos del cobro seleccionado
+      cobroSeleccionado.value.pedidos = productosData.map(producto => ({
+        num_pedido: producto.id_cobro_producto,
+        cliente: producto.cliente || 'Cliente',
+        fecha: formatearFechaCorta(producto.fecha || new Date()),
+        total: producto.total || 0,
+        comision: producto.comision || 0,
+        nombre: producto.nombre_producto || producto.nombre,
+        cantidad: producto.cantidad || 1,
+        precio: producto.precio_unitario || producto.precio || 0,
+        metodo_pago: producto.metodo_pago || 'efectivo'
+      }));
+
+      // Actualizar también los productos en el historial de cobros
+      const index = historialCobros.value.findIndex(c => c.num_factura === cobro.num_factura);
+      if (index !== -1) {
+        historialCobros.value[index].pedidos = cobroSeleccionado.value.pedidos;
+      }
+
+      console.log('Productos del cobro cargados desde API:', cobroSeleccionado.value.pedidos);
+
+      // Actualizar productosVendidosSemana para el modal de detalle
+      productosVendidosSemana.value = cobroSeleccionado.value.pedidos.map(p => ({
+        nombre: p.nombre,
+        cantidad: p.cantidad,
+        precio: p.precio,
+        metodo_pago: p.metodo_pago
+      }));
+    } else {
+      console.error('No se encontraron productos para este cobro o el formato de respuesta es inválido');
+    }
+  } catch (err) {
+    console.error('Error al cargar productos del cobro:', err);
+    console.error('Detalles del error:', err.response ? err.response.data : err.message);
+  }
 };
 
 // Variables para el modal de comprobante de pago
@@ -5302,12 +5434,70 @@ const cargarDatos = async () => {
         tendencia_ingresos: estadisticasData.tendencia_ingresos || 0
       };
 
+      // Cargar historial de cobros
+      await cargarHistorialCobros();
+
       console.log('Datos cargados correctamente desde la API:', estadisticasData);
     } catch (error) {
       console.error('Error al cargar datos desde la API:', error);
       fuenteDatos.value = 'mock';
       alert('Error al conectar con la API. Se usarán datos de ejemplo.');
     }
+  } else {
+    // Si estamos en modo mock, restaurar los datos de demostración para el historial de cobros
+    historialCobros.value = [
+      {
+        num_factura: 'FA-2023-0045',
+        fecha_cobro: new Date().toISOString().split('T')[0],
+        periodo_inicio: formatearFechaCorta(fechaInicioSemana.value),
+        periodo_fin: formatearFechaCorta(fechaFinSemana.value),
+        num_pedidos: 60,
+        pedidos_extra: 15,
+        costo_pedidos_extra: 375.00,
+        comision: 1520.00,
+        total: 1895.00,
+        estado: 'pendiente',
+        pedidos: [
+          { num_pedido: 'PD-4298', cliente: 'Juan Pérez', fecha: new Date().toISOString().split('T')[0], total: 200.00, comision: 30.00 },
+          { num_pedido: 'PD-4302', cliente: 'María González', fecha: new Date().toISOString().split('T')[0], total: 245.75, comision: 36.75 },
+          { num_pedido: 'PD-4315', cliente: 'Carlos Rodríguez', fecha: new Date().toISOString().split('T')[0], total: 13.00, comision: 20.25 }
+        ]
+      },
+      {
+        num_factura: 'FA-2023-0039',
+        fecha_cobro: '2023-06-11',
+        periodo_inicio: '05/06/2023',
+        periodo_fin: '11/06/2023',
+        num_pedidos: 42,
+        pedidos_extra: 12,
+        costo_pedidos_extra: 180.00,
+        comision: 720.30,
+        total: 900.30,
+        estado: 'pagado',
+        pedidos: [
+          { num_pedido: 'PD-4265', cliente: 'Laura Martínez', fecha: '2023-06-05', total: 210.25, comision: 31.54 },
+          { num_pedido: 'PD-4270', cliente: 'Roberto Sánchez', fecha: '2023-06-07', total: 185.00, comision: 27.75 },
+          { num_pedido: 'PD-4285', cliente: 'Ana López', fecha: '2023-06-10', total: 155.50, comision: 23.33 }
+        ]
+      },
+      {
+        num_factura: 'FA-2023-0032',
+        fecha_cobro: '2023-06-04',
+        periodo_inicio: '29/05/2023',
+        periodo_fin: '04/06/2023',
+        num_pedidos: 35,
+        pedidos_extra: 5,
+        costo_pedidos_extra: 75.00,
+        comision: 625.20,
+        total: 700.20,
+        estado: 'pagado',
+        pedidos: [
+          { num_pedido: 'PD-4230', cliente: 'Pedro García', fecha: '2023-05-30', total: 145.75, comision: 21.86 },
+          { num_pedido: 'PD-4238', cliente: 'Sofía Hernández', fecha: '2023-05-31', total: 195.30, comision: 29.30 },
+          { num_pedido: 'PD-4250', cliente: 'Miguel Torres', fecha: '2023-06-02', total: 165.00, comision: 24.75 }
+        ]
+      }
+    ];
   }
 
   // Inicializar gráficos

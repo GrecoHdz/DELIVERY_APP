@@ -58,7 +58,7 @@
             >
               <option value="todas">Todas las sucursales</option>
               <option v-for="sucursal in sucursales" :key="sucursal.id_sucursal" :value="sucursal.id_sucursal">
-                {{ sucursal.nombre }}
+                {{ sucursal.colonia }}
               </option>
             </select>
           </div>
@@ -252,7 +252,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, defineProps, watch } from 'vue';
 import {
   Receipt as ReceiptIcon,
   Clock as ClockIcon,
@@ -263,102 +263,138 @@ import {
   Check as CheckIcon,
   CreditCard as CreditCardIcon
 } from 'lucide-vue-next';
+import axios from 'axios';
 
-// Props para recibir datos del componente padre
+// Configuración de API
+const API_URL = 'http://localhost:4000';
+
+// ID de local temporal para pruebas (reemplazar con el ID real cuando se implemente la autenticación)
+const ID_LOCAL_TEMPORAL = 10;
+
+// Props del componente
 const props = defineProps({
-  // Datos de fechas
-  fechaInicioSemana: {
-    type: Date,
-    required: true
-  },
-  fechaFinSemana: {
-    type: Date,
-    required: true
-  },
-  fechaLimitePago: {
-    type: Date,
-    required: true
-  },
-  // Datos de productos y ventas
-  productosVendidosSemana: {
-    type: Array,
-    required: true
-  },
-  ventasEfectivoSemana: {
-    type: [String, Number],
-    required: true
-  },
-  ventasTarjetaSemana: {
-    type: [String, Number],
-    required: true
-  },
-  totalVentasSemana: {
-    type: [String, Number],
-    required: true
-  },
-  // Datos de membresía y pedidos
-  pedidosExtra: {
-    type: Number,
-    required: true
-  },
-  membresia: {
-    type: Object,
-    required: true
-  },
-  // Estado de cobro
-  cobroActualPagado: {
-    type: Boolean,
-    required: true
-  },
-  // Balance final
-  balanceFinal: {
-    type: Number,
-    required: true
+  dataSource: {
+    type: String,
+    default: 'mock',
+    required: false
   }
 });
 
-// Lista de sucursales (simulada)
-const sucursales = ref([
-  {
-    id_sucursal: 1,
-    nombre: "Sucursal Central",
-    ciudad: "Tegucigalpa",
-    colonia: "Kennedy"
-  },
-  {
-    id_sucursal: 2,
-    nombre: "Sucursal Mall Multiplaza",
-    ciudad: "Tegucigalpa",
-    colonia: "Los Proceres"
-  },
-  {
-    id_sucursal: 3,
-    nombre: "Sucursal City Mall",
-    ciudad: "San Pedro Sula",
-    colonia: "Centro"
+// Datos del cobro semanal
+const cobroSemanal = ref(null);
+const productosVendidosSemana = ref([]);
+const cargando = ref(true);
+const error = ref(null);
+
+// Datos de demostración (mock data)
+const mockCobroSemanal = {
+  id_cobro: 1001,
+  id_local: ID_LOCAL_TEMPORAL,
+  num_factura: 'FAC-20230615-10',
+  periodo_inicio: new Date(new Date().setDate(new Date().getDate() - 7)),
+  periodo_fin: new Date(),
+  ventas_efectivo: 3500.00,
+  ventas_tarjeta: 2800.00,
+  comision_efectivo: 525.00,
+  comision_tarjeta: 420.00,
+  pedidos_extra: 3,
+  costo_pedidos_extra: 30.00,
+  total: 135.00,
+  estado: 'pendiente',
+  Local: {
+    nombre_local: 'Café Aroma',
+    id_membresia: 2,
+    MembresiaLocales: {
+      nombre_membresia: 'Estándar',
+      precio_delivery_extra: 10,
+      limite_recomendaciones: 3
+    }
   }
-]);
+};
+
+const mockProductosVendidos = [
+  { id_cobro_producto: 1, id_producto: 101, nombre: 'Café Americano', cantidad: 18, precio: 45.00, total: 810.00, metodo_pago: 'efectivo', id_sucursal: 1 },
+  { id_cobro_producto: 2, id_producto: 102, nombre: 'Cappuccino', cantidad: 12, precio: 60.00, total: 720.00, metodo_pago: 'tarjeta', id_sucursal: 1 },
+  { id_cobro_producto: 3, id_producto: 103, nombre: 'Latte', cantidad: 15, precio: 55.00, total: 825.00, metodo_pago: 'efectivo', id_sucursal: 2 },
+  { id_cobro_producto: 4, id_producto: 104, nombre: 'Croissant', cantidad: 10, precio: 30.00, total: 300.00, metodo_pago: 'tarjeta', id_sucursal: 2 },
+  { id_cobro_producto: 5, id_producto: 105, nombre: 'Sándwich de pollo', cantidad: 14, precio: 85.00, total: 1190.00, metodo_pago: 'efectivo', id_sucursal: 1 },
+  { id_cobro_producto: 6, id_producto: 106, nombre: 'Jugo natural', cantidad: 8, precio: 40.00, total: 320.00, metodo_pago: 'tarjeta', id_sucursal: 1 },
+  { id_cobro_producto: 7, id_producto: 107, nombre: 'Pastel de chocolate', cantidad: 13, precio: 50.00, total: 650.00, metodo_pago: 'efectivo', id_sucursal: 2 },
+  { id_cobro_producto: 8, id_producto: 108, nombre: 'Ensalada César', cantidad: 6, precio: 95.00, total: 570.00, metodo_pago: 'tarjeta', id_sucursal: 2 }
+];
+
+const mockSucursales = [
+  { id_sucursal: 1, colonia: 'Las Colinas', direccion_precisa: 'Calle Principal #123', ciudad: 'Tegucigalpa' },
+  { id_sucursal: 2, colonia: 'El Prado', direccion_precisa: 'Avenida Central #456', ciudad: 'San Pedro Sula' }
+];
+
+// Fechas calculadas
+const fechaInicioSemana = computed(() => cobroSemanal.value ? new Date(cobroSemanal.value.periodo_inicio) : new Date());
+const fechaFinSemana = computed(() => cobroSemanal.value ? new Date(cobroSemanal.value.periodo_fin) : new Date());
+
+// Calcular fecha límite de pago (7 días después del fin de semana)
+const fechaLimitePago = computed(() => {
+  if (!cobroSemanal.value) return new Date();
+  const fecha = new Date(cobroSemanal.value.periodo_fin);
+  fecha.setDate(fecha.getDate() + 7);
+  return fecha;
+});
+
+// Datos de ventas
+const ventasEfectivoSemana = computed(() => cobroSemanal.value ? cobroSemanal.value.ventas_efectivo : 0);
+const ventasTarjetaSemana = computed(() => cobroSemanal.value ? cobroSemanal.value.ventas_tarjeta : 0);
+const totalVentasSemana = computed(() => {
+  return parseFloat(ventasEfectivoSemana.value) + parseFloat(ventasTarjetaSemana.value);
+});
+
+// Datos de pedidos extra
+const pedidosExtra = computed(() => cobroSemanal.value ? cobroSemanal.value.pedidos_extra : 0);
+
+// Datos de membresía
+const membresia = computed(() => {
+  if (!cobroSemanal.value || !cobroSemanal.value.Local) return { id_membresia: 1, precio_delivery_extra: 10 };
+  return {
+    id_membresia: cobroSemanal.value.Local.id_membresia,
+    precio_delivery_extra: cobroSemanal.value.Local.MembresiaLocales?.precio_delivery_extra || 10
+  };
+});
+
+// Estado de cobro
+const cobroActualPagado = computed(() => cobroSemanal.value ? cobroSemanal.value.estado === 'pagado' : false);
+
+// Balance final
+const balanceFinal = computed(() => {
+  if (!cobroSemanal.value) return 0;
+
+  // Si el cobro ya tiene un total calculado, usarlo
+  if (cobroSemanal.value.total) {
+    return parseFloat(cobroSemanal.value.total);
+  }
+
+  // Calcular el balance final
+  const comisionEfectivo = parseFloat(ventasEfectivoSemana.value) * 0.15;
+  const comisionTarjeta = parseFloat(ventasTarjetaSemana.value) * 0.15;
+  const costoPedidosExtra = calcularCostoPedidosExtra();
+  const pagoTarjeta = parseFloat(ventasTarjetaSemana.value) * 0.85;
+
+  return comisionEfectivo + costoPedidosExtra - pagoTarjeta;
+});
+
+// Lista de sucursales
+const sucursales = ref([]);
 
 // Sucursal seleccionada para filtrar
 const sucursalSeleccionada = ref('todas');
 
 // Productos filtrados por sucursal
 const productosFiltrados = computed(() => {
-  // Asignar una sucursal a cada producto (simulado)
-  const productosConSucursal = props.productosVendidosSemana.map((producto, index) => {
-    // Asignar sucursales de manera alternada para simular datos
-    const idSucursal = (index % sucursales.value.length) + 1;
-    return {
-      ...producto,
-      id_sucursal: idSucursal
-    };
-  });
+  if (!productosVendidosSemana.value) return [];
 
   // Filtrar por sucursal seleccionada
   if (sucursalSeleccionada.value === 'todas') {
-    return productosConSucursal;
+    return productosVendidosSemana.value;
   } else {
-    return productosConSucursal.filter(producto =>
+    return productosVendidosSemana.value.filter(producto =>
       producto.id_sucursal === parseInt(sucursalSeleccionada.value)
     );
   }
@@ -367,14 +403,281 @@ const productosFiltrados = computed(() => {
 // Total de ventas filtradas
 const totalVentasFiltradas = computed(() => {
   return productosFiltrados.value.reduce((total, producto) => {
-    return total + (producto.cantidad * producto.precio);
+    return total + (parseFloat(producto.total) || 0);
   }, 0).toFixed(2);
 });
 
 // Función para obtener el nombre de la sucursal
 const getNombreSucursal = (idSucursal) => {
   const sucursal = sucursales.value.find(s => s.id_sucursal === idSucursal);
-  return sucursal ? sucursal.nombre : 'Desconocida';
+  return sucursal ? sucursal.colonia : 'Desconocida';
+};
+
+// Función para cargar las sucursales
+const cargarSucursales = async () => {
+  try {
+    // Si estamos en modo demo, usar datos de demostración
+    if (props.dataSource === 'mock') {
+      console.log('Usando datos de demostración para sucursales');
+      sucursales.value = [...mockSucursales]; // Crear una copia para evitar referencias
+      // Resetear la sucursal seleccionada a 'todas' cuando cambiamos a datos demo
+      sucursalSeleccionada.value = 'todas';
+      console.log('Sucursales cargadas (demo):', JSON.stringify(sucursales.value));
+      return;
+    }
+
+    // Si estamos en modo API, hacer la solicitud
+    console.log('Solicitando datos de sucursales desde la API...');
+
+    // Usar ID_LOCAL_TEMPORAL en lugar de userStore.user.id_local
+    const response = await axios.get(`${API_URL}/direccioneslocales/${ID_LOCAL_TEMPORAL}`);
+
+    // Verificar si la respuesta es válida
+    console.log('Respuesta del servidor (sucursales) - status:', response.status);
+    console.log('Respuesta del servidor (sucursales) - tipo:', typeof response.data);
+    console.log('Respuesta del servidor (sucursales) - data:', response.data);
+
+    // Guardar la sucursal seleccionada actual
+    const sucursalAnterior = sucursalSeleccionada.value;
+
+    // Limpiar la lista de sucursales antes de actualizarla
+    sucursales.value = [];
+
+    // Verificar si la respuesta es un array directamente o está dentro de un objeto con estructura {success, data}
+    const sucursalesData = Array.isArray(response.data)
+      ? response.data
+      : (response.data && response.data.success && Array.isArray(response.data.data))
+        ? response.data.data
+        : null;
+
+    if (sucursalesData) {
+      // Actualizar la lista de sucursales
+      const sucursalesAPI = sucursalesData.map(sucursal => {
+        console.log('Procesando sucursal:', JSON.stringify(sucursal));
+        return {
+          id_sucursal: sucursal.id_direccion_local,
+          colonia: sucursal.colonia || 'Sin colonia',
+          direccion_precisa: sucursal.direccion_precisa || '',
+          ciudad: sucursal.ciudad || 'Sin ciudad'
+        };
+      });
+
+      // Asignar las nuevas sucursales
+      sucursales.value = sucursalesAPI;
+
+      console.log('Sucursales procesadas (API):', JSON.stringify(sucursales.value));
+
+      // Verificar si la sucursal seleccionada anteriormente existe en la nueva lista
+      if (sucursalAnterior !== 'todas') {
+        const existeSucursal = sucursales.value.some(s => s.id_sucursal === parseInt(sucursalAnterior));
+        if (!existeSucursal) {
+          // Si no existe, resetear a 'todas'
+          sucursalSeleccionada.value = 'todas';
+        }
+      } else {
+        // Asegurarse de que la sucursal seleccionada sea 'todas'
+        sucursalSeleccionada.value = 'todas';
+      }
+    } else {
+      console.error('La respuesta de la API no tiene el formato esperado:', response.data);
+      throw new Error('Formato de respuesta inválido');
+    }
+  } catch (err) {
+    console.error('Error al cargar sucursales:', err);
+    console.error('Detalles del error:', err.response ? err.response.data : err.message);
+    error.value = 'Error al cargar las sucursales';
+
+    // En caso de error, usar datos de demostración como fallback
+    console.log('Usando datos de demostración como fallback para sucursales');
+    sucursales.value = [...mockSucursales]; // Crear una copia para evitar referencias
+    // Resetear la sucursal seleccionada a 'todas' cuando hay un error
+    sucursalSeleccionada.value = 'todas';
+  }
+};
+
+// Función para cargar el cobro semanal actual
+const cargarCobroSemanal = async () => {
+  try {
+    cargando.value = true;
+    error.value = null;
+
+    // Si estamos en modo demo, usar datos de demostración
+    if (props.dataSource === 'mock') {
+      console.log('Usando datos de demostración para cobro semanal');
+      cobroSemanal.value = mockCobroSemanal;
+      productosVendidosSemana.value = mockProductosVendidos;
+      // Resetear la sucursal seleccionada a 'todas' cuando cambiamos a datos demo
+      sucursalSeleccionada.value = 'todas';
+      console.log('Datos del cobro semanal cargados (demo):', cobroSemanal.value);
+      console.log('Productos procesados (demo):', productosVendidosSemana.value);
+      return;
+    }
+
+    // Si estamos en modo API, hacer la solicitud
+    console.log('Solicitando datos del cobro semanal actual desde la API...');
+
+    try {
+      // Usar ID_LOCAL_TEMPORAL en lugar de userStore.user.id_local
+      const response = await axios.get(`${API_URL}/cobros-semanales/local/${ID_LOCAL_TEMPORAL}/actual`);
+
+      console.log('Respuesta del servidor (cobro semanal) - status:', response.status);
+      console.log('Respuesta del servidor (cobro semanal) - tipo:', typeof response.data);
+      console.log('Respuesta del servidor (cobro semanal) - data:', response.data);
+
+      // Verificar si la respuesta es un objeto directamente o está dentro de un objeto con estructura {success, data}
+      const cobroData = Array.isArray(response.data) && response.data.length > 0
+        ? response.data[0] // Si es un array, tomar el primer elemento
+        : (response.data && response.data.success && response.data.data)
+          ? response.data.data
+          : (response.data && !response.data.success)
+            ? null
+            : response.data; // Si es un objeto directamente
+
+      if (cobroData) {
+        cobroSemanal.value = cobroData;
+        console.log('Datos del cobro semanal cargados:', cobroSemanal.value);
+
+        // Cargar los productos del cobro
+        if (cobroSemanal.value && cobroSemanal.value.productos) {
+          console.log('Productos incluidos en la respuesta:', cobroSemanal.value.productos);
+          productosVendidosSemana.value = cobroSemanal.value.productos.map(producto => ({
+            id_cobro_producto: producto.id_cobro_producto,
+            id_producto: producto.id_producto,
+            nombre: producto.nombre_producto,
+            cantidad: producto.cantidad,
+            precio: producto.precio_unitario,
+            total: producto.total,
+            metodo_pago: producto.metodo_pago,
+            id_sucursal: producto.id_direccion_local,
+            sucursal: producto.sucursal ? {
+              id_direccion_local: producto.sucursal.id_direccion_local,
+              colonia: producto.sucursal.colonia,
+              ciudad: producto.sucursal.Ciudad ? producto.sucursal.Ciudad.nombre_ciudad : 'Desconocida',
+              nombre: producto.sucursal.Local ? producto.sucursal.Local.nombre_local : 'Desconocida'
+            } : null
+          }));
+          console.log('Productos procesados:', productosVendidosSemana.value);
+
+          // Verificar si hay productos para la sucursal seleccionada
+          if (sucursalSeleccionada.value !== 'todas') {
+            const existenProductosParaSucursal = productosVendidosSemana.value.some(
+              p => p.id_sucursal === parseInt(sucursalSeleccionada.value)
+            );
+
+            if (!existenProductosParaSucursal) {
+              // Si no hay productos para la sucursal seleccionada, resetear a 'todas'
+              console.log('No hay productos para la sucursal seleccionada, mostrando todos los productos');
+              sucursalSeleccionada.value = 'todas';
+            }
+          }
+        } else {
+          console.log('No hay productos incluidos en la respuesta, cargando productos separadamente...');
+          await cargarProductosCobro();
+        }
+      } else {
+        console.error('La respuesta de la API no tiene el formato esperado:', response.data);
+        throw new Error('Formato de respuesta inválido');
+      }
+    } catch (apiError) {
+      console.error('Error al solicitar datos de la API:', apiError);
+      throw apiError; // Re-lanzar el error para que lo maneje el catch externo
+    }
+  } catch (err) {
+    console.error('Error al cargar cobro semanal:', err);
+    console.error('Detalles del error:', err.response ? err.response.data : err.message);
+    error.value = 'Error al cargar el cobro semanal';
+
+    // En caso de error, usar datos de demostración como fallback
+    console.log('Usando datos de demostración como fallback para cobro semanal');
+    cobroSemanal.value = mockCobroSemanal;
+    productosVendidosSemana.value = mockProductosVendidos;
+    // Resetear la sucursal seleccionada a 'todas' cuando hay un error
+    sucursalSeleccionada.value = 'todas';
+  } finally {
+    cargando.value = false;
+  }
+};
+
+// Función para cargar los productos del cobro
+const cargarProductosCobro = async () => {
+  if (!cobroSemanal.value) return;
+
+  // Si estamos en modo demo, usar datos de demostración
+  if (props.dataSource === 'mock') {
+    console.log('Usando datos de demostración para productos del cobro');
+    productosVendidosSemana.value = mockProductosVendidos;
+    // Resetear la sucursal seleccionada a 'todas' cuando cambiamos a datos demo
+    sucursalSeleccionada.value = 'todas';
+    console.log('Productos procesados (demo):', productosVendidosSemana.value);
+    return;
+  }
+
+  try {
+    console.log('Solicitando productos del cobro desde la API...');
+
+    try {
+      const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/productos`);
+
+      console.log('Respuesta del servidor (productos) - status:', response.status);
+      console.log('Respuesta del servidor (productos) - tipo:', typeof response.data);
+      console.log('Respuesta del servidor (productos) - data:', response.data);
+
+      // Verificar si la respuesta es un array directamente o está dentro de un objeto con estructura {success, data}
+      const productosData = Array.isArray(response.data)
+        ? response.data
+        : (response.data && response.data.success && Array.isArray(response.data.data))
+          ? response.data.data
+          : null;
+
+      if (productosData) {
+        productosVendidosSemana.value = productosData.map(producto => ({
+          id_cobro_producto: producto.id_cobro_producto,
+          id_producto: producto.id_producto,
+          nombre: producto.nombre_producto || producto.nombre,
+          cantidad: producto.cantidad,
+          precio: producto.precio_unitario || producto.precio,
+          total: producto.total,
+          metodo_pago: producto.metodo_pago,
+          id_sucursal: producto.id_direccion_local || producto.id_sucursal,
+          sucursal: producto.sucursal ? {
+            id_direccion_local: producto.sucursal.id_direccion_local,
+            colonia: producto.sucursal.colonia,
+            ciudad: producto.sucursal.Ciudad ? producto.sucursal.Ciudad.nombre_ciudad : 'Desconocida',
+            nombre: producto.sucursal.Local ? producto.sucursal.Local.nombre_local : 'Desconocida'
+          } : null
+        }));
+        console.log('Productos procesados:', productosVendidosSemana.value);
+
+        // Verificar si hay productos para la sucursal seleccionada
+        if (sucursalSeleccionada.value !== 'todas') {
+          const existenProductosParaSucursal = productosVendidosSemana.value.some(
+            p => p.id_sucursal === parseInt(sucursalSeleccionada.value)
+          );
+
+          if (!existenProductosParaSucursal) {
+            // Si no hay productos para la sucursal seleccionada, resetear a 'todas'
+            console.log('No hay productos para la sucursal seleccionada, mostrando todos los productos');
+            sucursalSeleccionada.value = 'todas';
+          }
+        }
+      } else {
+        console.error('La respuesta de la API no tiene el formato esperado:', response.data);
+        throw new Error('Formato de respuesta inválido');
+      }
+    } catch (apiError) {
+      console.error('Error al solicitar productos del cobro desde la API:', apiError);
+      throw apiError; // Re-lanzar el error para que lo maneje el catch externo
+    }
+  } catch (err) {
+    console.error('Error al cargar productos del cobro:', err);
+    console.error('Detalles del error:', err.response ? err.response.data : err.message);
+
+    // En caso de error, usar datos de demostración como fallback
+    console.log('Usando datos de demostración como fallback para productos del cobro');
+    productosVendidosSemana.value = mockProductosVendidos;
+    // Resetear la sucursal seleccionada a 'todas' cuando hay un error
+    sucursalSeleccionada.value = 'todas';
+  }
 };
 
 // Emits para eventos que se enviarán al componente padre
@@ -394,7 +697,7 @@ const showTarjetaTooltip = ref(false);
 // Calcular días restantes para pago
 const diasRestantesPago = computed(() => {
   const hoy = new Date();
-  const limite = new Date(props.fechaLimitePago);
+  const limite = new Date(fechaLimitePago.value);
   const diferencia = limite.getTime() - hoy.getTime();
   const dias = Math.ceil(diferencia / (1000 * 60 * 60 * 24));
   return Math.max(0, dias);
@@ -409,8 +712,8 @@ const getColorClaseDiasPago = computed(() => {
 
 // Calcular costo de pedidos extra
 const calcularCostoPedidosExtra = () => {
-  if (props.membresia.id_membresia === 3) return 0; // Plan Premium no tiene costo por pedidos extra
-  return (props.pedidosExtra * props.membresia.precio_delivery_extra).toFixed(2);
+  if (membresia.value.id_membresia === 3) return 0; // Plan Premium no tiene costo por pedidos extra
+  return (pedidosExtra.value * membresia.value.precio_delivery_extra).toFixed(2);
 };
 
 // Funciones para mostrar/ocultar los tooltips
@@ -460,21 +763,123 @@ const obtenerDiaSemana = (fecha) => {
 };
 
 // Funciones para eventos
-const exportToExcel = () => {
-  emit('exportToExcel');
+const exportToExcel = async () => {
+  try {
+    // Implementar la exportación a Excel
+    const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/export/excel`, {
+      responseType: 'blob'
+    });
+
+    // Crear un enlace para descargar el archivo
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(fechaInicioSemana.value)}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('Archivo Excel generado correctamente');
+  } catch (err) {
+    console.error('Error al exportar a Excel:', err);
+    console.error('Error al generar el archivo Excel');
+  }
 };
 
-const exportToPDF = () => {
-  emit('exportToPDF', sucursalSeleccionada.value);
+const exportToPDF = async () => {
+  try {
+    // Implementar la exportación a PDF
+    const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/export/pdf`, {
+      params: { sucursal: sucursalSeleccionada.value },
+      responseType: 'blob'
+    });
+
+    // Crear un enlace para descargar el archivo
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(fechaInicioSemana.value)}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('Archivo PDF generado correctamente');
+  } catch (err) {
+    console.error('Error al exportar a PDF:', err);
+    console.error('Error al generar el archivo PDF');
+  }
 };
 
 const openHistorialCobros = () => {
+  // Emitir evento para que el componente padre abra el modal
   emit('openHistorialCobros');
 };
 
 const openPagoComprobanteModal = () => {
-  emit('openPagoComprobanteModal');
+  emit('openPagoComprobanteModal', cobroSemanal.value);
 };
+
+// Función para marcar un cobro como pagado
+const marcarComoPagado = async (formData) => {
+  try {
+    const response = await axios.put(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/pagar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (response.data.success) {
+      console.log('Pago registrado correctamente');
+      await cargarCobroSemanal(); // Recargar los datos
+    }
+  } catch (err) {
+    console.error('Error al marcar como pagado:', err);
+    console.error('Error al registrar el pago');
+  }
+};
+
+// Observar cambios en la fuente de datos
+watch(() => props.dataSource, async (newValue) => {
+  console.log(`Fuente de datos cambiada a: ${newValue}`);
+
+  try {
+    // Resetear la sucursal seleccionada a 'todas' cuando cambia la fuente de datos
+    sucursalSeleccionada.value = 'todas';
+
+    // Limpiar completamente todos los datos actuales
+    sucursales.value = [];
+    cobroSemanal.value = null;
+    productosVendidosSemana.value = [];
+
+    console.log(`Cambiando a datos de ${newValue}, datos limpiados`);
+
+    // Esperar un momento para asegurar que la UI se actualice
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Primero cargar las sucursales para que estén disponibles cuando se carguen los productos
+    await cargarSucursales();
+
+    // Esperar otro momento para asegurar que las sucursales se han cargado correctamente
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Luego cargar el cobro semanal y sus productos
+    await cargarCobroSemanal();
+
+    console.log(`Datos cargados con fuente: ${newValue}, sucursal seleccionada: ${sucursalSeleccionada.value}`);
+    console.log(`Sucursales disponibles después de cargar: ${JSON.stringify(sucursales.value)}`);
+  } catch (err) {
+    console.error('Error al cambiar la fuente de datos:', err);
+
+    // En caso de error, asegurarse de que al menos se muestren los datos de demostración
+    if (newValue === 'api') {
+      console.log('Error al cargar datos de API, cambiando a datos de demostración');
+      sucursales.value = [...mockSucursales];
+      cobroSemanal.value = mockCobroSemanal;
+      productosVendidosSemana.value = mockProductosVendidos;
+      sucursalSeleccionada.value = 'todas';
+    }
+  }
+}, { immediate: true });
 
 // Al montar el componente
 onMounted(() => {
@@ -485,6 +890,12 @@ onMounted(() => {
     showComisionTooltip.value = false;
     showTarjetaTooltip.value = false;
   });
+
+  console.log('Componente CobroSemanal montado');
+  console.log('Usando ID de local temporal para pruebas:', ID_LOCAL_TEMPORAL);
+  console.log('Fuente de datos inicial:', props.dataSource);
+
+  // No es necesario cargar datos aquí, ya que el watcher con immediate: true se encargará de eso
 });
 </script>
 
