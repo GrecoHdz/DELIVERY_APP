@@ -9,12 +9,12 @@ const CobroProducto = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    id_cobro: {
+    id_local: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "cobros_semanales",
-        key: "id_cobro",
+        model: "locales",
+        key: "id_local",
       },
     },
     id_producto: {
@@ -45,6 +45,11 @@ const CobroProducto = sequelize.define(
     metodo_pago: {
       type: DataTypes.ENUM("efectivo", "tarjeta"),
       allowNull: false,
+    },
+    fecha_venta: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
     id_direccion_local: {
       type: DataTypes.INTEGER,

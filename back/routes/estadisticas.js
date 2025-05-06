@@ -1,7 +1,8 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
 
-const verifyToken = require("../middlewares/authMiddleware");
+// Autenticación desactivada temporalmente
+// const verifyToken = require("../middlewares/authMiddleware");
 const { getEstadisticas, createEstadistica, updateEstadistica } = require("../controllers/estadisticaController");
 
 const router = express.Router();

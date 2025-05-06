@@ -5,17 +5,17 @@
         <h1>Iniciar Sesión</h1>
         <p class="subtitle">Ingresa tus credenciales para acceder</p>
       </div>
-      
+
       <form @submit.prevent="handleLogin" class="form">
         <div class="form-group">
           <label for="username">Usuario</label>
           <div class="input-group">
             <User class="icon" />
-            <input 
-              type="text" 
-              v-model="username" 
-              id="username" 
-              required 
+            <input
+              type="text"
+              v-model="username"
+              id="username"
+              required
               placeholder="Ingresa tu usuario"
               :disabled="loading"
             />
@@ -25,11 +25,11 @@
           <label for="password">Contraseña</label>
           <div class="input-group">
             <Lock class="icon" />
-            <input 
-              type="password" 
-              v-model="password" 
-              id="password" 
-              required 
+            <input
+              type="password"
+              v-model="password"
+              id="password"
+              required
               placeholder="Ingresa tu contraseña"
               :disabled="loading"
             />
@@ -61,9 +61,11 @@
 </template>
 
 <script setup>
+// Estos componentes se usan en el template, así que mantenemos la importación
 import { User, Lock, Loader2, AlertCircle, UserPlus, KeyRound } from 'lucide-vue-next'
 
-const { login } = useAuth()
+// Autenticación desactivada temporalmente
+// La autenticación será implementada más adelante
 const router = useRouter()
 
 const username = ref('')
@@ -71,26 +73,26 @@ const password = ref('')
 const error = ref(null)
 const loading = ref(false)
 
+// Redirigir automáticamente al cargar la página
+// Usamos setTimeout para asegurarnos de que la redirección ocurra después de que el componente esté montado
+setTimeout(() => {
+  console.log('Autenticación desactivada - redirigiendo automáticamente')
+  router.push('/Dashboard_Cliente')
+}, 100)
+
 const handleLogin = async () => {
   loading.value = true
   error.value = null
-  
-  try {
-    const user = await login({
-      usuario: username.value,
-      clave: password.value
-    })
 
-    // Redirigir según el rol
-    if (user.role === 1) {
-      await router.push('/Dashboard_Cliente')
-    } else if (user.role === 2 || user.role === 3) {
-      await router.push('/Dashboard_Superadmin')
-    } else {
-      error.value = 'Rol de usuario no válido'
-    }
+  try {
+    // Simular inicio de sesión exitoso
+    console.log('Simulando inicio de sesión con:', username.value)
+
+    // Redirigir a la página principal
+    await router.push('/Dashboard_Cliente')
   } catch (err) {
-    error.value = err.message || 'Error al iniciar sesión'
+    error.value = 'Error al iniciar sesión'
+    console.error('Error simulado:', err)
   } finally {
     loading.value = false
   }

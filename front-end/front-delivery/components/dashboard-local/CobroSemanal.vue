@@ -8,27 +8,33 @@
             <ReceiptIcon class="text-amber-600" :size="20" />
           </div>
           <div>
-            <h2 class="text-lg sm:text-xl font-bold text-gray-800">Cobro Semanal</h2>
+            <h2 class="text-lg sm:text-xl font-bold text-gray-800">
+              Cobro Semanal
+              <!-- Indicador de facturas pendientes -->
+              <span v-if="facturasPendientes > 0" class="ml-2 text-sm font-medium text-white bg-red-600 px-2 py-1 rounded-full">
+                {{ facturasPendientes }} {{ facturasPendientes === 1 ? 'pago pendiente' : 'pagos pendientes' }}
+              </span>
+            </h2>
 
             <!-- Mensaje según el balance -->
             <p class="text-gray-600 text-sm sm:text-base">
-              {{ balanceFinal >= 0 ? '' : 'Resumen de ventas y comisiones de la semana' }}
+              {{ facturasPendientes > 0 && Number(balanceFinal) > 0 ? '' : 'Resumen de ventas y comisiones de la semana' }}
             </p>
 
-            <!-- Contador de días restantes para pagar -->
-            <div class="mt-2">
+            <!-- Contador de días restantes para pagar (solo si hay pagos pendientes) -->
+            <div v-if="facturasPendientes > 0 && Number(balanceFinal) > 0" class="mt-2">
               <div class="flex items-center mb-2">
-                <ClockIcon :size="16" class="text-amber-600 mr-2" />
-                <span class="text-sm font-medium text-gray-700">Tiene {{ diasRestantesPago }} días para realizar el pago</span>
+                <ClockIcon :size="16" :class="facturasPendientes >= 2 ? 'text-red-600 mr-2' : 'text-amber-600 mr-2'" />
+                <span v-if="facturasPendientes >= 2" class="text-sm font-medium text-red-700">Cuenta con restricciones por facturas pendientes</span>
+                <span v-else class="text-sm font-medium text-gray-700">Tiene {{ diasRestantesPago }} días para realizar el pago</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-3 mt-1">
                 <div
                   class="h-3 rounded-full transition-all duration-500 ease-out"
                   :class="getColorClaseDiasPago"
-                  :style="{width: `${(diasRestantesPago / 7) * 100}%`}"
+                  :style="{width: facturasPendientes >= 2 ? '100%' : `${(diasRestantesPago / 7) * 100}%`}"
                 ></div>
-              </div>
-            </div>
+              </div>   </div>
           </div>
         </div>
 
@@ -40,6 +46,53 @@
           <button @click="exportToPDF" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
             Exportar PDF
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advertencia cuando quedan 3 días o menos para pagar y hay cobros pendientes -->
+    <div v-if="mostrarAdvertencia" class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 mx-6 mt-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <AlertTriangleIcon class="h-5 w-5 text-amber-500" />
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-amber-800">Advertencia de pago pendiente</h3>
+          <div class="mt-2 text-sm text-amber-700">
+            <p v-if="facturasPendientes === 1">Tiene <strong>1 factura pendiente</strong> de pago. Si no realiza el pago a tiempo, su cuenta podría ser suspendida temporalmente y no podrá recibir nuevos pedidos hasta regularizar su situación.</p>
+            <p v-else>Debe realizar un <strong>pago a la app</strong> por el monto indicado en el resumen. Si no realiza el pago a tiempo, su cuenta podría ser suspendida temporalmente.</p>
+          </div>
+          <div class="mt-3">
+            <button
+              @click="openPagoComprobanteModal()"
+              class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-amber-700 bg-amber-100 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+            >
+              Realizar pago ahora
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comunicado cuando el plazo ha vencido -->
+    <div v-if="mostrarComunicado" class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 mx-6 mt-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <AlertCircleIcon class="h-5 w-5 text-red-500" />
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800">Cuenta con restricciones</h3>
+          <div class="mt-2 text-sm text-red-700">
+            <p>Su cuenta tiene <strong>{{ facturasPendientes }} facturas pendientes</strong> de pago. Su servicio ha sido restringido y no recibirá nuevos pedidos hasta que cancele todas las facturas pendientes. Si no regulariza su situación pronto, su cuenta podría ser desactivada permanentemente.</p>
+          </div>
+          <div class="mt-3">
+            <button
+              @click="openPagoComprobanteModal()"
+              class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Pagar todas las facturas pendientes
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -176,25 +229,25 @@
                     <HelpCircleIcon :size="14" class="cursor-pointer" />
                   </button>
                   <span v-if="showComisionTooltip" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                    Total Ventas en efectivo: L. {{ ventasEfectivoSemana }}
+                    Total Ventas en efectivo: L. {{ parseFloat(ventasEfectivoSemana || 0).toFixed(2) }}
                   </span>
                 </span>
               </span>
-              <span class="text-red-600 font-medium">L. {{ (ventasEfectivoSemana * 0.15).toFixed(2) }}</span>
+              <span class="text-red-600 font-medium">L. {{ cobroSemanal?.comision_efectivo ? parseFloat(cobroSemanal.comision_efectivo).toFixed(2) : (parseFloat(ventasEfectivoSemana || 0) * 0.15).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between py-2 border-b border-white">
               <span class="text-gray-700 flex items-center">
-                Comisión app (Pagos Tarjeta)
+                Pago a recibir (Pagos Tarjeta)
                 <span class="relative ml-1">
                   <button @click.stop="toggleTarjetaTooltip" type="button" class="text-gray-400 focus:outline-none">
                     <HelpCircleIcon :size="14" class="cursor-pointer" />
                   </button>
                   <span v-if="showTarjetaTooltip" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                    Total Ventas con tarjeta: L. {{ ventasTarjetaSemana }}
+                    Total Ventas con tarjeta: L. {{ parseFloat(ventasTarjetaSemana || 0).toFixed(2) }}
                   </span>
                 </span>
               </span>
-              <span class="text-green-600 font-medium">L. {{ (ventasTarjetaSemana * 0.85).toFixed(2) }}</span>
+              <span class="text-green-600 font-medium">L. {{ (parseFloat(ventasTarjetaSemana || 0) * 0.85).toFixed(2) }}</span>
             </div>
             <div class="flex justify-between py-3 text-lg">
               <span class="font-bold text-gray-800">{{ Number(balanceFinal) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
@@ -206,7 +259,7 @@
             <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-blue-800 mb-4">
               <p class="flex items-center text-sm">
                 <InfoIcon :size="16" class="mr-2 text-blue-500 flex-shrink-0" />
-                Este resumen corresponde a la semana del {{ obtenerDiaSemana(fechaInicioSemana) }} {{ formatearFechaCorta(fechaInicioSemana) }} hasta el {{ obtenerDiaSemana(fechaFinSemana) }} {{ formatearFechaCorta(fechaFinSemana) }}. Para ver información más detallada, consulte la sección de Estadísticas o sección de Reportes.
+                Este resumen corresponde del Lunes {{ formatearFechaCorta(cobroSemanal?.periodo_inicio) }} al Domingo {{ formatearFechaCorta(cobroSemanal?.periodo_fin) }}. Para ver información relacionada, consulte la sección de Estadísticas o sección de Reportes.
               </p>
             </div>
 
@@ -261,7 +314,9 @@ import {
   FileText as FileTextIcon,
   DollarSign as DollarSignIcon,
   Check as CheckIcon,
-  CreditCard as CreditCardIcon
+  CreditCard as CreditCardIcon,
+  AlertTriangle as AlertTriangleIcon,
+  AlertCircle as AlertCircleIcon
 } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -328,24 +383,11 @@ const mockSucursales = [
   { id_sucursal: 2, colonia: 'El Prado', direccion_precisa: 'Avenida Central #456', ciudad: 'San Pedro Sula' }
 ];
 
-// Fechas calculadas
-const fechaInicioSemana = computed(() => cobroSemanal.value ? new Date(cobroSemanal.value.periodo_inicio) : new Date());
-const fechaFinSemana = computed(() => cobroSemanal.value ? new Date(cobroSemanal.value.periodo_fin) : new Date());
-
-// Calcular fecha límite de pago (7 días después del fin de semana)
-const fechaLimitePago = computed(() => {
-  if (!cobroSemanal.value) return new Date();
-  const fecha = new Date(cobroSemanal.value.periodo_fin);
-  fecha.setDate(fecha.getDate() + 7);
-  return fecha;
-});
+// La fecha límite de pago ahora se calcula directamente en diasRestantesPago
 
 // Datos de ventas
 const ventasEfectivoSemana = computed(() => cobroSemanal.value ? cobroSemanal.value.ventas_efectivo : 0);
 const ventasTarjetaSemana = computed(() => cobroSemanal.value ? cobroSemanal.value.ventas_tarjeta : 0);
-const totalVentasSemana = computed(() => {
-  return parseFloat(ventasEfectivoSemana.value) + parseFloat(ventasTarjetaSemana.value);
-});
 
 // Datos de pedidos extra
 const pedidosExtra = computed(() => cobroSemanal.value ? cobroSemanal.value.pedidos_extra : 0);
@@ -366,18 +408,58 @@ const cobroActualPagado = computed(() => cobroSemanal.value ? cobroSemanal.value
 const balanceFinal = computed(() => {
   if (!cobroSemanal.value) return 0;
 
-  // Si el cobro ya tiene un total calculado, usarlo
-  if (cobroSemanal.value.total) {
-    return parseFloat(cobroSemanal.value.total);
+  try {
+    // Obtener valores del cobro o calcularlos si no están disponibles
+    let comisionEfectivo, costoPedidosExtra, pagoTarjeta, total;
+
+    // Comisión efectivo (15% de ventas en efectivo)
+    if (cobroSemanal.value.comision_efectivo !== undefined && cobroSemanal.value.comision_efectivo !== null) {
+      comisionEfectivo = parseFloat(cobroSemanal.value.comision_efectivo);
+    } else {
+      comisionEfectivo = parseFloat(ventasEfectivoSemana.value || 0) * 0.15;
+    }
+
+    // Costo de pedidos extra
+    if (cobroSemanal.value.costo_pedidos_extra !== undefined && cobroSemanal.value.costo_pedidos_extra !== null) {
+      costoPedidosExtra = parseFloat(cobroSemanal.value.costo_pedidos_extra);
+    } else {
+      costoPedidosExtra = parseFloat(calcularCostoPedidosExtra());
+    }
+
+    // Pago por tarjeta (85% de ventas con tarjeta)
+    if (cobroSemanal.value.comision_tarjeta !== undefined && cobroSemanal.value.comision_tarjeta !== null) {
+      pagoTarjeta = parseFloat(cobroSemanal.value.comision_tarjeta);
+    } else {
+      pagoTarjeta = parseFloat(ventasTarjetaSemana.value || 0) * 0.85;
+    }
+
+    // Si el cobro ya tiene un total calculado, usarlo
+    if (cobroSemanal.value.total !== undefined && cobroSemanal.value.total !== null) {
+      total = parseFloat(cobroSemanal.value.total);
+      console.log('Usando total del cobro:', total);
+    } else {
+      // La fórmula correcta es:
+      // Total = Comisión efectivo (a pagar) + Costo pedidos extra (a pagar) - Pago tarjeta (a recibir)
+      total = comisionEfectivo + costoPedidosExtra - pagoTarjeta;
+      console.log('Calculando balance final manualmente:');
+    }
+
+    console.log('- Comisión efectivo (15% de ventas en efectivo):', comisionEfectivo);
+    console.log('- Costo pedidos extra:', costoPedidosExtra);
+    console.log('- Pago tarjeta (85% de ventas con tarjeta):', pagoTarjeta);
+    console.log('= Total:', total);
+
+    return total;
+  } catch (error) {
+    console.error('Error al calcular el balance final:', error);
+
+    // En caso de error, intentar usar el total del cobro directamente
+    if (cobroSemanal.value.total !== undefined && cobroSemanal.value.total !== null) {
+      return parseFloat(cobroSemanal.value.total);
+    }
+
+    return 0;
   }
-
-  // Calcular el balance final
-  const comisionEfectivo = parseFloat(ventasEfectivoSemana.value) * 0.15;
-  const comisionTarjeta = parseFloat(ventasTarjetaSemana.value) * 0.15;
-  const costoPedidosExtra = calcularCostoPedidosExtra();
-  const pagoTarjeta = parseFloat(ventasTarjetaSemana.value) * 0.85;
-
-  return comisionEfectivo + costoPedidosExtra - pagoTarjeta;
 });
 
 // Lista de sucursales
@@ -407,11 +489,11 @@ const totalVentasFiltradas = computed(() => {
   }, 0).toFixed(2);
 });
 
-// Función para obtener el nombre de la sucursal
-const getNombreSucursal = (idSucursal) => {
-  const sucursal = sucursales.value.find(s => s.id_sucursal === idSucursal);
-  return sucursal ? sucursal.colonia : 'Desconocida';
-};
+// Función para obtener el nombre de la sucursal (comentada porque no se usa actualmente)
+// const getNombreSucursal = (idSucursal) => {
+//   const sucursal = sucursales.value.find(s => s.id_sucursal === idSucursal);
+//   return sucursal ? sucursal.colonia : 'Desconocida';
+// };
 
 // Función para cargar las sucursales
 const cargarSucursales = async () => {
@@ -518,11 +600,25 @@ const cargarCobroSemanal = async () => {
 
     try {
       // Usar ID_LOCAL_TEMPORAL en lugar de userStore.user.id_local
-      const response = await axios.get(`${API_URL}/cobros-semanales/local/${ID_LOCAL_TEMPORAL}/actual`);
+      const response = await axios.get(`${API_URL}/cobros-semanales/local/${ID_LOCAL_TEMPORAL}/actual`, {
+        // Agregar un timeout para evitar esperas indefinidas
+        timeout: 10000,
+        // Manejar errores de red y respuestas no válidas
+        validateStatus: function (status) {
+          return status >= 200 && status < 300; // Solo aceptar respuestas exitosas
+        }
+      });
 
       console.log('Respuesta del servidor (cobro semanal) - status:', response.status);
       console.log('Respuesta del servidor (cobro semanal) - tipo:', typeof response.data);
-      console.log('Respuesta del servidor (cobro semanal) - data:', response.data);
+
+      // Verificar si la respuesta es un objeto válido antes de mostrarla
+      try {
+        console.log('Respuesta del servidor (cobro semanal) - data:',
+          typeof response.data === 'object' ? JSON.stringify(response.data) : response.data);
+      } catch (logError) {
+        console.log('No se pudo mostrar la respuesta completa');
+      }
 
       // Verificar si la respuesta es un objeto directamente o está dentro de un objeto con estructura {success, data}
       const cobroData = Array.isArray(response.data) && response.data.length > 0
@@ -536,6 +632,12 @@ const cargarCobroSemanal = async () => {
       if (cobroData) {
         cobroSemanal.value = cobroData;
         console.log('Datos del cobro semanal cargados:', cobroSemanal.value);
+        console.log('Fecha inicio del cobro:', cobroSemanal.value.periodo_inicio);
+        console.log('Fecha fin del cobro:', cobroSemanal.value.periodo_fin);
+        console.log('Fechas formateadas:', formatearFechaCorta(cobroSemanal.value.periodo_inicio), formatearFechaCorta(cobroSemanal.value.periodo_fin));
+
+        // Actualizar el contador de facturas pendientes
+        await verificarFacturasPendientes();
 
         // Cargar los productos del cobro
         if (cobroSemanal.value && cobroSemanal.value.productos) {
@@ -616,11 +718,25 @@ const cargarProductosCobro = async () => {
     console.log('Solicitando productos del cobro desde la API...');
 
     try {
-      const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/productos`);
+      const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/productos`, {
+        // Agregar un timeout para evitar esperas indefinidas
+        timeout: 10000,
+        // Manejar errores de red y respuestas no válidas
+        validateStatus: function (status) {
+          return status >= 200 && status < 300; // Solo aceptar respuestas exitosas
+        }
+      });
 
       console.log('Respuesta del servidor (productos) - status:', response.status);
       console.log('Respuesta del servidor (productos) - tipo:', typeof response.data);
-      console.log('Respuesta del servidor (productos) - data:', response.data);
+
+      // Verificar si la respuesta es un objeto válido antes de mostrarla
+      try {
+        console.log('Respuesta del servidor (productos) - data:',
+          typeof response.data === 'object' ? JSON.stringify(response.data) : response.data);
+      } catch (logError) {
+        console.log('No se pudo mostrar la respuesta completa de productos');
+      }
 
       // Verificar si la respuesta es un array directamente o está dentro de un objeto con estructura {success, data}
       const productosData = Array.isArray(response.data)
@@ -694,17 +810,127 @@ const showPedidosExtraTooltip = ref(false);
 const showComisionTooltip = ref(false);
 const showTarjetaTooltip = ref(false);
 
-// Calcular días restantes para pago
-const diasRestantesPago = computed(() => {
-  const hoy = new Date();
-  const limite = new Date(fechaLimitePago.value);
-  const diferencia = limite.getTime() - hoy.getTime();
-  const dias = Math.ceil(diferencia / (1000 * 60 * 60 * 24));
-  return Math.max(0, dias);
+// Variables para las advertencias y comunicados
+const facturasPendientes = ref(0); // Inicializar en 0, se actualizará con datos reales
+const todasFacturasPagadas = ref(true); // Inicializar como true, se actualizará con datos reales
+
+// Verificar si hay facturas pendientes anteriores
+const verificarFacturasPendientes = async () => {
+  try {
+    // Obtener todas las facturas del local
+    const response = await axios.get(`${API_URL}/cobros-semanales/local/${ID_LOCAL_TEMPORAL}`);
+
+    if (response.data.success) {
+      // Ordenar las facturas por fecha (más recientes primero)
+      const facturas = response.data.data.sort((a, b) =>
+        new Date(b.periodo_fin) - new Date(a.periodo_fin)
+      );
+
+      // Tomar solo las últimas 2 facturas
+      const ultimasFacturas = facturas.slice(0, 2);
+
+      // Filtrar las pendientes entre las últimas 2
+      const pendientes = ultimasFacturas.filter(cobro => cobro.estado === 'pendiente');
+
+      // Actualizar el contador de facturas pendientes
+      facturasPendientes.value = pendientes.length;
+      todasFacturasPagadas.value = pendientes.length === 0;
+
+      console.log(`[Facturas] Se encontraron ${facturasPendientes.value} facturas pendientes entre las últimas 2`);
+
+      // Si hay más de 2 facturas pendientes, se debería desactivar el local
+      if (pendientes.length >= 2) {
+        console.log('[Facturas] El local debería ser desactivado por tener 2 o más facturas pendientes');
+      }
+    }
+  } catch (error) {
+    console.error('Error al verificar facturas pendientes:', error);
+  }
+};
+
+// Llamar a la función al cargar el componente
+onMounted(() => {
+  verificarFacturasPendientes();
 });
 
-// Color de la barra de progreso según días restantes
+// Mostrar advertencia si hay 1 factura pendiente o si el balance es positivo
+const mostrarAdvertencia = computed(() => {
+  const condicion = facturasPendientes.value === 1 ||
+    (Number(balanceFinal.value) > 0 && facturasPendientes.value === 0);
+
+  console.log('Condición mostrarAdvertencia:', {
+    facturasPendientes: facturasPendientes.value,
+    balanceFinal: Number(balanceFinal.value),
+    resultado: condicion
+  });
+
+  return condicion;
+});
+
+// Mostrar comunicado si hay 2 o más facturas pendientes
+const mostrarComunicado = computed(() => {
+  const condicion = facturasPendientes.value >= 2;
+
+  console.log('Condición mostrarComunicado:', {
+    facturasPendientes: facturasPendientes.value,
+    resultado: condicion
+  });
+
+  return condicion;
+});
+
+// Calcular días restantes para pago (hasta el viernes)
+const diasRestantesPago = computed(() => {
+  try {
+    // Usar la fecha actual del sistema
+    const hoy = new Date();
+    console.log('Fecha actual:', hoy.toISOString());
+
+    // Ajustar para considerar solo año, mes, día
+    const hoyAjustado = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+    // Obtener el día de la semana (0 = domingo, 1 = lunes, ..., 5 = viernes, 6 = sábado)
+    const diaSemana = hoyAjustado.getDay();
+    console.log('Día de la semana actual:', diaSemana);
+
+    // Calcular días hasta el viernes
+    let diasHastaViernes;
+
+    if (diaSemana === 1) {
+      // Lunes
+      diasHastaViernes = 5;
+    } else if (diaSemana === 2) {
+      // Martes
+      diasHastaViernes = 4;
+    } else if (diaSemana === 3) {
+      // Miércoles
+      diasHastaViernes = 3;
+    } else if (diaSemana === 4) {
+      // Jueves
+      diasHastaViernes = 2;
+    } else if (diaSemana === 5) {
+      // Viernes
+      diasHastaViernes = 1;
+    } else {
+      // Sábado (6) o Domingo (0), ya pasó el plazo
+      diasHastaViernes = 0;
+    }
+
+    console.log('Días hasta el viernes:', diasHastaViernes);
+
+    // Asegurar que el valor no sea negativo
+    return Math.max(0, diasHastaViernes);
+  } catch (error) {
+    console.error('Error al calcular días restantes:', error);
+    return 5; // Valor predeterminado en caso de error: 5 días (lunes)
+  }
+});
+
+// Color de la barra de progreso según días restantes o facturas pendientes
 const getColorClaseDiasPago = computed(() => {
+  // Si hay 2 o más facturas pendientes, siempre mostrar en rojo
+  if (facturasPendientes.value >= 2) return 'bg-red-600';
+  // Si no, usar la lógica basada en días restantes
   if (diasRestantesPago.value <= 2) return 'bg-red-600';
   if (diasRestantesPago.value <= 4) return 'bg-amber-500';
   return 'bg-green-600';
@@ -712,8 +938,26 @@ const getColorClaseDiasPago = computed(() => {
 
 // Calcular costo de pedidos extra
 const calcularCostoPedidosExtra = () => {
-  if (membresia.value.id_membresia === 3) return 0; // Plan Premium no tiene costo por pedidos extra
-  return (pedidosExtra.value * membresia.value.precio_delivery_extra).toFixed(2);
+  // Si el cobro ya tiene un costo de pedidos extra calculado, usarlo
+  if (cobroSemanal.value && cobroSemanal.value.costo_pedidos_extra !== undefined && cobroSemanal.value.costo_pedidos_extra !== null) {
+    const costo = parseFloat(cobroSemanal.value.costo_pedidos_extra);
+    console.log('Usando costo de pedidos extra del cobro:', costo);
+    return costo.toFixed(2);
+  }
+
+  // Calcular manualmente
+  if (membresia.value.id_membresia === 3) return '0.00'; // Plan Premium no tiene costo por pedidos extra
+
+  const cantidad = parseInt(pedidosExtra.value || 0);
+  const precio = parseFloat(membresia.value.precio_delivery_extra || 0);
+  const costo = cantidad * precio;
+
+  console.log('Calculando costo de pedidos extra manualmente:');
+  console.log('- Cantidad:', cantidad);
+  console.log('- Precio por pedido:', precio);
+  console.log('= Costo total:', costo);
+
+  return costo.toFixed(2);
 };
 
 // Funciones para mostrar/ocultar los tooltips
@@ -752,15 +996,27 @@ const toggleTarjetaTooltip = () => {
 // Funciones para formatear fechas
 const formatearFechaCorta = (fecha) => {
   if (!fecha) return 'N/A';
-  const f = new Date(fecha);
-  return `${f.getDate().toString().padStart(2, '0')}/${(f.getMonth() + 1).toString().padStart(2, '0')}/${f.getFullYear()}`;
+
+  // Si la fecha es una cadena en formato ISO (YYYY-MM-DD)
+  if (typeof fecha === 'string') {
+    // Extraer directamente las partes de la fecha sin convertir a objeto Date
+    const partes = fecha.split('T')[0].split('-');
+    if (partes.length === 3) {
+      // Formatear como DD/MM/YYYY
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  }
+
+  // Si no es una cadena en formato ISO, devolver la fecha tal como está
+  return fecha.toString();
 };
 
-const obtenerDiaSemana = (fecha) => {
-  if (!fecha) return '';
-  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  return dias[new Date(fecha).getDay()];
-};
+// Función para obtener el día de la semana (comentada porque no se usa actualmente)
+// const obtenerDiaSemana = (fecha) => {
+//   if (!fecha) return '';
+//   const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+//   return dias[new Date(fecha).getDay()];
+// };
 
 // Funciones para eventos
 const exportToExcel = async () => {
@@ -774,7 +1030,7 @@ const exportToExcel = async () => {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(fechaInicioSemana.value)}.xlsx`);
+    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(cobroSemanal.value?.periodo_inicio)}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -798,7 +1054,7 @@ const exportToPDF = async () => {
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(fechaInicioSemana.value)}.pdf`);
+    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(cobroSemanal.value?.periodo_inicio)}.pdf`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -817,26 +1073,37 @@ const openHistorialCobros = () => {
 
 const openPagoComprobanteModal = () => {
   emit('openPagoComprobanteModal', cobroSemanal.value);
-};
 
-// Función para marcar un cobro como pagado
-const marcarComoPagado = async (formData) => {
-  try {
-    const response = await axios.put(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/pagar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-
-    if (response.data.success) {
-      console.log('Pago registrado correctamente');
-      await cargarCobroSemanal(); // Recargar los datos
+  // Agregar un evento para actualizar el contador después de procesar el pago
+  const checkPagoStatus = setInterval(async () => {
+    // Verificar si el modal de pago sigue abierto
+    const modal = document.querySelector('.modal-pago-comprobante');
+    if (!modal) {
+      // Si el modal ya no está visible, actualizar el contador y detener el intervalo
+      clearInterval(checkPagoStatus);
+      await verificarFacturasPendientes();
     }
-  } catch (err) {
-    console.error('Error al marcar como pagado:', err);
-    console.error('Error al registrar el pago');
-  }
+  }, 1000); // Verificar cada segundo
 };
+
+// Función para marcar un cobro como pagado (comentada porque no se usa actualmente)
+// const marcarComoPagado = async (formData) => {
+//   try {
+//     const response = await axios.put(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/pagar`, formData, {
+//       headers: {
+//         'Content-Type': 'multipart/form-data'
+//       }
+//     });
+//
+//     if (response.data.success) {
+//       console.log('Pago registrado correctamente');
+//       await cargarCobroSemanal(); // Recargar los datos
+//     }
+//   } catch (err) {
+//     console.error('Error al marcar como pagado:', err);
+//     console.error('Error al registrar el pago');
+//   }
+// };
 
 // Observar cambios en la fuente de datos
 watch(() => props.dataSource, async (newValue) => {

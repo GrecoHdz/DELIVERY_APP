@@ -8,9 +8,10 @@ const {
   deleteUsuario,
 } = require("../controllers/usuariosController");
 const {
-  createUsuarioRol, 
+  createUsuarioRol,
 } = require("../controllers/usuarioRolesController");
-const verifyToken = require("../middlewares/authMiddleware");
+// Autenticación desactivada temporalmente
+// const verifyToken = require("../middlewares/authMiddleware");
 const router = express.Router();
 
 // Middleware para validar errores
@@ -23,12 +24,12 @@ const validarErrores = (req, res, next) => {
 };
 
 // Obtener todos los usuarios
-router.get("/", verifyToken, getUsuarios);
+// Autenticación desactivada temporalmente
+router.get("/", getUsuarios);
 
 // Obtener un usuario por su ID
 router.get(
   "/:id",
-  verifyToken,
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   getUsuarioById
@@ -71,9 +72,9 @@ router.post(
 );
 
 // Actualizar un usuario
+// Autenticación desactivada temporalmente
 router.put(
   "/:id",
-  verifyToken,
   [
     param("id").isInt().withMessage("El ID debe ser un número entero"),
     body("usuario")
@@ -98,9 +99,9 @@ router.put(
 );
 
 // Eliminar un usuario
+// Autenticación desactivada temporalmente
 router.delete(
   "/:id",
-  verifyToken,
   [param("id").isInt().withMessage("El ID debe ser un número entero")],
   validarErrores,
   deleteUsuario

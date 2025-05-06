@@ -1,7 +1,8 @@
 const express = require("express");
 const { body, param, validationResult } = require("express-validator");
 
-const verifyToken = require("../middlewares/authMiddleware");
+// Autenticación desactivada temporalmente
+// const verifyToken = require("../middlewares/authMiddleware");
 const { getBancos, getBancoById, createBanco, updateBanco, deleteBanco } = require("../controllers/bancoController");
 
 const router = express.Router();
@@ -15,7 +16,8 @@ const validarErrores = (req, res, next) => {
   next();
 };
 
-router.get("/", verifyToken,getBancos);
+// Autenticación desactivada temporalmente
+router.get("/", getBancos);
 
 router.get(
   "/:id",

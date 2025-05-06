@@ -44,6 +44,9 @@ router.get("/:id_cobro/productos", cobroProductoController.getProductosByCobro);
 router.post("/:id_cobro/productos", cobroProductoController.addProductoToCobro);
 router.delete("/productos/:id_cobro_producto", cobroProductoController.removeProductoFromCobro);
 
+// Ruta para obtener productos por local y período
+router.get("/local/:id_local/productos", cobroProductoController.getProductosByLocalAndPeriod);
+
 // Rutas para exportación
 router.get("/:id_cobro/export/excel", exportController.exportToExcel);
 router.get("/:id_cobro/export/pdf", exportController.exportToPDF);

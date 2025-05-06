@@ -1,23 +1,20 @@
-const jwt = require("jsonwebtoken");
+// Middleware de autenticación modificado para permitir siempre el acceso
+// Este middleware ha sido desactivado temporalmente para eliminar la autenticación
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1]; // Extrae el token del header
-  
-  console.log("Token recibido:", token); // Log para verificar que llega el token
+  // Comentario para desarrolladores: Este middleware ha sido modificado para permitir siempre el acceso
+  // La autenticación será implementada más adelante
+  console.log("Middleware de autenticación desactivado - acceso permitido");
 
-  if (!token) {
-    return res.status(401).json({ message: "Acceso denegado. Token no proporcionado." });
-  }
+  // Simular un usuario autenticado para evitar errores en el código que espera req.user
+  req.user = {
+    id: 1,
+    usuario: 'usuario_temporal',
+    role: 1
+  };
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verifica el token
-    console.log("Token decodificado:", decoded); // Log para verificar el contenido del token
-    req.user = decoded; // Guarda los datos del usuario en `req.user`
-    next(); // Continua con la petición
-  } catch (error) {
-    console.error("Error al verificar el token:", error);
-    return res.status(401).json({ message: "Token inválido o expirado." });
-  }
+  // Continuar con la petición
+  next();
 };
 
 module.exports = verifyToken;

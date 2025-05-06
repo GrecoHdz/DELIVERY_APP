@@ -1,4 +1,5 @@
 const { CobroProducto, CobroSemanal, Producto, DireccionLocal, Local, Ciudad } = require("../models");
+const { Op } = require("sequelize");
 
 // Obtener todos los productos de un cobro
 exports.getProductosByCobro = async (req, res) => {
@@ -17,9 +18,14 @@ exports.getProductosByCobro = async (req, res) => {
       });
     }
 
-    // Obtener los productos del cobro
+    // Obtener los productos vendidos en el período del cobro
     const productos = await CobroProducto.findAll({
-      where: { id_cobro },
+      where: {
+        id_local: cobro.id_local,
+        fecha_venta: {
+          [Op.between]: [cobro.periodo_inicio, cobro.periodo_fin]
+        }
+      },
       include: [
         {
           model: DireccionLocal,
@@ -81,13 +87,14 @@ exports.addProductoToCobro = async (req, res) => {
 
     // Crear el producto del cobro
     const nuevoProducto = await CobroProducto.create({
-      id_cobro,
+      id_local: cobro.id_local,
       id_producto,
       nombre_producto,
       cantidad,
       precio_unitario,
       total,
       metodo_pago,
+      fecha_venta: new Date(), // Agregar la fecha de venta
       id_direccion_local,
     });
 
@@ -129,6 +136,96 @@ exports.addProductoToCobro = async (req, res) => {
   }
 };
 
+// Obtener productos por local y período
+exports.getProductosByLocalAndPeriod = async (req, res) => {
+  try {
+    const { id_local } = req.params;
+    const { inicio, fin } = req.query;
+
+    console.log(`[API] Solicitando productos para el local ID: ${id_local} en el período: ${inicio} - ${fin}`);
+
+    // Validar fechas
+    if (!inicio || !fin) {
+      return res.status(400).json({
+        success: false,
+        message: "Se requieren las fechas de inicio y fin del período",
+      });
+    }
+
+    const fechaInicio = new Date(inicio);
+    const fechaFin = new Date(fin);
+
+    // Asegurar que fechaFin tenga la hora 23:59:59.999
+    fechaFin.setHours(23, 59, 59, 999);
+
+    console.log(`[API] Fechas procesadas: ${fechaInicio.toISOString()} - ${fechaFin.toISOString()}`);
+
+    // Obtener los productos del período
+    const productos = await CobroProducto.findAll({
+      where: {
+        id_local,
+        fecha_venta: {
+          [Op.between]: [fechaInicio, fechaFin]
+        }
+      },
+      include: [
+        {
+          model: DireccionLocal,
+          as: "sucursal",
+          attributes: ["id_direccion_local", "colonia", "id_ciudad"],
+          include: [
+            {
+              model: Local,
+              attributes: ["nombre_local"],
+            },
+            {
+              model: Ciudad,
+              attributes: ["nombre_ciudad"],
+            },
+          ],
+        },
+      ],
+      order: [["fecha_venta", "DESC"]]
+    });
+
+    console.log(`[API] Se encontraron ${productos.length} productos para el local ID: ${id_local} en el período especificado`);
+
+    // Calcular totales
+    let ventasEfectivo = 0;
+    let ventasTarjeta = 0;
+
+    productos.forEach(producto => {
+      if (producto.metodo_pago === 'efectivo') {
+        ventasEfectivo += parseFloat(producto.total);
+      } else if (producto.metodo_pago === 'tarjeta') {
+        ventasTarjeta += parseFloat(producto.total);
+      }
+    });
+
+    const totalVentas = ventasEfectivo + ventasTarjeta;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        productos,
+        resumen: {
+          totalProductos: productos.length,
+          ventasEfectivo,
+          ventasTarjeta,
+          totalVentas
+        }
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener productos por período:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener los productos por período",
+      error: error.message,
+    });
+  }
+};
+
 // Eliminar un producto de un cobro
 exports.removeProductoFromCobro = async (req, res) => {
   try {
@@ -144,13 +241,24 @@ exports.removeProductoFromCobro = async (req, res) => {
       });
     }
 
-    // Obtener el cobro
-    const cobro = await CobroSemanal.findByPk(producto.id_cobro);
+    // Buscar el cobro actual para este local
+    const fechaProducto = new Date(producto.fecha_venta);
+    const cobro = await CobroSemanal.findOne({
+      where: {
+        id_local: producto.id_local,
+        periodo_inicio: {
+          [Op.lte]: fechaProducto
+        },
+        periodo_fin: {
+          [Op.gte]: fechaProducto
+        }
+      }
+    });
 
     if (!cobro) {
       return res.status(404).json({
         success: false,
-        message: "Cobro semanal no encontrado",
+        message: "No se encontró un cobro semanal para este producto",
       });
     }
 

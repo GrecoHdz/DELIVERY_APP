@@ -2141,21 +2141,21 @@
                 <h4 class="font-medium text-gray-800 mb-3">Resumen de cobro</h4>
                 <div class="bg-gray-50 p-4 rounded-lg">
                   <p class="flex justify-between py-2 border-b border-gray-200">
-                    <span class="text-gray-600">Pedidos extra ({{ cobroSeleccionado?.pedidos_extra }}):</span>
-                    <span class="font-medium text-red-600">L. {{ cobroSeleccionado?.costo_pedidos_extra.toFixed(2) }}</span>
+                    <span class="text-gray-600">Pedidos extra ({{ cobroSeleccionado?.pedidos_extra || 0 }}):</span>
+                    <span class="font-medium text-red-600">L. {{ parseFloat(cobroSeleccionado?.costo_pedidos_extra || 0).toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 border-b border-gray-200">
                     <span class="text-gray-600">Comisión app (Pagos Efectivo):</span>
-                    <span class="font-medium text-red-600">L. {{ cobroSeleccionado?.comision.toFixed(2) }}</span>
+                    <span class="font-medium text-red-600">L. {{ parseFloat(cobroSeleccionado?.comision || 0).toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 border-b border-gray-200">
                     <span class="text-gray-600">Comisión app (Pagos Tarjeta):</span>
-                    <span class="font-medium text-green-600">L. {{ (cobroSeleccionado?.total - cobroSeleccionado?.comision - cobroSeleccionado?.costo_pedidos_extra).toFixed(2) }}</span>
+                    <span class="font-medium text-green-600">L. {{ (parseFloat(cobroSeleccionado?.total || 0) - parseFloat(cobroSeleccionado?.comision || 0) - parseFloat(cobroSeleccionado?.costo_pedidos_extra || 0)).toFixed(2) }}</span>
                   </p>
                   <p class="flex justify-between py-2 text-lg">
-                    <span class="font-bold text-gray-800">{{ cobroSeleccionado?.total >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
-                    <span class="font-bold" :class="cobroSeleccionado?.total >= 0 ? 'text-red-600' : 'text-green-600'">
-                      L. {{ Math.abs(cobroSeleccionado?.total).toFixed(2) }}
+                    <span class="font-bold text-gray-800">{{ parseFloat(cobroSeleccionado?.total || 0) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:' }}</span>
+                    <span class="font-bold" :class="parseFloat(cobroSeleccionado?.total || 0) >= 0 ? 'text-red-600' : 'text-green-600'">
+                      L. {{ Math.abs(parseFloat(cobroSeleccionado?.total || 0)).toFixed(2) }}
                     </span>
                   </p>
                 </div>
@@ -2179,13 +2179,13 @@
                       <tr v-for="(producto, index) in productosVendidosSemana" :key="index"
                           :class="{'bg-gray-50': index % 2 === 0}">
                         <td class="py-2 px-4 text-gray-800">
-                          <span class="font-medium">(x{{ producto.cantidad }})</span> {{ producto.nombre }}
+                          <span class="font-medium">(x{{ producto.cantidad || 1 }})</span> {{ producto.nombre || 'Producto' }}
                         </td>
                         <td class="py-2 px-4 text-gray-800">
-                          <span>L. {{ producto.precio }}</span>
+                          <span>L. {{ parseFloat(producto.precio || 0).toFixed(2) }}</span>
                         </td>
                         <td class="py-2 px-4 font-medium text-gray-800 flex items-center">
-                          <span class="mr-2">L. {{ (producto.cantidad * producto.precio).toFixed(2) }}</span>
+                          <span class="mr-2">L. {{ (parseFloat(producto.cantidad || 1) * parseFloat(producto.precio || 0)).toFixed(2) }}</span>
                           <span v-if="producto.metodo_pago === 'tarjeta'" class="text-gray-500" title="Pago con tarjeta">
                             <CreditCardIcon :size="16" />
                           </span>
@@ -2348,6 +2348,7 @@ import LocalInfoHeader from '../components/dashboard-local/LocalInfoHeader.vue';
 import StatusCards from '../components/dashboard-local/StatusCards.vue';
 import CobroSemanal from '../components/dashboard-local/CobroSemanal.vue';
 import Chart from 'chart.js/auto';
+import axios from 'axios';
 import {
   Truck as TruckIcon,
   Bell as BellIcon,
@@ -2400,6 +2401,8 @@ const currentTab = ref('planes');
 const fuenteDatos = ref('mock'); // 'mock' o 'api'
 const ventasChart = ref(null);
 const productosChart = ref(null);
+const API_URL = 'http://localhost:4000'; // URL base para las solicitudes a la API
+const ID_LOCAL_TEMPORAL = 10; // ID del local para pruebas
 // Utilidades de formato (definidas al principio para evitar errores de inicialización)
 const formatearFecha = (fecha) => {
   if (!fecha) return 'N/A';
@@ -3391,7 +3394,7 @@ const cargarHistorialCobros = async () => {
     console.log('Cargando historial de cobros desde la API...');
 
     // Usar ID_LOCAL_TEMPORAL para la solicitud
-    const response = await axios.get(`${API_URL}/cobros-semanales/local/${local.value.id_local}`);
+    const response = await axios.get(`${API_URL}/cobros-semanales/local/${ID_LOCAL_TEMPORAL}`);
 
     console.log('Respuesta del servidor (historial cobros) - status:', response.status);
     console.log('Respuesta del servidor (historial cobros) - tipo:', typeof response.data);
@@ -3407,15 +3410,16 @@ const cargarHistorialCobros = async () => {
     if (cobrosData && cobrosData.length > 0) {
       // Transformar los datos al formato esperado por la aplicación
       historialCobros.value = cobrosData.map(cobro => ({
+        id_cobro: cobro.id_cobro,
         num_factura: cobro.num_factura || `FAC-${cobro.id_cobro}`,
         fecha_cobro: cobro.fecha_cobro || new Date().toISOString().split('T')[0],
         periodo_inicio: formatearFechaCorta(cobro.periodo_inicio),
         periodo_fin: formatearFechaCorta(cobro.periodo_fin),
-        num_pedidos: cobro.num_pedidos || 0,
-        pedidos_extra: cobro.pedidos_extra || 0,
-        costo_pedidos_extra: cobro.costo_pedidos_extra || 0,
-        comision: cobro.comision_efectivo || 0,
-        total: cobro.total || 0,
+        num_pedidos: parseFloat(cobro.num_pedidos || 0),
+        pedidos_extra: parseFloat(cobro.pedidos_extra || 0),
+        costo_pedidos_extra: parseFloat(cobro.costo_pedidos_extra || 0),
+        comision: parseFloat(cobro.comision_efectivo || 0),
+        total: parseFloat(cobro.total || 0),
         estado: cobro.estado || 'pendiente',
         pedidos: cobro.productos || []
       }));
@@ -3491,11 +3495,11 @@ const cargarProductosCobro = async (cobro) => {
         num_pedido: producto.id_cobro_producto,
         cliente: producto.cliente || 'Cliente',
         fecha: formatearFechaCorta(producto.fecha || new Date()),
-        total: producto.total || 0,
-        comision: producto.comision || 0,
-        nombre: producto.nombre_producto || producto.nombre,
-        cantidad: producto.cantidad || 1,
-        precio: producto.precio_unitario || producto.precio || 0,
+        total: parseFloat(producto.total || 0),
+        comision: parseFloat(producto.comision || 0),
+        nombre: producto.nombre_producto || producto.nombre || 'Producto',
+        cantidad: parseFloat(producto.cantidad || 1),
+        precio: parseFloat(producto.precio_unitario || producto.precio || 0),
         metodo_pago: producto.metodo_pago || 'efectivo'
       }));
 

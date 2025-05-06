@@ -93,15 +93,9 @@ const setupAssociations = () => {
     onDelete: "CASCADE"
   });
 
-  CobroSemanal.hasMany(CobroProducto, {
-    foreignKey: "id_cobro",
-    as: "productos",
-    onDelete: "CASCADE"
-  });
-
   // Asociaciones de CobroProducto
-  CobroProducto.belongsTo(CobroSemanal, {
-    foreignKey: "id_cobro",
+  CobroProducto.belongsTo(Local, {
+    foreignKey: "id_local",
     onDelete: "CASCADE"
   });
 
