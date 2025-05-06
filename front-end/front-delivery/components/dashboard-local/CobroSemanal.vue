@@ -21,7 +21,7 @@
               {{ facturasPendientes > 0 && Number(balanceFinal) > 0 ? '' : 'Resumen de ventas y comisiones de la semana' }}
             </p>
 
-            <!-- Contador de días restantes para pagar (solo si hay pagos pendientes) -->
+            <!-- Contador de días restantes para pagar (solo si hay pagos pendientes y el balance es positivo) -->
             <div v-if="facturasPendientes > 0 && Number(balanceFinal) > 0" class="mt-2">
               <div class="flex items-center mb-2">
                 <ClockIcon :size="16" :class="facturasPendientes >= 2 ? 'text-red-600 mr-2' : 'text-amber-600 mr-2'" />
@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Comunicado cuando el plazo ha vencido -->
+    <!-- Comunicado cuando hay 2 o más facturas pendientes (independientemente del balance) -->
     <div v-if="mostrarComunicado" class="bg-red-50 border-l-4 border-red-500 p-4 mb-4 mx-6 mt-4">
       <div class="flex items-start">
         <div class="flex-shrink-0">
@@ -853,8 +853,12 @@ onMounted(() => {
   verificarFacturasPendientes();
 });
 
-// Mostrar advertencia si hay 1 factura pendiente o si el balance es positivo
+// Mostrar advertencia si hay 1 factura pendiente o si el balance es positivo (pero nunca si el balance es negativo)
 const mostrarAdvertencia = computed(() => {
+  // Si el balance es negativo (la app debe pagar al local), no mostrar advertencia
+  if (Number(balanceFinal.value) < 0) return false;
+
+  // Si hay exactamente 1 factura pendiente o si hay balance positivo sin facturas pendientes
   const condicion = facturasPendientes.value === 1 ||
     (Number(balanceFinal.value) > 0 && facturasPendientes.value === 0);
 
@@ -867,12 +871,14 @@ const mostrarAdvertencia = computed(() => {
   return condicion;
 });
 
-// Mostrar comunicado si hay 2 o más facturas pendientes
+// Mostrar comunicado si hay 2 o más facturas pendientes (independientemente del balance)
 const mostrarComunicado = computed(() => {
+  // Si hay 2 o más facturas pendientes, mostrar comunicado siempre
   const condicion = facturasPendientes.value >= 2;
 
   console.log('Condición mostrarComunicado:', {
     facturasPendientes: facturasPendientes.value,
+    balanceFinal: Number(balanceFinal.value),
     resultado: condicion
   });
 
