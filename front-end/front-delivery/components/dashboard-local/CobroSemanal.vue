@@ -40,10 +40,20 @@
 
         <!-- Botones de exportación -->
         <div class="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-2">
-          <button @click="exportToExcel" class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700">
+          <button
+            @click="exportarExcel"
+            class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center justify-center"
+            :disabled="exportandoExcel"
+          >
+            <span v-if="exportandoExcel" class="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             Exportar Excel
           </button>
-          <button @click="exportToPDF" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+          <button
+            @click="exportarPDF"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center justify-center"
+            :disabled="exportandoPDF"
+          >
+            <span v-if="exportandoPDF" class="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             Exportar PDF
           </button>
         </div>
@@ -319,6 +329,7 @@ import {
   AlertCircle as AlertCircleIcon
 } from 'lucide-vue-next';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 
 // Configuración de API
 const API_URL = 'http://localhost:4000';
@@ -1025,50 +1036,229 @@ const formatearFechaCorta = (fecha) => {
 // };
 
 // Funciones para eventos
-const exportToExcel = async () => {
-  try {
-    // Implementar la exportación a Excel
-    const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/export/excel`, {
-      responseType: 'blob'
-    });
+// Variables para controlar el estado de exportación
+const exportandoExcel = ref(false);
+const exportandoPDF = ref(false);
 
-    // Crear un enlace para descargar el archivo
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(cobroSemanal.value?.periodo_inicio)}.xlsx`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// Función para exportar a Excel
+const exportarExcel = async () => {
+  // Evitar múltiples clics
+  if (exportandoExcel.value) return;
+
+  try {
+    // Activar indicador de carga
+    exportandoExcel.value = true;
+
+    console.log('Iniciando exportación a Excel...');
+
+    // Validar que exista un cobro semanal
+    if (!cobroSemanal.value || !cobroSemanal.value.id_cobro) {
+      console.error('Error: No hay un cobro semanal válido para exportar');
+      alert('No se puede exportar el Excel porque no hay datos de cobro disponibles');
+      return;
+    }
+
+    // Importar XLSX si aún no está disponible
+    if (typeof XLSX === 'undefined') {
+      // Si estamos en un entorno de desarrollo, podemos importar dinámicamente
+      try {
+        const XLSX = await import('xlsx');
+        if (!XLSX) {
+          throw new Error('No se pudo cargar la librería XLSX');
+        }
+      } catch (e) {
+        console.error('Error al cargar la librería XLSX:', e);
+        alert('No se pudo cargar la librería para exportar a Excel. Por favor, inténtelo de nuevo más tarde.');
+        return;
+      }
+    }
+
+    // Crear un nuevo libro de trabajo
+    const wb = XLSX.utils.book_new();
+
+    // HOJA 1: RESUMEN DEL COBRO
+    // Preparar datos para la hoja de resumen
+    const resumenData = [
+      ['DETALLE DE COBRO SEMANAL'],
+      [],
+      ['Información del Local'],
+      ['Nombre:', cobroSemanal.value.Local?.nombre_local || 'Local'],
+      ['RTN:', cobroSemanal.value.Local?.rtn || 'RTN no disponible'],
+      ['Período:', `${formatearFechaCorta(cobroSemanal.value.periodo_inicio)} al ${formatearFechaCorta(cobroSemanal.value.periodo_fin)}`],
+      ['Sucursal:', sucursalSeleccionada.value === 'todas' ? 'Todas las sucursales' : sucursales.value.find(s => s.id_sucursal === parseInt(sucursalSeleccionada.value))?.colonia || 'Sucursal'],
+      [],
+      ['Resumen Financiero'],
+      ['Pedidos extra:', `L. ${calcularCostoPedidosExtra()}`],
+      ['Comisión app (Pagos Efectivo):', `L. ${cobroSemanal.value?.comision_efectivo ? parseFloat(cobroSemanal.value.comision_efectivo).toFixed(2) : (parseFloat(ventasEfectivoSemana.value || 0) * 0.15).toFixed(2)}`],
+      ['Pago a recibir (Pagos Tarjeta):', `L. ${(parseFloat(ventasTarjetaSemana.value || 0) * 0.85).toFixed(2)}`],
+      [],
+      [Number(balanceFinal.value) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:', `L. ${Math.abs(Number(balanceFinal.value) || 0).toFixed(2)}`],
+      [],
+      ['Información de Pago'],
+      ['Banco Atlántida:', 'Cuenta: 1234-5678-9012-3456'],
+      ['BAC Credomatic:', 'Cuenta: 9876-5432-1098-7654'],
+      [],
+      [`Fecha de generación: ${formatearFechaCorta(new Date())}`],
+      [`© ${new Date().getFullYear()} Delivery App - Todos los derechos reservados`]
+    ];
+
+    // Crear hoja de resumen
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+
+    // Configurar ancho de columnas para la hoja de resumen
+    const wscols1 = [
+      { wch: 30 }, // Columna A
+      { wch: 40 }  // Columna B
+    ];
+    wsResumen['!cols'] = wscols1;
+
+    // Agregar estilos a la hoja de resumen (títulos en negrita)
+    // Nota: XLSX no soporta estilos directamente, pero podemos usar algunas propiedades básicas
+    wsResumen['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } } // Fusionar celdas A1:B1 para el título
+    ];
+
+    // HOJA 2: PRODUCTOS VENDIDOS
+    // Preparar datos para la hoja de productos
+    const productosHeaders = ['Producto', 'Cantidad', 'Precio Unitario', 'Total', 'Método de Pago'];
+
+    // Convertir los productos a filas para la tabla
+    const productosRows = productosFiltrados.value.map(producto => [
+      producto.nombre,
+      producto.cantidad,
+      parseFloat(producto.precio).toFixed(2),
+      (producto.cantidad * producto.precio).toFixed(2),
+      producto.metodo_pago === 'tarjeta' ? 'Tarjeta' : 'Efectivo'
+    ]);
+
+    // Agregar fila de totales
+    productosRows.push([
+      'TOTAL',
+      productosFiltrados.value.reduce((total, producto) => total + producto.cantidad, 0),
+      '',
+      totalVentasFiltradas.value,
+      ''
+    ]);
+
+    // Crear hoja de productos
+    const wsProductos = XLSX.utils.aoa_to_sheet([productosHeaders, ...productosRows]);
+
+    // Configurar ancho de columnas para la hoja de productos
+    const wscols2 = [
+      { wch: 40 }, // Producto
+      { wch: 10 }, // Cantidad
+      { wch: 15 }, // Precio Unitario
+      { wch: 15 }, // Total
+      { wch: 15 }  // Método de Pago
+    ];
+    wsProductos['!cols'] = wscols2;
+
+    // Agregar las hojas al libro
+    XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen del Cobro');
+    XLSX.utils.book_append_sheet(wb, wsProductos, 'Productos Vendidos');
+
+    // Generar nombre de archivo
+    const nombreArchivo = `Cobro_Semanal_${formatearFechaCorta(cobroSemanal.value.periodo_inicio)}_${formatearFechaCorta(cobroSemanal.value.periodo_fin)}`;
+
+    // Exportar a archivo
+    XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
 
     console.log('Archivo Excel generado correctamente');
-  } catch (err) {
-    console.error('Error al exportar a Excel:', err);
-    console.error('Error al generar el archivo Excel');
+  } catch (error) {
+    console.error('Error al exportar a Excel:', error);
+    alert(`Error al generar el Excel: ${error.message}`);
+  } finally {
+    // Desactivar indicador de carga
+    exportandoExcel.value = false;
   }
 };
 
-const exportToPDF = async () => {
+// Función para exportar a PDF
+const exportarPDF = async () => {
+  // Evitar múltiples clics
+  if (exportandoPDF.value) return;
+
   try {
-    // Implementar la exportación a PDF
-    const response = await axios.get(`${API_URL}/cobros-semanales/${cobroSemanal.value.id_cobro}/export/pdf`, {
-      params: { sucursal: sucursalSeleccionada.value },
-      responseType: 'blob'
-    });
+    // Activar indicador de carga
+    exportandoPDF.value = true;
 
-    // Crear un enlace para descargar el archivo
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `cobro-semanal-${formatearFechaCorta(cobroSemanal.value?.periodo_inicio)}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.log('Iniciando exportación a PDF...');
 
-    console.log('Archivo PDF generado correctamente');
-  } catch (err) {
-    console.error('Error al exportar a PDF:', err);
-    console.error('Error al generar el archivo PDF');
+    // Validar que exista un cobro semanal
+    if (!cobroSemanal.value || !cobroSemanal.value.id_cobro) {
+      console.error('Error: No hay un cobro semanal válido para exportar');
+      alert('No se puede exportar el PDF porque no hay datos de cobro disponibles');
+      return;
+    }
+
+    // Preparar datos para la vista previa del PDF
+    const tituloSucursal = sucursalSeleccionada.value === 'todas'
+      ? 'Todas las sucursales'
+      : sucursales.value.find(s => s.id_sucursal === parseInt(sucursalSeleccionada.value))?.colonia || 'Sucursal';
+
+    // Preparar los datos para la vista previa
+    const pdfPreviewData = {
+      titulo: 'Detalle de Cobro',
+      subtitulo: cobroSemanal.value.num_factura || `FAC-${formatearFechaCorta(cobroSemanal.value.periodo_inicio)}-${cobroSemanal.value.id_local}`,
+      periodo: `${formatearFechaCorta(cobroSemanal.value.periodo_inicio)} al ${formatearFechaCorta(cobroSemanal.value.periodo_fin)}`,
+      local: {
+        nombre_local: cobroSemanal.value.Local?.nombre_local || 'Local',
+        rtn: cobroSemanal.value.Local?.rtn || 'RTN no disponible',
+        sucursal: tituloSucursal,
+        membresia: cobroSemanal.value.Local?.MembresiaLocales?.nombre_membresia || 'Básica'
+      },
+      tablaTitle: 'Productos Vendidos',
+      headers: ['Producto', 'Cantidad', 'Precio', 'Total'],
+      rows: productosFiltrados.value.map(producto => [
+        producto.nombre,
+        producto.cantidad.toString(),
+        `L. ${parseFloat(producto.precio).toFixed(2)}`,
+        `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
+      ]),
+      footers: ['', '', 'Total Ventas:', `L. ${totalVentasFiltradas.value}`],
+      resumen: [
+        {
+          label: 'Pedidos extra',
+          value: `L. ${calcularCostoPedidosExtra()}`,
+          color: 'text-red-600',
+          cantidad: pedidosExtra.value
+        },
+        {
+          label: 'Comisión app (Pagos Efectivo)',
+          value: `L. ${cobroSemanal.value?.comision_efectivo ? parseFloat(cobroSemanal.value.comision_efectivo).toFixed(2) : (parseFloat(ventasEfectivoSemana.value || 0) * 0.15).toFixed(2)}`,
+          color: 'text-red-600'
+        },
+        {
+          label: 'Pago a recibir (Pagos Tarjeta)',
+          value: `L. ${(parseFloat(ventasTarjetaSemana.value || 0) * 0.85).toFixed(2)}`,
+          color: 'text-green-600'
+        },
+        {
+          label: Number(balanceFinal.value) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
+          value: `L. ${Math.abs(Number(balanceFinal.value) || 0).toFixed(2)}`,
+          color: Number(balanceFinal.value) >= 0 ? 'text-red-600' : 'text-green-600'
+        }
+      ],
+      mostrarGrafico: false,
+      esComprobante: false,
+      estado: cobroSemanal.value.estado || 'pendiente'
+    };
+
+
+
+    // Asegurarse de que el RTN se pase correctamente
+    if (cobroSemanal.value && cobroSemanal.value.Local && cobroSemanal.value.Local.rtn) {
+      pdfPreviewData.local.rtn = cobroSemanal.value.Local.rtn;
+    }
+
+    // Emitir evento para mostrar la vista previa
+    emit('exportToPDF', pdfPreviewData);
+  } catch (error) {
+    console.error('Error al generar la vista previa del PDF:', error);
+    alert(`Error al generar la vista previa del PDF: ${error.message}`);
+  } finally {
+    // Desactivar indicador de carga
+    exportandoPDF.value = false;
   }
 };
 

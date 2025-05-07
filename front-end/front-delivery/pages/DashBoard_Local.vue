@@ -2336,7 +2336,6 @@
       :estado="pdfPreviewData.estado"
       @close="showPdfPreview = false"
       @download="downloadPDF"
-      @cambiarSucursal="cambiarSucursalPdf"
     />
   </div>
 </template>
@@ -3156,6 +3155,22 @@ const isPremiumFeatureAvailable = (requiredMembership) => {
   return membresia.value.id_membresia >= requiredMembership;
 };
 
+// Función para obtener el nombre de la membresía según su ID
+const obtenerNombreMembresia = (id_membresia) => {
+  if (!id_membresia) return 'Básica';
+
+  switch (parseInt(id_membresia)) {
+    case 1:
+      return 'Gratuita';
+    case 2:
+      return 'Básica';
+    case 3:
+      return 'Premium';
+    default:
+      return 'Básica';
+  }
+};
+
 // Modal de notificaciones
 const showNotifications = () => {
   openModal('notificaciones');
@@ -3687,9 +3702,11 @@ const imprimirComprobante = () => {
     periodo: `${cobroSeleccionado.value.periodo_inicio} al ${cobroSeleccionado.value.periodo_fin}`,
     local: {
       ...local.value,
-      sucursal: 'Todas las sucursales' // Siempre mostrar "Todas las sucursales"
+      sucursal: 'Todas las sucursales', // Siempre mostrar "Todas las sucursales"
+      rtn: local.value?.rtn || 'Sin RTN',
+      membresia: obtenerNombreMembresia(local.value?.id_membresia) || 'Básica'
     },
-    tablaTitle: 'Productos Vendidos en la Semana',
+    tablaTitle: 'Productos Vendidos',
     headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
     rows: [],
     footers: ['', '', 'Total:', `L. ${Math.abs(Number(cobroSeleccionado.value.total) || 0).toFixed(2)}`],
@@ -3708,11 +3725,6 @@ const imprimirComprobante = () => {
         label: 'Comisión app (Pagos Efectivo)',
         value: `L. ${cobroSeleccionado.value.comision?.toFixed(2) || '0.00'}`,
         color: 'text-red-600'
-      },
-      {
-        label: 'Número de pedidos',
-        value: `${cobroSeleccionado.value.num_pedidos || 0}`,
-        color: 'text-gray-800'
       },
       {
         label: Number(cobroSeleccionado.value.total) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
@@ -3750,6 +3762,13 @@ const imprimirComprobante = () => {
 
   // Asegurarnos de que el estado se pase correctamente
   pdfPreviewData.value.estado = cobroSeleccionado.value.estado;
+
+  // Asegurarse de que el RTN se pase correctamente
+  if (cobroSeleccionado.value && cobroSeleccionado.value.Local && cobroSeleccionado.value.Local.rtn) {
+    pdfPreviewData.value.local.rtn = cobroSeleccionado.value.Local.rtn;
+  } else if (local.value && local.value.rtn) {
+    pdfPreviewData.value.local.rtn = local.value.rtn;
+  }
 
   showPdfPreview.value = true;
 
@@ -3851,81 +3870,34 @@ const pdfPreviewData = ref({
 });
 
 // Función para manejar el evento de exportar a PDF
-const handleExportToPDF = (sucursalId) => {
-  exportToPDF(sucursalId);
-};
+const handleExportToPDF = (pdfData) => {
+  // Si recibimos datos directamente del componente CobroSemanal, usarlos
+  if (pdfData && typeof pdfData === 'object' && !pdfData.sucursalId) {
+    // Asignar los datos
+    pdfPreviewData.value = pdfData;
 
-// Función para cambiar la sucursal en la vista previa del PDF
-const cambiarSucursalPdf = (sucursalId) => {
-  // Recalcular los valores financieros según la sucursal seleccionada
-  let ventasEfectivoFiltradas = ventasEfectivoSemana.value;
-  let ventasTarjetaFiltradas = ventasTarjetaSemana.value;
-  let pedidosExtraFiltrados = pedidosExtra.value;
-  let costoPedidosExtraFiltrado = calcularCostoPedidosExtra();
-
-  // Si se selecciona una sucursal específica, filtrar los valores
-  if (sucursalId !== 'todas') {
-    // Simulamos que cada sucursal tiene un porcentaje del total
-    // En un entorno real, estos datos vendrían de la base de datos
-    const porcentajes = {
-      1: 0.4, // 40% para sucursal 1
-      2: 0.35, // 35% para sucursal 2
-      3: 0.25  // 25% para sucursal 3
-    };
-
-    const porcentaje = porcentajes[sucursalId] || 0.33; // Por defecto, distribución equitativa
-
-    ventasEfectivoFiltradas = (parseFloat(ventasEfectivoSemana.value) * porcentaje).toFixed(2);
-    ventasTarjetaFiltradas = (parseFloat(ventasTarjetaSemana.value) * porcentaje).toFixed(2);
-    pedidosExtraFiltrados = Math.round(pedidosExtra.value * porcentaje);
-    costoPedidosExtraFiltrado = (parseFloat(calcularCostoPedidosExtra()) * porcentaje).toFixed(2);
-  }
-
-  // Calcular el balance final filtrado
-  const comisionEfectivo = (parseFloat(ventasEfectivoFiltradas) * 0.15).toFixed(2);
-  const comisionTarjeta = (parseFloat(ventasTarjetaFiltradas) * 0.85).toFixed(2);
-  const balanceFinalFiltrado = (parseFloat(costoPedidosExtraFiltrado) + parseFloat(comisionEfectivo) - parseFloat(comisionTarjeta)).toFixed(2);
-
-  // Actualizar el resumen financiero en la vista previa
-  pdfPreviewData.value.resumen = [
-    {
-      label: 'Pedidos Extra',
-      value: `${pedidosExtraFiltrados}`,
-      color: 'text-gray-800'
-    },
-    {
-      label: 'Costo Pedidos Extra',
-      value: `L. ${costoPedidosExtraFiltrado}`,
-      color: 'text-red-600'
-    },
-    {
-      label: 'Comisión app (Pagos Efectivo)',
-      value: `L. ${comisionEfectivo}`,
-      color: 'text-red-600'
-    },
-    {
-      label: 'Comisión app (Pagos Tarjeta)',
-      value: `L. ${comisionTarjeta}`,
-      color: 'text-green-600'
-    },
-    {
-      label: Number(balanceFinalFiltrado) >= 0 ? 'Total a Pagar' : 'Total a Recibir',
-      value: `L. ${Math.abs(Number(balanceFinalFiltrado)).toFixed(2)}`,
-      color: Number(balanceFinalFiltrado) >= 0 ? 'text-red-600' : 'text-green-600'
+    // Asegurarse de que el RTN se pase correctamente
+    if (local.value && local.value.rtn && (!pdfPreviewData.value.local.rtn || pdfPreviewData.value.local.rtn === 'RTN no disponible')) {
+      pdfPreviewData.value.local.rtn = local.value.rtn;
     }
-  ];
 
-  // Llamar a exportToPDF para actualizar la tabla de productos
-  exportToPDF(sucursalId);
+    showPdfPreview.value = true;
+  } else {
+    // Si solo recibimos el ID de la sucursal, usar la función anterior
+    const sucursalId = typeof pdfData === 'object' ? pdfData.sucursalId : pdfData;
+    exportToPDF(sucursalId);
+  }
 };
+
+
 
 // Función para exportar a PDF el cobro semanal
 const exportToPDF = (sucursalId = 'todas') => {
   // Lista de sucursales (simulada)
   const sucursales = [
-    { id_sucursal: 1, nombre: "Sucursal Central" },
-    { id_sucursal: 2, nombre: "Sucursal Mall Multiplaza" },
-    { id_sucursal: 3, nombre: "Sucursal City Mall" }
+    { id_sucursal: 1, colonia: "Kennedy", nombre: "Sucursal Central" },
+    { id_sucursal: 2, colonia: "Los Proceres", nombre: "Sucursal Mall Multiplaza" },
+    { id_sucursal: 3, colonia: "Centro", nombre: "Sucursal City Mall" }
   ];
 
   // Función para obtener el nombre de la sucursal
@@ -3974,9 +3946,11 @@ const exportToPDF = (sucursalId = 'todas') => {
     periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`,
     local: {
       ...local.value,
-      sucursal: tituloSucursal
+      sucursal: tituloSucursal,
+      rtn: local.value?.rtn || 'Sin RTN',
+      membresia: obtenerNombreMembresia(local.value?.id_membresia) || 'Básica'
     },
-    tablaTitle: 'Productos Vendidos en la Semana',
+    tablaTitle: 'Productos Vendidos',
     headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
     rows: productosData,
     footers: ['', '', 'Total Ventas:', `L. ${totalVentasFiltradas}`],
@@ -3984,7 +3958,8 @@ const exportToPDF = (sucursalId = 'todas') => {
       {
         label: 'Pedidos Extra',
         value: `${pedidosExtra.value}`,
-        color: 'text-gray-800'
+        color: 'text-gray-800',
+        showQuantityInLabel: true // Indicador para mostrar la cantidad en la etiqueta
       },
       {
         label: 'Costo Pedidos Extra',
@@ -4036,7 +4011,7 @@ const downloadPDF = () => {
 
   // Título del documento
   doc.setTextColor(0, 0, 0);
-  doc.text(pdfPreviewData.value.titulo, margenIzquierdo, 20);
+  doc.text(pdfPreviewData.value.titulo || 'Detalle de Cobro', margenIzquierdo, 20);
 
   // Línea debajo del título
   doc.setDrawColor(200, 200, 200);
@@ -4044,7 +4019,7 @@ const downloadPDF = () => {
 
   // Número de factura
   doc.setFontSize(12);
-  doc.text(pdfPreviewData.value.subtitulo, margenIzquierdo, 30);
+  doc.text(pdfPreviewData.value.subtitulo || 'Factura: N/A', margenIzquierdo, 30);
 
   // Fecha de generación
   doc.setFont('helvetica', 'normal');
@@ -4068,12 +4043,12 @@ const downloadPDF = () => {
   // Etiquetas y valores en líneas separadas
   doc.text('Nombre:', margenIzquierdo + 5, 50);
   doc.setFont('helvetica', 'bold');
-  doc.text(local.value.nombre_local, margenIzquierdo + 5, 55);
+  doc.text(local.value?.nombre_local || 'Local', margenIzquierdo + 5, 55);
 
   doc.setFont('helvetica', 'normal');
   doc.text('RTN:', margenIzquierdo + 5, 62);
   doc.setFont('helvetica', 'bold');
-  doc.text(local.value.rtn, margenIzquierdo + 5, 67);
+  doc.text(pdfPreviewData.value.local?.rtn || 'Sin RTN', margenIzquierdo + 5, 67);
 
   doc.setFont('helvetica', 'normal');
   doc.text('Período:', margenIzquierdo + 5, 74);
@@ -4081,9 +4056,9 @@ const downloadPDF = () => {
   doc.text(`${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`, margenIzquierdo + 5, 79);
 
   doc.setFont('helvetica', 'normal');
-  doc.text('Sucursal:', margenIzquierdo + 5, 86);
+  doc.text('Membresía Activa:', margenIzquierdo + 5, 86);
   doc.setFont('helvetica', 'bold');
-  doc.text(pdfPreviewData.value.sucursal, margenIzquierdo + 5, 91);
+  doc.text(obtenerNombreMembresia(local.value?.id_membresia) || 'Básica', margenIzquierdo + 5, 91);
 
   // Sección de resumen financiero
   doc.setFontSize(12);
@@ -4099,42 +4074,144 @@ const downloadPDF = () => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
 
-  // Etiquetas y valores
-  doc.text('Pedidos extra:', centroX + 10, 50);
-  doc.setTextColor(255, 0, 0);
-  doc.text(`L. ${calcularCostoPedidosExtra()}`, centroX + anchoDisponible / 2 - 15, 50, { align: 'right' });
+  // Usar los datos del resumen de pdfPreviewData
+  const resumen = pdfPreviewData.value.resumen;
+  let yPos = 50;
+  const lineHeight = 9; // Aumentar aún más el espacio entre líneas
+  const lastItemIndex = resumen.length - 1;
 
-  doc.setTextColor(0, 0, 0);
-  doc.text('Comisión app (Pagos Efectivo):', centroX + 10, 57);
-  doc.setTextColor(255, 0, 0);
-  doc.text(`L. ${(parseFloat(ventasEfectivoSemana.value || 0) * 0.15).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 57, { align: 'right' });
+  // Calcular el ancho máximo de las etiquetas para alinear los valores
+  let maxLabelWidth = 0;
+  for (let i = 0; i < resumen.length; i++) {
+    // Modificar la etiqueta de Pedidos extra para incluir la cantidad
+    let label = resumen[i].label;
+    if (label === 'Pedidos Extra' && resumen[i].value) {
+      // Extraer el número de pedidos extra (eliminar cualquier texto no numérico)
+      const numPedidos = resumen[i].value.toString().replace(/[^0-9]/g, '');
+      if (numPedidos) {
+        label = `Pedidos Extra (${numPedidos})`;
+      }
+    }
 
-  doc.setTextColor(0, 0, 0);
-  doc.text('Comisión app (Pagos Tarjeta):', centroX + 10, 64);
-  doc.setTextColor(0, 128, 0);
-  doc.text(`L. ${(parseFloat(ventasTarjetaSemana.value || 0) * 0.85).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 64, { align: 'right' });
+    const labelWidth = doc.getTextWidth(`${label}:`);
+    if (labelWidth > maxLabelWidth) {
+      maxLabelWidth = labelWidth;
+    }
+  }
 
-  // Balance final
+  // Añadir margen adicional
+  maxLabelWidth += 10;
+
+  // Posición X para los valores (alineados a la derecha)
+  // Aumentar la distancia entre etiquetas y valores
+  const valorX = centroX + anchoDisponible / 2 - 10;
+
+  // Mostrar todos los elementos excepto el último (Total)
+  for (let i = 0; i < lastItemIndex; i++) {
+    const item = resumen[i];
+
+    // Modificar la etiqueta de Pedidos extra para incluir la cantidad
+    let label = item.label;
+    if (label === 'Pedidos Extra' && item.value) {
+      // Extraer el número de pedidos extra (eliminar cualquier texto no numérico)
+      const numPedidos = item.value.toString().replace(/[^0-9]/g, '');
+      if (numPedidos) {
+        label = `Pedidos Extra (${numPedidos})`;
+      }
+    }
+
+    // Etiqueta
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    // Limitar la longitud de la etiqueta para evitar solapamientos
+    const etiquetaX = centroX + 10;
+    doc.text(`${label}:`, etiquetaX, yPos);
+
+    // Valor con color
+    if (item.color === 'text-red-600') {
+      doc.setTextColor(255, 0, 0);
+    } else if (item.color === 'text-green-600') {
+      doc.setTextColor(0, 128, 0);
+    } else {
+      doc.setTextColor(0, 0, 0);
+    }
+
+    // Asegurar que el valor sea una cadena y tenga el formato correcto
+    const valor = item.value.toString();
+    // Si es Pedidos Extra, solo mostrar el costo, no la cantidad
+    const valorMostrado = label.startsWith('Pedidos Extra') && !valor.includes('L.') ? '' : valor;
+
+    // Asegurar que hay suficiente espacio entre la etiqueta y el valor
+    const etiquetaWidth = doc.getTextWidth(`${label}:`);
+    const espacioDisponible = valorX - (etiquetaX + etiquetaWidth);
+
+    // Si el espacio es insuficiente, ajustar la posición del valor
+    const valorPosX = espacioDisponible < 10 ? valorX + 5 : valorX;
+
+    doc.text(valorMostrado, valorPosX, yPos, { align: 'right' });
+
+    yPos += lineHeight;
+  }
+
+  // Línea separadora para el total
+  doc.setDrawColor(200, 200, 200);
+  doc.line(centroX + 10, yPos - 2, centroX + anchoDisponible / 2 - 10, yPos - 2);
+  yPos += 5; // Aumentar el espacio antes del total
+
+  // Balance final (último elemento)
+  const totalItem = resumen[lastItemIndex];
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${Number(balanceFinal.value) >= 0 ? 'Total a Pagar:' : 'Total a Recibir:'}`, centroX + 10, 78);
-  doc.setTextColor(Number(balanceFinal.value) >= 0 ? 255 : 0, Number(balanceFinal.value) >= 0 ? 0 : 128, 0);
-  doc.text(`L. ${Math.abs(Number(balanceFinal.value) || 0).toFixed(2)}`, centroX + anchoDisponible / 2 - 15, 78, { align: 'right' });
+
+  const etiquetaX = centroX + 10;
+  doc.text(`${totalItem.label}:`, etiquetaX, yPos);
+
+  if (totalItem.color === 'text-red-600') {
+    doc.setTextColor(255, 0, 0);
+  } else if (totalItem.color === 'text-green-600') {
+    doc.setTextColor(0, 128, 0);
+  }
+
+  // Asegurar que hay suficiente espacio entre la etiqueta y el valor
+  const etiquetaWidth = doc.getTextWidth(`${totalItem.label}:`);
+  const espacioDisponible = valorX - (etiquetaX + etiquetaWidth);
+
+  // Si el espacio es insuficiente, ajustar la posición del valor
+  const valorPosX = espacioDisponible < 10 ? valorX + 5 : valorX;
+
+  doc.text(totalItem.value.toString(), valorPosX, yPos, { align: 'right' });
 
   // Título de la tabla de productos
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.text('Productos Vendidos en la Semana', margenIzquierdo, 105);
+  doc.text('Productos Vendidos', margenIzquierdo, 105);
+
+  // Añadir la sucursal entre paréntesis en una nueva línea
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100); // Color gris para efecto opaco
+  doc.text(`(${pdfPreviewData.value?.local?.sucursal || 'Todas las sucursales'})`, margenIzquierdo, 110);
 
   // Preparar datos para la tabla de productos
   const productosData = pdfPreviewData.value.rows;
 
+  // Limitar la cantidad de productos a mostrar si hay muchos
+  let productosParaMostrar = productosData;
+  const maxFilas = 15; // Máximo número de filas a mostrar
+  let productosTruncados = false;
+
+  if (productosData.length > maxFilas) {
+    productosParaMostrar = productosData.slice(0, maxFilas);
+    productosTruncados = true;
+  }
+
   // Agregar tabla de productos con diseño mejorado
   autoTable(doc, {
-    startY: 108,
+    startY: 113, // Ajustar la posición de inicio para dejar espacio para el texto de la sucursal
     head: [pdfPreviewData.value.headers],
-    body: productosData,
+    body: productosParaMostrar,
     foot: [pdfPreviewData.value.footers],
     theme: 'grid',
     headStyles: {
@@ -4153,21 +4230,35 @@ const downloadPDF = () => {
       fillColor: [245, 245, 245]
     },
     styles: {
-      cellPadding: 5,
-      fontSize: 10,
+      cellPadding: 1.5, // Reducir aún más el padding para hacer las filas menos altas
+      fontSize: 7, // Reducir aún más el tamaño de la fuente
       textColor: [0, 0, 0],
-      halign: 'center' // Centrar todo el contenido por defecto
+      halign: 'center', // Centrar todo el contenido por defecto
+      overflow: 'linebreak', // Permitir saltos de línea para textos largos
+      lineWidth: 0.1, // Líneas más delgadas para las celdas
+      minCellHeight: 6 // Altura mínima de celda reducida
     },
     bodyStyles: {
       textColor: [0, 0, 0]
     },
     columnStyles: {
-      0: { cellWidth: 60, textColor: [0, 0, 0], halign: 'center' }, // Centrar nombre del producto
+      0: { cellWidth: 60, textColor: [0, 0, 0], halign: 'left' }, // Alinear a la izquierda el nombre del producto
       1: { cellWidth: 20, halign: 'center', textColor: [0, 0, 0] }, // Centrar cantidad
       2: { cellWidth: 40, halign: 'center', textColor: [0, 0, 0] }, // Centrar precio unitario
       3: { cellWidth: 50, halign: 'center', textColor: [0, 0, 0] }  // Centrar total (más ancho)
     },
-    margin: { left: margenIzquierdo, right: margenDerecho }
+    margin: { left: margenIzquierdo, right: margenDerecho },
+    didDrawPage: (data) => {
+      // Si se truncaron productos, mostrar un mensaje
+      if (productosTruncados) {
+        const currentY = data.cursor.y + 5;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`* Se muestran solo ${maxFilas} de ${productosData.length} productos. Para ver todos, descargue el Excel.`,
+                 margenIzquierdo, currentY);
+      }
+    }
   });
 
   // Obtener la posición final de la tabla
@@ -4191,17 +4282,17 @@ const downloadPDF = () => {
     doc.setFont('helvetica', 'normal');
     doc.text('Realiza tu pago a cualquiera de nuestras cuentas:', margenIzquierdo + 5, pagoY + 10);
 
-    // Banco 1
+    // Banco 1 - Primera línea
     doc.setFont('helvetica', 'bold');
-    doc.text('Banco Atlántida:', margenIzquierdo + 5, pagoY + 17);
+    doc.text('Banco Atlántida:', margenIzquierdo + 5, pagoY + 15);
     doc.setFont('helvetica', 'normal');
-    doc.text('Cuenta: 1234-5678-9012-3456', margenIzquierdo + 40, pagoY + 17);
+    doc.text('Cuenta: 1234-5678-9012-3456', margenIzquierdo + 50, pagoY + 15);
 
-    // Banco 2
+    // Banco 2 - Segunda línea
     doc.setFont('helvetica', 'bold');
-    doc.text('BAC Credomatic:', centroX, pagoY + 17);
+    doc.text('BAC Credomatic:', margenIzquierdo + 5, pagoY + 22);
     doc.setFont('helvetica', 'normal');
-    doc.text('Cuenta: 9876-5432-1098-7654', centroX + 35, pagoY + 17);
+    doc.text('Cuenta: 9876-5432-1098-7654', margenIzquierdo + 50, pagoY + 22);
   } else {
     // Para comprobantes, mostrar el estado del cobro
     doc.text('Estado del Cobro', margenIzquierdo, pagoY);
@@ -4230,17 +4321,7 @@ const downloadPDF = () => {
     doc.setTextColor(0, 0, 0); // Restaurar color
   }
 
-  // Línea de firma
-  const firmaY = pagoY + 40;
-  doc.setDrawColor(100, 100, 100);
-  doc.line(margenIzquierdo + 20, firmaY, margenIzquierdo + 80, firmaY);
-  doc.line(centroX + 20, firmaY, centroX + 80, firmaY);
-
-  // Texto de firma
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Firma del Local', margenIzquierdo + 35, firmaY + 7);
-  doc.text('Firma Delivery App', centroX + 35, firmaY + 7);
+  // No incluir líneas de firma
 
   // Pie de página
   doc.setTextColor(0, 0, 0);

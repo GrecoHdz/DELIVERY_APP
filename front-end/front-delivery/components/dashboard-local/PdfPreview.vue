@@ -57,15 +57,15 @@
                 </div>
                 <div>
                   <p class="text-sm text-gray-600">RTN:</p>
-                  <p class="font-medium text-gray-800">{{ local.rtn }}</p>
+                  <p class="font-medium text-gray-800">{{ local.rtn || 'Sin RTN' }}</p>
                 </div>
                 <div>
                   <p class="text-sm text-gray-600">Período:</p>
                   <p class="font-medium text-gray-800">{{ periodo }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600">Sucursal:</p>
-                  <p class="font-medium text-gray-800">{{ local.sucursal || 'Todas las sucursales' }}</p>
+                  <p class="text-sm text-gray-600">Membresía Activa:</p>
+                  <p class="font-medium text-gray-800">{{ local.membresia || 'Básica' }}</p>
                 </div>
               </div>
             </div>
@@ -74,10 +74,14 @@
             <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <h3 class="text-lg font-semibold text-gray-800 mb-3">Resumen Financiero</h3>
               <div class="space-y-3">
-                <!-- Primeros 4 items -->
-                <div v-for="(item, index) in resumen.slice(0, 4)" :key="index" class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ item.label }}:</span>
-                  <span :class="item.color || 'text-gray-800'" class="font-medium whitespace-nowrap">{{ item.value }}</span>
+                <!-- Primeros items (todos excepto el último) -->
+                <div v-for="(item, index) in resumen.slice(0, resumen.length - 1)" :key="index" class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-600">
+                    {{ item.label === 'Pedidos extra' ? `${item.label}(${item.cantidad || 0})` : item.label }}:
+                  </span>
+                  <span :class="item.color || 'text-gray-800'" class="font-medium whitespace-nowrap">
+                    {{ item.value }}
+                  </span>
                 </div>
 
                 <!-- Total a Pagar/Recibir (último item) -->
@@ -93,21 +97,22 @@
 
           <!-- Tabla de datos -->
           <div class="mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-              {{ tablaTitle }}
-              <span class="text-sm font-normal text-gray-500 ml-2">({{ local.sucursal }})</span>
-            </h3>
+            <div class="flex items-center mb-4">
+              <h3 class="text-lg font-semibold text-gray-800">
+                {{ tablaTitle }} <span class="text-sm font-normal text-gray-600 ml-1">({{ local.sucursal || 'Todas las sucursales' }})</span>
+              </h3>
+            </div>
             <div class="overflow-x-auto">
               <table class="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr class="bg-blue-600 text-white">
                     <th v-for="(header, index) in headers" :key="index"
-                        class="py-2 px-4 text-center"
+                        class="py-2 px-4 text-center text-base"
                         :class="{
                           'w-[25%]': index === 0,
                           'w-[10%]': index === 1,
                           'w-[15%]': index === 2,
-                          'w-[20%]': index === 3, /* Columna Total más ancha */
+                          'w-[20%]': index === 3,
                           'w-[30%]': index === 4
                         }">
                       {{ header }}
@@ -117,7 +122,7 @@
                 <tbody>
                   <tr v-for="(row, rowIndex) in rows" :key="rowIndex" :class="rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'">
                     <td v-for="(cell, cellIndex) in row" :key="cellIndex"
-                        class="py-2 px-4 border-t border-gray-200 text-gray-800 text-center">
+                        class="py-2 px-4 border-t border-gray-200 text-gray-800 text-center text-sm">
                       {{ cell }}
                     </td>
                   </tr>
@@ -125,7 +130,7 @@
                 <tfoot v-if="footers && footers.length">
                   <tr class="bg-gray-100 font-medium">
                     <td v-for="(footer, index) in footers" :key="index"
-                        class="py-2 px-4 border-t border-gray-200 text-gray-800"
+                        class="py-2 px-4 border-t border-gray-200 text-gray-800 text-sm"
                         :class="{
                           'text-center': index < footers.length - 2,
                           'text-right': index >= footers.length - 2
@@ -146,8 +151,22 @@
               {{ esComprobante ? 'Estado del Cobro' : 'Información de Pago' }}
             </h3>
 
-            <!-- Para reportes normales: Información de pago -->
-            <div v-if="!esComprobante" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <!-- Estado del cobro (solo para comprobantes) -->
+            <div v-if="esComprobante" class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+              <div
+                class="inline-block px-6 py-3 rounded-lg font-bold text-lg"
+                :class="{
+                  'bg-green-100 text-green-800': estado === 'pagado',
+                  'bg-red-100 text-red-800': estado === 'vencido',
+                  'bg-gray-100 text-gray-800': estado !== 'pagado' && estado !== 'vencido'
+                }"
+              >
+                {{ estado === 'pagado' ? 'PAGADO' : (estado === 'vencido' ? 'VENCIDO' : 'PENDIENTE') }}
+              </div>
+            </div>
+
+            <!-- Información de pago (para reportes) -->
+            <div v-else class="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <p class="text-sm text-gray-600 mb-3">Realiza tu pago a cualquiera de nuestras cuentas:</p>
 
               <div class="grid grid-cols-2 gap-4">
@@ -159,23 +178,6 @@
                 <div class="p-3 bg-white rounded border border-gray-200">
                   <p class="font-medium text-gray-800">BAC Credomatic</p>
                   <p class="text-gray-700">Cuenta: 9876-5432-1098-7654</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Para comprobantes: Estado del cobro -->
-            <div v-else class="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div class="flex justify-center items-center">
-                <div
-                  class="text-center py-3 px-6 rounded-lg font-bold text-lg"
-                  :class="{
-                    'bg-green-100 text-green-700': estado === 'pagado',
-                    'bg-red-100 text-red-700': estado === 'vencido',
-                    'bg-gray-100 text-gray-700': estado !== 'pagado' && estado !== 'vencido'
-                  }"
-                >
-                  {{ estado === 'pagado' ? 'PAGADO' :
-                     estado === 'vencido' ? 'VENCIDO' : 'PENDIENTE' }}
                 </div>
               </div>
             </div>
@@ -191,28 +193,12 @@
 
       <!-- Pie del modal con botones -->
       <div class="flex justify-between items-center p-4 border-t">
-        <!-- Selector de sucursal (solo visible para reportes, no para comprobantes) -->
-        <div v-if="!esComprobante" class="flex items-center">
-          <label for="filtroSucursalPdf" class="mr-2 text-sm text-gray-600">Sucursal:</label>
-          <select
-            id="filtroSucursalPdf"
-            v-model="sucursalSeleccionada"
-            class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @change="cambiarSucursal"
-          >
-            <option value="todas">Todas las sucursales</option>
-            <option v-for="sucursal in sucursales" :key="sucursal.id_sucursal" :value="sucursal.id_sucursal">
-              {{ sucursal.nombre }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Espacio vacío para mantener la alineación cuando no hay selector -->
-        <div v-else></div>
+        <!-- Espacio vacío a la izquierda para mantener la alineación -->
+        <div></div>
 
         <!-- Botones de acción -->
-        <div>
-          <button @click="$emit('close')" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg mr-2 hover:bg-gray-200">
+        <div class="flex items-center space-x-2">
+          <button @click="$emit('close')" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
             Cancelar
           </button>
           <button @click="$emit('download')" class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center">
@@ -228,92 +214,26 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, onMounted } from 'vue';
+import { defineProps, defineEmits, onMounted } from 'vue';
 
 // Definir props
 const props = defineProps({
-  titulo: {
-    type: String,
-    required: true
-  },
-  subtitulo: {
-    type: String,
-    default: ''
-  },
-  periodo: {
-    type: String,
-    required: true
-  },
-  local: {
-    type: Object,
-    required: true
-  },
-  tablaTitle: {
-    type: String,
-    default: 'Datos'
-  },
-  headers: {
-    type: Array,
-    required: true
-  },
-  rows: {
-    type: Array,
-    required: true
-  },
-  footers: {
-    type: Array,
-    default: () => []
-  },
-  resumen: {
-    type: Array,
-    required: true
-  },
-  mostrarGrafico: {
-    type: Boolean,
-    default: true
-  },
-  esComprobante: {
-    type: Boolean,
-    default: false
-  },
-  estado: {
-    type: String,
-    default: 'pendiente'
-  }
+  titulo: { type: String, required: true },
+  subtitulo: { type: String, default: '' },
+  periodo: { type: String, required: true },
+  local: { type: Object, required: true },
+  tablaTitle: { type: String, default: 'Datos' },
+  headers: { type: Array, required: true },
+  rows: { type: Array, required: true },
+  footers: { type: Array, default: () => [] },
+  resumen: { type: Array, required: true },
+  mostrarGrafico: { type: Boolean, default: true },
+  esComprobante: { type: Boolean, default: false },
+  estado: { type: String, default: 'pendiente' }
 });
 
-// Lista de sucursales (simulada)
-const sucursales = ref([
-  {
-    id_sucursal: 1,
-    nombre: "Sucursal Central",
-    ciudad: "Tegucigalpa",
-    colonia: "Kennedy"
-  },
-  {
-    id_sucursal: 2,
-    nombre: "Sucursal Mall Multiplaza",
-    ciudad: "Tegucigalpa",
-    colonia: "Los Proceres"
-  },
-  {
-    id_sucursal: 3,
-    nombre: "Sucursal City Mall",
-    ciudad: "San Pedro Sula",
-    colonia: "Centro"
-  }
-]);
-
-// Sucursal seleccionada para filtrar
-const sucursalSeleccionada = ref('todas');
-
 // Definir emits
-const emit = defineEmits(['close', 'download', 'cambiarSucursal']);
-
-// Función para cambiar la sucursal
-const cambiarSucursal = () => {
-  emit('cambiarSucursal', sucursalSeleccionada.value);
-};
+const emit = defineEmits(['close', 'download']);
 
 // Función para formatear fecha
 const formatearFecha = (fecha) => {
@@ -322,13 +242,12 @@ const formatearFecha = (fecha) => {
   return `${f.getDate().toString().padStart(2, '0')}/${(f.getMonth() + 1).toString().padStart(2, '0')}/${f.getFullYear()}`;
 };
 
-// Al montar el componente, inicializar la sucursal seleccionada
+// Al montar el componente
 onMounted(() => {
-  // Si el local tiene una sucursal específica, seleccionarla
-  if (props.local && props.local.sucursalId) {
-    sucursalSeleccionada.value = props.local.sucursalId;
-  }
+  // Inicialización si es necesaria
 });
+
+
 </script>
 
 <style scoped>
