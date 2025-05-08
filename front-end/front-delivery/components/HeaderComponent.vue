@@ -55,11 +55,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Truck as TruckIcon, Bell as BellIcon } from 'lucide-vue-next';
-import { useAuth } from '~/composables/useAuth';
+import { Truck as TruckIcon, Bell as BellIcon } from 'lucide-vue-next'; 
 
-const router = useRouter();
-const { auth } = useAuth();
+const router = useRouter(); 
 const selectedProfile = ref("Cliente");
 
 const notifications = ref([

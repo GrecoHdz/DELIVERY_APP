@@ -567,6 +567,45 @@ const inicializarSocket = () => {
 
   socket.value.on('connect', () => {
     console.log('Local conectado al servidor de websockets');
+
+    // Registrar el local para recibir pedidos
+    // En una implementación real, se enviaría el ID del local
+    socket.value.emit('register_local', {
+      localId: 1, // Esto vendría de la autenticación real
+    });
+  });
+
+  // Escuchar nuevos pedidos
+  socket.value.on('nuevo_pedido', (pedido) => {
+    console.log('Nuevo pedido recibido:', pedido);
+
+    // Convertir el pedido al formato esperado por la UI
+    const nuevoPedido = procesarNuevoPedido(pedido);
+
+    // Agregar el pedido a la lista
+    orders.value.unshift(nuevoPedido);
+
+    // Reproducir sonido de notificación
+    reproducirSonidoNotificacion();
+
+    // Mostrar notificación visual
+    mostrarNotificacionPedido(nuevoPedido);
+  });
+
+  // Escuchar actualizaciones de estado de pedidos
+  socket.value.on('order_status_updated', (data) => {
+    console.log('Actualización de estado de pedido:', data);
+
+    // Actualizar el estado del pedido en la UI
+    const pedido = orders.value.find(order => order.id === data.order_id);
+    if (pedido) {
+      pedido.status = mapApiStatusToUI(data.new_status);
+
+      // Si el pedido fue rechazado, moverlo a la lista de rechazados o eliminarlo
+      if (data.new_status === 'rechazado') {
+        orders.value = orders.value.filter(order => order.id !== data.order_id);
+      }
+    }
   });
 
   socket.value.on('disconnect', () => {
@@ -1055,10 +1094,147 @@ const markOrderAsCompleted = async (orderId) => {
   alert(`Pedido #${orderId} marcado como completado.`);
 };
 
+// Procesar nuevo pedido recibido por socket
+const procesarNuevoPedido = (pedido) => {
+  try {
+    // Formatear fecha para la UI
+    const fechaPedido = new Date(pedido.fecha_pedido);
+
+    // Procesar los items del pedido
+    const items = pedido.items ? pedido.items.map(item => ({
+      id: item.id || Date.now(),
+      name: item.nombre_producto || item.name,
+      quantity: item.cantidad || item.quantity || 1,
+      attributes: procesarAtributos(item.atributos || item.attributes || []),
+      extras: procesarExtras(item.extras || []),
+      price: parseFloat(item.precio_unitario || item.price || 0)
+    })) : [];
+
+    // Crear objeto de pedido en el formato esperado por la UI
+    return {
+      id: pedido.id_pedido || pedido.orderId || Date.now(),
+      date: formatDateForDisplay(fechaPedido),
+      time: formatTimeForDisplay(fechaPedido),
+      customer: pedido.cliente || pedido.customer || 'Cliente',
+      total: calcularTotal(items),
+      paymentMethod: pedido.metodo_pago || pedido.paymentMethod || 'Efectivo',
+      orderType: pedido.tipo_pedido || pedido.orderType || 'Delivery',
+      items: items,
+      status: 'received' // Los nuevos pedidos siempre tienen estado "recibido"
+    };
+  } catch (error) {
+    console.error('Error al procesar nuevo pedido:', error);
+    // Devolver un pedido básico en caso de error
+    return {
+      id: Date.now(),
+      date: formatDateForDisplay(new Date()),
+      time: formatTimeForDisplay(new Date()),
+      customer: 'Cliente',
+      total: 0,
+      paymentMethod: 'Desconocido',
+      orderType: 'Desconocido',
+      items: [],
+      status: 'received'
+    };
+  }
+};
+
+// Procesar atributos de un nuevo pedido
+const procesarAtributos = (atributos) => {
+  if (!atributos) return [];
+
+  if (typeof atributos === 'string') {
+    try {
+      return JSON.parse(atributos);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  if (Array.isArray(atributos)) {
+    return atributos;
+  }
+
+  // Si es un objeto, convertirlo a un formato más fácil de procesar
+  return Object.entries(atributos).map(([key, value]) => ({ [key]: value }));
+};
+
+// Procesar extras de un nuevo pedido
+const procesarExtras = (extras) => {
+  if (!extras) return [];
+
+  if (typeof extras === 'string') {
+    try {
+      return JSON.parse(extras);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  if (Array.isArray(extras)) {
+    return extras;
+  }
+
+  // Si es un objeto, convertirlo a un formato más fácil de procesar
+  return Object.entries(extras).map(([key, value]) => ({ name: key, price: value }));
+};
+
+// Calcular total de un pedido
+const calcularTotal = (items) => {
+  return items.reduce((total, item) => {
+    return total + (item.price * item.quantity);
+  }, 0);
+};
+
+// Reproducir sonido de notificación
+const reproducirSonidoNotificacion = () => {
+  try {
+    const audio = new Audio('/notification.mp3');
+    audio.play();
+  } catch (error) {
+    console.error('Error al reproducir sonido:', error);
+  }
+};
+
+// Mostrar notificación visual de nuevo pedido
+const mostrarNotificacionPedido = (pedido) => {
+  // Agregar notificación a la lista de notificaciones
+  notifications.value.unshift({
+    id: Date.now(),
+    message: `Nuevo pedido #${pedido.id} de ${pedido.customer}`,
+    read: false
+  });
+
+  // Mostrar notificación del navegador si está permitido
+  if (Notification && Notification.permission === 'granted') {
+    new Notification('Nuevo Pedido', {
+      body: `Pedido #${pedido.id} de ${pedido.customer}`,
+      icon: '/favicon.ico'
+    });
+  } else if (Notification && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        new Notification('Nuevo Pedido', {
+          body: `Pedido #${pedido.id} de ${pedido.customer}`,
+          icon: '/favicon.ico'
+        });
+      }
+    });
+  }
+};
+
+// Solicitar permisos de notificación al cargar la página
+const solicitarPermisosNotificacion = () => {
+  if (Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+};
+
 // Cargar datos iniciales
 onMounted(() => {
   fetchOrders();
   inicializarSocket();
+  solicitarPermisosNotificacion();
 });
 
 // Agregar onBeforeUnmount para limpiar la conexión

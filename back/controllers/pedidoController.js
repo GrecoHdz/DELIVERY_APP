@@ -3,7 +3,7 @@ const PedidoDetalle = require("../models/PedidoDetalle");
 const DireccionLocal = require("../models/DireccionLocal");
 const OfertaDriver = require("../models/OfertaDriver");
 const MetodoPago = require("../models/MetodoPago");
-const { getIO } = require('../socket');
+const { getIO, emitNuevoPedido, emitActualizacionPedido } = require('../socket');
 
 // Obtener todos los pedidos
 const getAllPedidos = async (req, res) => {
@@ -150,7 +150,7 @@ const getCarritoCount = async (req, res) => {
 // Crear un nuevo pedido
 const createPedido = async (req, res) => {
   try {
-    const { id_cliente, id_local, id_direccion_cliente, id_direccion_local, id_metodo_pago, tipo_pedido } = req.body;
+    const { id_cliente, id_local, id_direccion_cliente, id_direccion_local, id_metodo_pago, tipo_pedido, items = [] } = req.body;
 
     const pedido = await Pedido.create({
       id_cliente,
@@ -160,21 +160,44 @@ const createPedido = async (req, res) => {
       id_metodo_pago,
       tipo_pedido,
       fecha_pedido: new Date(),
-      estado: 'pendiente'
+      estado: 'pendiente_local'
     });
 
-    // Emitir evento de nuevo pedido
-    const io = getIO();
-    io.emit('nuevo_pedido', {
+    // Obtener información adicional para el socket
+    let cliente = { nombre: 'Cliente' };
+    let local = { nombre: 'Local' };
+    let metodoPago = { tipo_pago: tipo_pedido || 'Efectivo' };
+
+    try {
+      // Aquí se podrían obtener los datos del cliente, local y método de pago
+      // desde la base de datos para enviar información más completa
+      // Ejemplo: cliente = await Cliente.findByPk(id_cliente);
+    } catch (err) {
+      console.error('Error al obtener datos adicionales:', err);
+    }
+
+    // Emitir evento de nuevo pedido usando la función del socket
+    emitNuevoPedido({
       id_pedido: pedido.id_pedido,
       id_cliente,
       id_local,
+      cliente: cliente.nombre,
+      local: local.nombre,
       id_direccion_cliente,
       id_direccion_local,
       id_metodo_pago,
+      metodo_pago: metodoPago.tipo_pago,
       tipo_pedido,
       fecha_pedido: pedido.fecha_pedido,
-      estado: pedido.estado
+      estado: pedido.estado,
+      items: items.map(item => ({
+        id: item.id_producto,
+        nombre_producto: item.nombre_producto,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+        atributos: item.atributos || [],
+        extras: item.extras || []
+      }))
     });
 
     res.status(201).json(pedido);
@@ -229,13 +252,16 @@ const updatePedido = async (req, res) => {
       }
     }
 
-    // Emitir evento de actualización de estado
-    const io = getIO();
-    io.emit('estado_pedido_actualizado', {
-      id_pedido: pedido.id_pedido,
-      estado: pedido.estado,
-      tarifa: pedido.tarifa
-    });
+    // Emitir evento de actualización de estado usando la función del socket
+    emitActualizacionPedido(
+      pedido.id_pedido,
+      pedido.estado,
+      {
+        tiempo_preparacion_estimado: pedido.tiempo_preparacion_estimado,
+        tiempo_llegada_estimado: pedido.tiempo_llegada_estimado,
+        fecha_entrega: pedido.fecha_entrega
+      }
+    );
 
     res.status(200).json({ message: "Pedido actualizado correctamente" });
   } catch (error) {
