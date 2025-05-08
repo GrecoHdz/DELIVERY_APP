@@ -35,6 +35,14 @@ router.post(
     body("id_local").isInt().withMessage("ID de local inválido"),
     body("id_direccion_cliente").isInt().withMessage("ID de dirección de cliente inválido"),
     body("id_direccion_local").isInt().withMessage("ID de dirección de local inválido"),
+    body("id_metodo_pago")
+      .optional()
+      .isInt()
+      .withMessage("ID de método de pago inválido"),
+    body("tipo_pedido")
+      .optional()
+      .isString()
+      .withMessage("Tipo de pedido debe ser una cadena de texto"),
     ],
   validarErrores,
   createPedido
@@ -49,6 +57,14 @@ router.put(
       .optional()
       .isInt()
       .withMessage("ID de driver inválido"),
+    body("id_metodo_pago")
+      .optional()
+      .isInt()
+      .withMessage("ID de método de pago inválido"),
+    body("tipo_pedido")
+      .optional()
+      .isString()
+      .withMessage("Tipo de pedido debe ser una cadena de texto"),
     body("tiempo_preparacion_estimado")
       .optional()
       .isInt()
@@ -66,7 +82,7 @@ router.put(
       .isIn(["pendiente_local", "pendiente_deposito", "preparando_pedido", "en_camino", "entregado"])
       .withMessage("Estado no válido"),
       body("fecha_pedido").isISO8601().withMessage("La fecha del pedido debe ser válida"),
- 
+
   ],
   validarErrores,
   updatePedido

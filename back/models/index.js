@@ -17,6 +17,7 @@ const CobroSemanal = require("./CobroSemanal");
 const CobroProducto = require("./CobroProducto");
 const Ciudad = require("./Ciudad");
 const MembresiaLocal = require("./MembresiaLocales");
+const MetodoPago = require("./MetodoPago");
 
 // Definir las asociaciones
 const setupAssociations = () => {
@@ -57,6 +58,11 @@ const setupAssociations = () => {
     foreignKey: "id_direccion_local",
     as: "DireccionLocal",
     onDelete: "CASCADE"
+  });
+
+  Pedido.belongsTo(MetodoPago, {
+    foreignKey: "id_metodo_pago",
+    onDelete: "SET NULL"
   });
 
   // Asociaciones de Producto
@@ -165,5 +171,6 @@ module.exports = {
   CobroSemanal,
   CobroProducto,
   Ciudad,
-  MembresiaLocal
+  MembresiaLocal,
+  MetodoPago
 };

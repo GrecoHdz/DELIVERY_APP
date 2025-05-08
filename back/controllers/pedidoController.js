@@ -2,6 +2,7 @@ const Pedido = require("../models/Pedido");
 const PedidoDetalle = require("../models/PedidoDetalle");
 const DireccionLocal = require("../models/DireccionLocal");
 const OfertaDriver = require("../models/OfertaDriver");
+const MetodoPago = require("../models/MetodoPago");
 const { getIO } = require('../socket');
 
 // Obtener todos los pedidos
@@ -13,6 +14,8 @@ const getAllPedidos = async (req, res) => {
         'id_cliente',
         'id_local',
         'id_driver',
+        'id_metodo_pago',
+        'tipo_pedido',
         'fecha_pedido',
         'fecha_entrega',
         'estado',
@@ -29,17 +32,21 @@ const getAllPedidos = async (req, res) => {
           model: DireccionLocal,
           as: 'DireccionLocal',
           attributes: ['colonia', 'direccion_precisa', 'latitud', 'longitud']
+        },
+        {
+          model: MetodoPago,
+          attributes: ['id_metodo_pago', 'tipo_pago']
         }
       ]
     });
-    
+
     // Obtener las ofertas de drivers para cada pedido
     const pedidosProcesados = await Promise.all(pedidos.map(async pedido => {
       const pedidoJSON = pedido.toJSON();
       const oferta = await OfertaDriver.findOne({
         where: { id_pedido: pedidoJSON.id_pedido }
       });
-      
+
       return {
         ...pedidoJSON,
         pago_delivery: oferta ? oferta.precio_oferta : 0,
@@ -72,6 +79,8 @@ const getPedidoById = async (req, res) => {
         'id_cliente',
         'id_local',
         'id_driver',
+        'id_metodo_pago',
+        'tipo_pedido',
         'fecha_pedido',
         'fecha_entrega',
         'estado',
@@ -88,10 +97,14 @@ const getPedidoById = async (req, res) => {
           model: DireccionLocal,
           as: 'DireccionLocal',
           attributes: ['colonia', 'direccion_precisa', 'latitud', 'longitud']
+        },
+        {
+          model: MetodoPago,
+          attributes: ['id_metodo_pago', 'tipo_pago']
         }
       ]
     });
-    
+
     if (!pedido) {
       return res.status(404).json({ message: "Pedido no encontrado" });
     }
@@ -103,7 +116,7 @@ const getPedidoById = async (req, res) => {
 
     const pedidoJSON = pedido.toJSON();
     pedidoJSON.pago_delivery = oferta ? oferta.precio_oferta : 0;
-    
+
     res.json(pedidoJSON);
   } catch (error) {
     console.error("Error al obtener el pedido:", error);
@@ -137,13 +150,15 @@ const getCarritoCount = async (req, res) => {
 // Crear un nuevo pedido
 const createPedido = async (req, res) => {
   try {
-    const { id_cliente, id_local, id_direccion_cliente, id_direccion_local } = req.body;
+    const { id_cliente, id_local, id_direccion_cliente, id_direccion_local, id_metodo_pago, tipo_pedido } = req.body;
 
     const pedido = await Pedido.create({
       id_cliente,
       id_local,
       id_direccion_cliente,
       id_direccion_local,
+      id_metodo_pago,
+      tipo_pedido,
       fecha_pedido: new Date(),
       estado: 'pendiente'
     });
@@ -156,6 +171,8 @@ const createPedido = async (req, res) => {
       id_local,
       id_direccion_cliente,
       id_direccion_local,
+      id_metodo_pago,
+      tipo_pedido,
       fecha_pedido: pedido.fecha_pedido,
       estado: pedido.estado
     });
@@ -172,11 +189,13 @@ const updatePedido = async (req, res) => {
   const { id } = req.params;
   const {
     id_driver,
+    id_metodo_pago,
+    tipo_pedido,
     tiempo_preparacion_estimado,
-    tiempo_llegada_estimado, 
+    tiempo_llegada_estimado,
     fecha_entrega,
-    estado_pedido, 
-    fecha_pedido, 
+    estado_pedido,
+    fecha_pedido,
   } = req.body;
 
   try {
@@ -188,11 +207,13 @@ const updatePedido = async (req, res) => {
     // Actualizar el pedido
     await pedido.update({
       id_driver,
+      id_metodo_pago,
+      tipo_pedido,
       tiempo_preparacion_estimado,
       tiempo_llegada_estimado,
       fecha_entrega,
-      estado: estado_pedido, 
-      fecha_pedido, 
+      estado: estado_pedido,
+      fecha_pedido,
     });
 
     // Si el estado del pedido es cancelado, actualizar el estado de la oferta

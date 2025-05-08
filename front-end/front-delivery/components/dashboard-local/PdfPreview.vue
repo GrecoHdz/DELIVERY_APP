@@ -41,7 +41,6 @@
             </div>
             <div class="text-right">
               <p class="text-sm text-gray-600">Fecha: {{ formatearFecha(new Date()) }}</p>
-              <p class="text-sm text-gray-600">Período: {{ periodo }}</p>
             </div>
           </div>
 
@@ -63,10 +62,6 @@
                   <p class="text-sm text-gray-600">Período:</p>
                   <p class="font-medium text-gray-800">{{ periodo }}</p>
                 </div>
-                <div>
-                  <p class="text-sm text-gray-600">Membresía Activa:</p>
-                  <p class="font-medium text-gray-800">{{ local.membresia || 'Básica' }}</p>
-                </div>
               </div>
             </div>
 
@@ -75,17 +70,17 @@
               <h3 class="text-lg font-semibold text-gray-800 mb-3">Resumen Financiero</h3>
               <div class="space-y-3">
                 <!-- Primeros items (todos excepto el último) -->
-                <div v-for="(item, index) in resumen.slice(0, resumen.length - 1)" :key="index" class="flex justify-between mb-2">
-                  <span class="text-sm text-gray-600">
-                    {{ item.label === 'Pedidos extra' ? `${item.label}(${item.cantidad || 0})` : item.label }}:
-                  </span>
-                  <span :class="item.color || 'text-gray-800'" class="font-medium whitespace-nowrap">
-                    {{ item.value }}
-                  </span>
+                <div v-for="(item, index) in resumen.slice(0, resumen.length - 1)" :key="index" class="mb-3">
+                  <div class="text-sm text-gray-600">
+                    {{ item.label }}:
+                  </div>
+                  <div :class="item.color || 'text-gray-800'" class="font-medium">
+                    {{ item.label.includes('Pedidos Extra (') ? '' : item.value }}
+                  </div>
                 </div>
 
                 <!-- Total a Pagar/Recibir (último item) -->
-                <div class="flex justify-between pt-2 border-t border-gray-200 mt-2">
+                <div class="flex justify-between mt-3">
                   <span class="text-sm font-medium text-gray-700">{{ resumen[resumen.length - 1].label }}:</span>
                   <span :class="resumen[resumen.length - 1].color || 'text-gray-800'" class="font-medium whitespace-nowrap">
                     {{ resumen[resumen.length - 1].value }}
@@ -97,10 +92,11 @@
 
           <!-- Tabla de datos -->
           <div class="mb-8">
-            <div class="flex items-center mb-4">
+            <div class="mb-4">
               <h3 class="text-lg font-semibold text-gray-800">
-                {{ tablaTitle }} <span class="text-sm font-normal text-gray-600 ml-1">({{ local.sucursal || 'Todas las sucursales' }})</span>
+                {{ tablaTitle }}
               </h3>
+              <p class="text-sm text-gray-600">{{ local.sucursal || 'Todas las sucursales' }}</p>
             </div>
             <div class="overflow-x-auto">
               <table class="min-w-full bg-white border border-gray-200">
@@ -122,7 +118,13 @@
                 <tbody>
                   <tr v-for="(row, rowIndex) in rows" :key="rowIndex" :class="rowIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'">
                     <td v-for="(cell, cellIndex) in row" :key="cellIndex"
-                        class="py-2 px-4 border-t border-gray-200 text-gray-800 text-center text-sm">
+                        class="py-2 px-4 border-t border-gray-200 text-gray-800 text-center text-sm"
+                        :class="{
+                          'text-left': cellIndex === 0,
+                          'text-center': cellIndex === 1,
+                          'text-center': cellIndex === 2,
+                          'text-center': cellIndex === 3
+                        }">
                       {{ cell }}
                     </td>
                   </tr>
@@ -240,6 +242,12 @@ const formatearFecha = (fecha) => {
   if (!fecha) return 'N/A';
   const f = new Date(fecha);
   return `${f.getDate().toString().padStart(2, '0')}/${(f.getMonth() + 1).toString().padStart(2, '0')}/${f.getFullYear()}`;
+};
+
+// Función para formatear moneda
+const formatearMoneda = (valor) => {
+  if (!valor) return 'L. 0.00';
+  return `L. ${parseFloat(valor).toFixed(2)}`;
 };
 
 // Al montar el componente

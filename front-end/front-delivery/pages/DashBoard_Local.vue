@@ -3699,12 +3699,11 @@ const imprimirComprobante = () => {
   const comprobantePreviewData = {
     titulo: 'Detalle de Cobro',
     subtitulo: `Factura: ${cobroSeleccionado.value.num_factura}`,
-    periodo: `${cobroSeleccionado.value.periodo_inicio} al ${cobroSeleccionado.value.periodo_fin}`,
+    periodo: `${formatearFechaCorta(new Date(cobroSeleccionado.value.periodo_inicio))} al ${formatearFechaCorta(new Date(cobroSeleccionado.value.periodo_fin))}`,
     local: {
-      ...local.value,
+      nombre_local: local.value?.nombre_local || 'Local',
       sucursal: 'Todas las sucursales', // Siempre mostrar "Todas las sucursales"
-      rtn: local.value?.rtn || 'Sin RTN',
-      membresia: obtenerNombreMembresia(local.value?.id_membresia) || 'Básica'
+      rtn: local.value?.rtn || 'Sin RTN'
     },
     tablaTitle: 'Productos Vendidos',
     headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
@@ -3742,7 +3741,7 @@ const imprimirComprobante = () => {
   if (cobroSeleccionado.value.pedidos && cobroSeleccionado.value.pedidos.length > 0) {
     // Usar los datos de pedidos del cobro seleccionado
     comprobantePreviewData.rows = cobroSeleccionado.value.pedidos.map(pedido => [
-      pedido.cliente || pedido.nombre || 'Producto',
+      pedido.nombre || pedido.nombre_producto || 'Producto',
       pedido.cantidad?.toString() || '1',
       `L. ${pedido.precio?.toFixed(2) || (pedido.total / (pedido.cantidad || 1)).toFixed(2) || '0.00'}`,
       `L. ${pedido.total?.toFixed(2) || ((pedido.cantidad || 1) * (pedido.precio || 0)).toFixed(2)}`
@@ -3750,7 +3749,7 @@ const imprimirComprobante = () => {
   } else {
     // Si no hay pedidos en el cobro seleccionado, usar los datos de productos vendidos en la semana
     comprobantePreviewData.rows = productosVendidosSemana.value.map(producto => [
-      producto.nombre,
+      producto.nombre || producto.nombre_producto || 'Producto',
       producto.cantidad.toString(),
       `L. ${producto.precio.toFixed(2)}`,
       `L. ${(producto.cantidad * producto.precio).toFixed(2)}`
@@ -3945,10 +3944,9 @@ const exportToPDF = (sucursalId = 'todas') => {
     subtitulo: `Factura: FA-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
     periodo: `${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`,
     local: {
-      ...local.value,
+      nombre_local: local.value?.nombre_local || 'Local',
       sucursal: tituloSucursal,
-      rtn: local.value?.rtn || 'Sin RTN',
-      membresia: obtenerNombreMembresia(local.value?.id_membresia) || 'Básica'
+      rtn: local.value?.rtn || 'Sin RTN'
     },
     tablaTitle: 'Productos Vendidos',
     headers: ['Producto', 'Cantidad', 'Precio Unitario', 'Total'],
@@ -3956,7 +3954,7 @@ const exportToPDF = (sucursalId = 'todas') => {
     footers: ['', '', 'Total Ventas:', `L. ${totalVentasFiltradas}`],
     resumen: [
       {
-        label: 'Pedidos Extra',
+        label: `Pedidos Extra (${pedidosExtra.value})`,
         value: `${pedidosExtra.value}`,
         color: 'text-gray-800',
         showQuantityInLabel: true // Indicador para mostrar la cantidad en la etiqueta
@@ -4055,11 +4053,6 @@ const downloadPDF = () => {
   doc.setFont('helvetica', 'bold');
   doc.text(`${formatearFechaCorta(fechaInicioSemana.value)} al ${formatearFechaCorta(fechaFinSemana.value)}`, margenIzquierdo + 5, 79);
 
-  doc.setFont('helvetica', 'normal');
-  doc.text('Membresía Activa:', margenIzquierdo + 5, 86);
-  doc.setFont('helvetica', 'bold');
-  doc.text(obtenerNombreMembresia(local.value?.id_membresia) || 'Básica', margenIzquierdo + 5, 91);
-
   // Sección de resumen financiero
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
@@ -4075,25 +4068,23 @@ const downloadPDF = () => {
   doc.setFontSize(10);
 
   // Usar los datos del resumen de pdfPreviewData
-  const resumen = pdfPreviewData.value.resumen;
+  // Crear una copia del resumen para modificarlo
+  const resumen = JSON.parse(JSON.stringify(pdfPreviewData.value.resumen));
+
+  // Modificar directamente la etiqueta de Pedidos Extra para incluir la cantidad
+  for (let i = 0; i < resumen.length; i++) {
+    if (resumen[i].label === 'Pedidos Extra') {
+      resumen[i].label = `Pedidos Extra (${pedidosExtra.value})`;
+    }
+  }
+
   let yPos = 50;
-  const lineHeight = 9; // Aumentar aún más el espacio entre líneas
   const lastItemIndex = resumen.length - 1;
 
   // Calcular el ancho máximo de las etiquetas para alinear los valores
   let maxLabelWidth = 0;
   for (let i = 0; i < resumen.length; i++) {
-    // Modificar la etiqueta de Pedidos extra para incluir la cantidad
-    let label = resumen[i].label;
-    if (label === 'Pedidos Extra' && resumen[i].value) {
-      // Extraer el número de pedidos extra (eliminar cualquier texto no numérico)
-      const numPedidos = resumen[i].value.toString().replace(/[^0-9]/g, '');
-      if (numPedidos) {
-        label = `Pedidos Extra (${numPedidos})`;
-      }
-    }
-
-    const labelWidth = doc.getTextWidth(`${label}:`);
+    const labelWidth = doc.getTextWidth(`${resumen[i].label}:`);
     if (labelWidth > maxLabelWidth) {
       maxLabelWidth = labelWidth;
     }
@@ -4102,31 +4093,19 @@ const downloadPDF = () => {
   // Añadir margen adicional
   maxLabelWidth += 10;
 
-  // Posición X para los valores (alineados a la derecha)
-  // Aumentar la distancia entre etiquetas y valores
-  const valorX = centroX + anchoDisponible / 2 - 10;
+  // Posición X para los valores (ya no se usa con el nuevo formato)
 
   // Mostrar todos los elementos excepto el último (Total)
+  let currentY = 50;
+  const itemSpacing = 12; // Espacio entre elementos
+
   for (let i = 0; i < lastItemIndex; i++) {
     const item = resumen[i];
-
-    // Modificar la etiqueta de Pedidos extra para incluir la cantidad
-    let label = item.label;
-    if (label === 'Pedidos Extra' && item.value) {
-      // Extraer el número de pedidos extra (eliminar cualquier texto no numérico)
-      const numPedidos = item.value.toString().replace(/[^0-9]/g, '');
-      if (numPedidos) {
-        label = `Pedidos Extra (${numPedidos})`;
-      }
-    }
 
     // Etiqueta
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
-
-    // Limitar la longitud de la etiqueta para evitar solapamientos
-    const etiquetaX = centroX + 10;
-    doc.text(`${label}:`, etiquetaX, yPos);
+    doc.text(`${item.label}:`, centroX + 10, currentY);
 
     // Valor con color
     if (item.color === 'text-red-600') {
@@ -4139,48 +4118,47 @@ const downloadPDF = () => {
 
     // Asegurar que el valor sea una cadena y tenga el formato correcto
     const valor = item.value.toString();
-    // Si es Pedidos Extra, solo mostrar el costo, no la cantidad
-    const valorMostrado = label.startsWith('Pedidos Extra') && !valor.includes('L.') ? '' : valor;
+    // Para Pedidos Extra, no mostrar el valor ya que está incluido en la etiqueta
+    const valorMostrado = item.label.includes('Pedidos Extra (') ? '' : valor;
 
-    // Asegurar que hay suficiente espacio entre la etiqueta y el valor
-    const etiquetaWidth = doc.getTextWidth(`${label}:`);
-    const espacioDisponible = valorX - (etiquetaX + etiquetaWidth);
+    doc.setFont('helvetica', 'bold');
+    doc.text(valorMostrado, centroX + 10, currentY + 5);
 
-    // Si el espacio es insuficiente, ajustar la posición del valor
-    const valorPosX = espacioDisponible < 10 ? valorX + 5 : valorX;
-
-    doc.text(valorMostrado, valorPosX, yPos, { align: 'right' });
-
-    yPos += lineHeight;
+    // Avanzar a la siguiente posición
+    currentY += itemSpacing;
   }
 
-  // Línea separadora para el total
-  doc.setDrawColor(200, 200, 200);
-  doc.line(centroX + 10, yPos - 2, centroX + anchoDisponible / 2 - 10, yPos - 2);
-  yPos += 5; // Aumentar el espacio antes del total
+  // Actualizar yPos para el total (sin línea separadora)
+  yPos = currentY;
 
   // Balance final (último elemento)
   const totalItem = resumen[lastItemIndex];
+
+  // Ajustar la posición vertical para un salto de línea normal
+  // Usar el mismo espaciado que tienen los demás elementos
+  yPos = currentY;
+
+  // Etiqueta del total
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
+  doc.text(`${totalItem.label}:`, centroX + 10, yPos);
 
-  const etiquetaX = centroX + 10;
-  doc.text(`${totalItem.label}:`, etiquetaX, yPos);
-
+  // Valor con color
   if (totalItem.color === 'text-red-600') {
     doc.setTextColor(255, 0, 0);
   } else if (totalItem.color === 'text-green-600') {
     doc.setTextColor(0, 128, 0);
   }
 
-  // Asegurar que hay suficiente espacio entre la etiqueta y el valor
-  const etiquetaWidth = doc.getTextWidth(`${totalItem.label}:`);
-  const espacioDisponible = valorX - (etiquetaX + etiquetaWidth);
+  // Calcular la posición del valor para que esté alineado a la derecha
+  const valorX = centroX + anchoDisponible / 2 - 10;
 
-  // Si el espacio es insuficiente, ajustar la posición del valor
-  const valorPosX = espacioDisponible < 10 ? valorX + 5 : valorX;
+  // Usar un tamaño de fuente ligeramente mayor para el total
+  doc.setFontSize(11);
+  doc.text(totalItem.value.toString(), valorX, yPos, { align: 'right' });
 
-  doc.text(totalItem.value.toString(), valorPosX, yPos, { align: 'right' });
+  // Restaurar el tamaño de fuente
+  doc.setFontSize(10);
 
   // Título de la tabla de productos
   doc.setTextColor(0, 0, 0);
@@ -4188,11 +4166,11 @@ const downloadPDF = () => {
   doc.setFontSize(12);
   doc.text('Productos Vendidos', margenIzquierdo, 105);
 
-  // Añadir la sucursal entre paréntesis en una nueva línea
+  // Añadir la sucursal en una nueva línea pero con un estilo que parezca parte del título
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100); // Color gris para efecto opaco
-  doc.text(`(${pdfPreviewData.value?.local?.sucursal || 'Todas las sucursales'})`, margenIzquierdo, 110);
+  doc.text(`${pdfPreviewData.value?.local?.sucursal || 'Todas las sucursales'}`, margenIzquierdo, 110);
 
   // Preparar datos para la tabla de productos
   const productosData = pdfPreviewData.value.rows;
@@ -4230,13 +4208,13 @@ const downloadPDF = () => {
       fillColor: [245, 245, 245]
     },
     styles: {
-      cellPadding: 1.5, // Reducir aún más el padding para hacer las filas menos altas
-      fontSize: 7, // Reducir aún más el tamaño de la fuente
+      cellPadding: 2, // Padding adecuado para las celdas
+      fontSize: 8, // Reducir el tamaño de la fuente en un punto
       textColor: [0, 0, 0],
       halign: 'center', // Centrar todo el contenido por defecto
       overflow: 'linebreak', // Permitir saltos de línea para textos largos
       lineWidth: 0.1, // Líneas más delgadas para las celdas
-      minCellHeight: 6 // Altura mínima de celda reducida
+      minCellHeight: 7 // Altura mínima de celda ajustada
     },
     bodyStyles: {
       textColor: [0, 0, 0]

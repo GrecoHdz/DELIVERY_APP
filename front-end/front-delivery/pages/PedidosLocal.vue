@@ -11,24 +11,24 @@
       <div class="mb-6 flex items-center justify-end">
         <div class="flex items-center space-x-2 bg-white p-2 rounded-lg shadow-sm">
           <span class="text-sm font-medium text-gray-700">Fuente de datos:</span>
-          <select 
-            v-model="dataSource" 
+          <select
+            v-model="dataSource"
             class="border border-gray-300 rounded p-1 text-sm"
             @change="fetchOrders"
           >
             <option value="mock">Datos de ejemplo</option>
             <option value="api">API Local</option>
           </select>
-          <button 
-            v-if="loading" 
+          <button
+            v-if="loading"
             class="text-gray-500 cursor-not-allowed p-1"
             disabled
           >
             <div class="w-5 h-5 border-2 border-t-blue-600 border-blue-600 rounded-full animate-spin"></div>
           </button>
-          <button 
-            v-else 
-            @click="fetchOrders" 
+          <button
+            v-else
+            @click="fetchOrders"
             class="text-blue-600 hover:text-blue-800 p-1"
             title="Actualizar datos"
           >
@@ -62,8 +62,8 @@
       <!-- Mensaje de error -->
       <div v-if="error" class="bg-red-100 text-red-800 p-4 rounded-lg mb-6">
         <p class="font-medium">{{ error }}</p>
-        <button 
-          @click="fetchOrders" 
+        <button
+          @click="fetchOrders"
           class="mt-2 bg-red-600 text-white px-4 py-1 rounded-md hover:bg-red-700 transition-colors"
         >
           Reintentar
@@ -112,10 +112,10 @@
               <li v-for="item in order.items" :key="item.id" class="text-sm text-gray-700">
                 {{ item.name }} (x{{ item.quantity }})
                 <div v-if="item.attributes && item.attributes.length > 0" class="text-xs text-gray-500 ml-2">
-                  {{ item.attributes.join(", ") }}
+                  {{ formatAttributes(item.attributes) }}
                 </div>
                 <div v-if="item.extras && item.extras.length > 0" class="text-xs text-gray-500 ml-2">
-                  Extras: {{ item.extras.join(", ") }}
+                  Extras: {{ formatExtras(item.extras) }}
                 </div>
               </li>
             </ul>
@@ -228,10 +228,10 @@
                 <li v-for="item in order.items" :key="item.id" class="text-sm text-gray-700">
                   {{ item.name }} (x{{ item.quantity }})
                   <div v-if="item.attributes && item.attributes.length > 0" class="text-xs text-gray-500 ml-2">
-                    {{ item.attributes.join(", ") }}
+                    {{ formatAttributes(item.attributes) }}
                   </div>
                   <div v-if="item.extras && item.extras.length > 0" class="text-xs text-gray-500 ml-2">
-                    Extras: {{ item.extras.join(", ") }}
+                    Extras: {{ formatExtras(item.extras) }}
                   </div>
                 </li>
               </ul>
@@ -393,7 +393,7 @@ import {
 } from 'lucide-vue-next';
 import { io } from 'socket.io-client';
 
-const isModalOpen = ref(false); 
+const isModalOpen = ref(false);
 const router = useRouter();
 
 // Funciones para el manejo de notificaciones
@@ -425,13 +425,13 @@ const unreadNotifications = computed(() => {
 const redirectToProfile = () => {
   switch (selectedProfile.value) {
     case 'Cliente':
-      router.push('/Dashboard_Cliente');  
+      router.push('/Dashboard_Cliente');
       break;
     case 'Local':
-      router.push('/Dashboard_Local');  
+      router.push('/Dashboard_Local');
       break;
     case 'Delivery':
-      router.push('/Dashboard_Driver');  
+      router.push('/Dashboard_Driver');
       break;
     default:
       break;
@@ -587,20 +587,20 @@ const fetchOrders = async () => {
     } else {
       // Obtener datos de la API
       const response = await fetch('http://localhost:4000/pedidos');
-      
+
       if (!response.ok) {
         throw new Error(`Error al obtener pedidos: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       // Mapear datos de la API al formato esperado por la UI
       orders.value = await mapOrdersFromAPI(data);
     }
   } catch (err) {
     console.error('Error fetching orders:', err);
-    error.value = dataSource.value === 'mock' 
-      ? 'Error al cargar los datos de ejemplo. Por favor intenta de nuevo.' 
+    error.value = dataSource.value === 'mock'
+      ? 'Error al cargar los datos de ejemplo. Por favor intenta de nuevo.'
       : 'Error al conectar con la API local. Asegúrate que http://localhost:4000 esté disponible.';
   } finally {
     loading.value = false;
@@ -612,47 +612,93 @@ const mapOrdersFromAPI = async (apiOrders) => {
   try {
     // Obtener todos los detalles de pedidos para relacionarlos
     const detallesResponse = await fetch('http://localhost:4000/carrito');
-    
+
     if (!detallesResponse.ok) {
       throw new Error(`Error al obtener detalles de pedidos: ${detallesResponse.status}`);
     }
-    
+
     const detalles = await detallesResponse.json();
-    
+
     // Obtener información de clientes
     const clientesResponse = await fetch('http://localhost:4000/clientes');
-    
+
     if (!clientesResponse.ok) {
       throw new Error(`Error al obtener clientes: ${clientesResponse.status}`);
     }
-    
+
     const clientes = await clientesResponse.json();
-    
+
     // Transformar datos al formato esperado por la UI
     return apiOrders.map(pedido => {
       // Encontrar detalles asociados al pedido
       const pedidoDetalles = detalles.filter(d => d.id_pedido === pedido.id_pedido);
-      
+
       // Encontrar cliente asociado al pedido
       const cliente = clientes.find(c => c.id_cliente === pedido.id_cliente);
-      
+
       // Formatear fecha para la UI
       const fechaPedido = new Date(pedido.fecha_pedido);
-      
+
+      // Obtener método de pago si existe
+      let metodoPago = 'Desconocido';
+      if (pedido.id_metodo_pago && pedido.MetodoPago) {
+        metodoPago = pedido.MetodoPago.tipo_pago;
+      }
+
       return {
         id: pedido.id_pedido,
         date: formatDateForDisplay(fechaPedido),
         time: formatTimeForDisplay(fechaPedido),
         customer: cliente ? cliente.nombre : 'Cliente Desconocido',
         total: pedidoDetalles.reduce((sum, item) => sum + parseFloat(item.subtotal), 0),
-        paymentMethod: pedidoDetalles.length > 0 ? pedidoDetalles[0].metodopago : 'Desconocido',
-        orderType: pedidoDetalles.length > 0 ? pedidoDetalles[0].tipopedido : 'Desconocido',
+        paymentMethod: pedido.id_metodo_pago ? metodoPago : 'Desconocido',
+        orderType: pedido.tipo_pedido || 'Desconocido',
         items: pedidoDetalles.map(detalle => ({
           id: detalle.id_pedido_detalle,
           name: detalle.nombre_producto,
           quantity: detalle.cantidad,
-          attributes: detalle.atributos ? Object.values(detalle.atributos) : [],
-          extras: [],
+          attributes: detalle.atributos ?
+                    (typeof detalle.atributos === 'string' ?
+                      (() => {
+                        try {
+                          // Intentar parsear como JSON
+                          const parsed = JSON.parse(detalle.atributos);
+
+                          return parsed;
+                        } catch (e) {
+                          console.error('Error al parsear atributos:', e);
+                          return [];
+                        }
+                      })() :
+                      Array.isArray(detalle.atributos) ?
+                        detalle.atributos :
+                        // Si es un objeto, convertirlo a un formato más fácil de procesar
+                        Object.entries(detalle.atributos).map(([key, value]) => {
+
+                          return { [key]: value };
+                        })
+                    ) : [],
+          extras: detalle.extras ?
+                    (typeof detalle.extras === 'string' ?
+                      (() => {
+                        try {
+                          // Intentar parsear como JSON
+                          const parsed = JSON.parse(detalle.extras);
+
+                          return parsed;
+                        } catch (e) {
+                          console.error('Error al parsear extras:', e);
+                          return [];
+                        }
+                      })() :
+                      Array.isArray(detalle.extras) ?
+                        detalle.extras :
+                        // Si es un objeto, convertirlo a un formato más fácil de procesar
+                        Object.entries(detalle.extras).map(([key, value]) => {
+
+                          return { name: key, price: value };
+                        })
+                    ) : [],
           price: parseFloat(detalle.precio_unitario)
         })),
         status: mapApiStatusToUI(pedido.estado)
@@ -697,13 +743,95 @@ const formatPrice = (price) => {
   return price ? price.toFixed(2) : '0.00';
 };
 
+// Función para formatear extras
+const formatExtras = (extras) => {
+  if (!extras || !extras.length) return '';
+
+  return extras.map(extra => {
+    if (typeof extra === 'object') {
+      // Si es un objeto, extraer solo el nombre o la propiedad relevante
+      if (extra.nombre) return extra.nombre;
+      if (extra.name) return extra.name;
+
+      // Si es un objeto sin nombre específico, tomar la primera propiedad
+      const keys = Object.keys(extra);
+      if (keys.length > 0) return extra[keys[0]];
+
+      return '';
+    }
+    return extra;
+  }).filter(Boolean).join(', '); // Filtrar valores vacíos
+};
+
+// Función para formatear atributos
+const formatAttributes = (attributes) => {
+  if (!attributes || !attributes.length) return '';
+
+  return attributes.map(attr => {
+
+
+    if (typeof attr === 'object') {
+      // Caso especial: si es un objeto con una propiedad que es otro objeto
+      const keys = Object.keys(attr);
+      if (keys.length === 1) {
+        const key = keys[0];
+        const value = attr[key];
+
+        // Si el valor es un objeto, intentar extraer información útil
+        if (typeof value === 'object' && value !== null) {
+          // Si el objeto valor tiene una propiedad 'valor', usarla
+          if (value.valor !== undefined) {
+            return `${key}: ${value.valor}`;
+          }
+
+          // Si el objeto valor tiene propiedades, usar la primera
+          const valueKeys = Object.keys(value);
+          if (valueKeys.length > 0) {
+            return `${key}: ${valueKeys[0]}`;
+          }
+
+          // Si no podemos extraer información útil, mostrar solo la clave
+          return key;
+        }
+
+        // Si el valor no es un objeto, mostrar clave y valor
+        // Si el valor es 0 o null, mostrar solo la clave
+        if (value === 0 || value === null) {
+          return key;
+        }
+        return `${key}: ${value}`;
+      }
+
+      // Si tiene nombre_atributo y valor, mostrar ambos valores
+      if (attr.nombre_atributo && attr.valor) {
+        return `${attr.nombre_atributo}: ${attr.valor}`;
+      }
+
+      // Si es un objeto con nombre y valor como propiedades separadas
+      if (attr.nombre && attr.valor) {
+        return `${attr.nombre}: ${attr.valor}`;
+      }
+
+      // Para otros casos, intentar extraer información útil
+      return keys.map(key => {
+        const value = attr[key];
+        if (typeof value === 'object' && value !== null) {
+          return key;
+        }
+        return `${key}${value !== 0 && value !== null ? ': ' + value : ''}`;
+      }).join(', ');
+    }
+    return attr;
+  }).filter(Boolean).join(', '); // Filtrar valores vacíos
+};
+
 // Pedidos filtrados según la pestaña activa
-const receivedOrders = computed(() => 
+const receivedOrders = computed(() =>
   orders.value.filter(order => order.status === 'received')
 );
 
 const filteredAcceptedOrders = computed(() => {
-  let filtered = orders.value.filter(order => 
+  let filtered = orders.value.filter(order =>
     order.status === 'preparation' || order.status === 'completed'
   );
 
@@ -778,10 +906,10 @@ const confirmIndividualAccept = async () => {
     alert("Por favor, ingresa un tiempo estimado de preparación.");
     return;
   }
-  
+
   try {
     const order = orders.value.find((order) => order.id === selectedOrderId.value);
-    
+
     if (socket.value && socket.value.connected) {
       socket.value.emit('pedido_aceptado', {
         pedidoId: selectedOrderId.value,
@@ -795,7 +923,7 @@ const confirmIndividualAccept = async () => {
       order.status = "preparation";
       order.estimatedTime = estimatedTime.value;
     }
-    
+
     alert("Pedido aceptado exitosamente.");
     closeIndividualActionModal();
   } catch (error) {
@@ -810,7 +938,7 @@ const confirmIndividualReject = async () => {
     alert("Por favor, ingresa una razón de rechazo.");
     return;
   }
-  
+
   try {
     const order = orders.value.find((order) => order.id === selectedOrderId.value);
 
@@ -824,7 +952,7 @@ const confirmIndividualReject = async () => {
 
     // Actualizar la UI
     orders.value = orders.value.filter((order) => order.id !== selectedOrderId.value);
-    
+
     alert("Pedido rechazado exitosamente.");
     closeIndividualActionModal();
   } catch (error) {
@@ -859,7 +987,7 @@ const confirmBulkAccept = async () => {
         order.estimatedTime = estimatedTime.value;
       }
     });
-    
+
     alert("Pedidos seleccionados aceptados exitosamente.");
     selectedOrders.value = [];
     closeBulkActionModal();
@@ -875,7 +1003,7 @@ const confirmBulkReject = async () => {
     alert("Por favor, ingresa una razón de rechazo.");
     return;
   }
-  
+
   try {
     const selectedOrdersDetails = orders.value.filter(order => selectedOrders.value.includes(order.id));
 
@@ -889,7 +1017,7 @@ const confirmBulkReject = async () => {
 
     // Actualizar la UI
     orders.value = orders.value.filter((order) => !selectedOrders.value.includes(order.id));
-    
+
     alert("Pedidos seleccionados rechazados exitosamente.");
     selectedOrders.value = [];
     closeBulkActionModal();
@@ -908,7 +1036,7 @@ const markOrderAsCompleted = async (orderId) => {
       // await fetch(`http://localhost:4000/pedidos/${orderId}/completar`, {
       //   method: 'POST'
       // });
-      
+
       // Simulamos tiempo de espera
       await new Promise(resolve => setTimeout(resolve, 800));
     } catch (error) {
@@ -923,7 +1051,7 @@ const markOrderAsCompleted = async (orderId) => {
   if (order) {
     order.status = "completed";
   }
-  
+
   alert(`Pedido #${orderId} marcado como completado.`);
 };
 
@@ -951,7 +1079,7 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px;
 }
- 
+
 .order-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);

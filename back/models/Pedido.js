@@ -29,6 +29,14 @@ const Pedido = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    id_metodo_pago: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Método de pago es opcional inicialmente
+    },
+    tipo_pedido: {
+      type: DataTypes.STRING(55),
+      allowNull: true, // Tipo de pedido es opcional inicialmente
+    },
     tiempo_preparacion_estimado: {
       type: DataTypes.INTEGER,
       allowNull: true, // Tiempo en minutos (opcional)
